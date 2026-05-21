@@ -43,10 +43,19 @@ async def lifespan(app: FastAPI):
     bm25_store = get_bm25_store()
     await bm25_store.initialize_from_db()
 
-    # Log LLM provider
+    # Log LLM provider chain
     llm_provider = settings.get_available_llm()
     if llm_provider:
-        print(f"✓ LLM provider: {llm_provider}")
+        available = []
+        if settings.GROQ_API_KEY:
+            available.append(f"Groq ({settings.GROQ_MODEL})")
+        if settings.GEMINI_API_KEY:
+            available.append(f"Gemini ({settings.GEMINI_MODEL})")
+        if settings.OPENAI_API_KEY:
+            available.append(f"OpenAI ({settings.OPENAI_MODEL})")
+        if settings.ANTHROPIC_API_KEY:
+            available.append(f"Anthropic ({settings.ANTHROPIC_MODEL})")
+        print(f"✓ LLM failover chain: {' → '.join(available)}")
     else:
         print("⚠ No LLM API key configured — chat will not work")
 

@@ -2,7 +2,7 @@
 Agentic StudyMate — Application Settings
 
 Loads configuration from environment variables (.env file).
-Supports multi-LLM providers with priority: Gemini > OpenAI > Anthropic.
+Supports multi-LLM providers with priority: Groq > Gemini > OpenAI > Anthropic.
 """
 
 from pydantic_settings import BaseSettings
@@ -16,15 +16,17 @@ class Settings(BaseSettings):
     # --- Database ---
     DATABASE_URL: str = "sqlite+aiosqlite:///./studymate.db"
 
-    # --- LLM API Keys (priority: Gemini > OpenAI > Anthropic) ---
+    # --- LLM API Keys (priority: Groq > Gemini > OpenAI > Anthropic) ---
+    GROQ_API_KEY: str = ""
     GEMINI_API_KEY: str = ""
     OPENAI_API_KEY: str = ""
     ANTHROPIC_API_KEY: str = ""
 
     # --- LLM Model Names ---
+    GROQ_MODEL: str = "llama-3.1-8b-instant"
     GEMINI_MODEL: str = "gemini-2.0-flash-lite"
     OPENAI_MODEL: str = "gpt-4o-mini"
-    ANTHROPIC_MODEL: str = "claude-sonnet-4-20250514"
+    ANTHROPIC_MODEL: str = "claude-3-haiku-20240307"
 
     # --- Embedding Model (CPU) ---
     EMBEDDING_MODEL: str = "sentence-transformers/all-MiniLM-L6-v2"
@@ -65,6 +67,8 @@ class Settings(BaseSettings):
 
     def get_available_llm(self) -> str | None:
         """Return the highest-priority available LLM provider name."""
+        if self.GROQ_API_KEY:
+            return "groq"
         if self.GEMINI_API_KEY:
             return "gemini"
         if self.OPENAI_API_KEY:

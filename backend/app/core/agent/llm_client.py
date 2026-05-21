@@ -1,16 +1,20 @@
 """
-Agentic StudyMate — Unified LLM Client
+Agentic StudyMate — Unified LLM Client (4-Provider Failover Router)
 
-Abstracts Gemini / OpenAI / Anthropic behind one async interface.
+Abstracts Groq / Gemini / OpenAI / Anthropic behind one async interface.
 Supports both structured (JSON) responses and streaming text.
 
-Fallback chain: Gemini → OpenAI → Anthropic.
-If the primary provider fails, automatically tries the next.
+Failover chain (strict cascade):
+    Groq (Primary)  →  Gemini  →  OpenAI  →  Anthropic
+
+If a provider throws any exception (429, timeout, network error),
+the router logs a warning and immediately tries the next provider.
 
 Rate-limiting features:
   • Concurrency semaphore — caps simultaneous API calls
-  • Exponential backoff — retries on 429/rate-limit errors with increasing delay
-  • Retry-delay parsing — extracts server-suggested wait from Gemini error messages
+  • Exponential backoff — retries on 429/rate-limit errors per provider
+  • Retry-delay parsing — extracts server-suggested wait from error messages
+  • Standardized output — all providers return plain string text
 """
 
 import json
@@ -41,6 +45,7 @@ def _parse_retry_delay(error: Exception) -> float | None:
 
     Gemini errors include a `retryDelay` field like `'retryDelay': '51s'`
     or `'retryDelay': '41.709722063s'`. We parse that to seconds.
+    Groq errors include `retry-after` headers or similar patterns.
     """
     err_str = str(error)
 
@@ -60,13 +65,26 @@ def _parse_retry_delay(error: Exception) -> float | None:
         except ValueError:
             pass
 
+    # Match "try again in Xs" pattern (Groq)
+    match = re.search(r"try again in ([\d.]+)", err_str)
+    if match:
+        try:
+            return float(match.group(1))
+        except ValueError:
+            pass
+
     return None
 
 
 class LLMClient:
     """
-    Unified LLM client with multi-provider fallback, concurrency limiting,
-    and exponential backoff on rate-limit errors.
+    Unified LLM client with 4-provider cascading failover, concurrency
+    limiting, and exponential backoff on rate-limit errors.
+
+    Failover chain: Groq → Gemini → OpenAI → Anthropic
+
+    The rest of the system doesn't know or care which provider actually
+    answered — all methods return standardized plain text strings.
 
     Usage:
         client = get_llm_client()
@@ -77,6 +95,7 @@ class LLMClient:
 
     def __init__(self):
         self._settings = get_settings()
+        self._groq_client = None
         self._gemini_client = None
         self._openai_client = None
         self._anthropic_client = None
@@ -85,6 +104,15 @@ class LLMClient:
         self._semaphore = asyncio.Semaphore(self._settings.LLM_MAX_CONCURRENT)
 
     # ─── Provider Initialization (Lazy) ───────────────────────────────────
+
+    def _get_groq_client(self):
+        """Lazy-init Groq async client."""
+        if self._groq_client is None and self._settings.GROQ_API_KEY:
+            from groq import AsyncGroq
+            self._groq_client = AsyncGroq(
+                api_key=self._settings.GROQ_API_KEY
+            )
+        return self._groq_client
 
     def _get_gemini_client(self):
         """Lazy-init Google GenAI client."""
@@ -116,8 +144,10 @@ class LLMClient:
     # ─── Provider Order ───────────────────────────────────────────────────
 
     def _get_provider_order(self) -> list[str]:
-        """Return available providers in priority order."""
+        """Return available providers in strict priority order."""
         providers = []
+        if self._settings.GROQ_API_KEY:
+            providers.append("groq")
         if self._settings.GEMINI_API_KEY:
             providers.append("gemini")
         if self._settings.OPENAI_API_KEY:
@@ -167,12 +197,104 @@ class LLMClient:
                     delay = min(base_delay * (2 ** attempt), max_delay)
 
                 print(
-                    f"⏳ Rate limited by {provider} (attempt {attempt + 1}/{max_retries}). "
+                    f"[RETRY] Rate limited by {provider} (attempt {attempt + 1}/{max_retries}). "
                     f"Retrying in {delay:.1f}s..."
                 )
                 await asyncio.sleep(delay)
 
-    # ─── Gemini ───────────────────────────────────────────────────────────
+    async def _retry_stream_with_backoff(self, stream_factory, provider: str):
+        """
+        Retry a streaming call with exponential backoff on rate-limit errors.
+        Returns an async generator that yields text chunks.
+        """
+        max_retries = self._settings.LLM_MAX_RETRIES
+        base_delay = self._settings.LLM_RETRY_BASE_DELAY
+        max_delay = self._settings.LLM_RETRY_MAX_DELAY
+
+        for attempt in range(max_retries + 1):
+            try:
+                async for chunk in stream_factory():
+                    yield chunk
+                return  # Stream completed successfully
+            except Exception as e:
+                if not _is_rate_limit_error(e) or attempt >= max_retries:
+                    raise
+
+                server_delay = _parse_retry_delay(e)
+                delay = (
+                    min(server_delay + 1.0, max_delay)
+                    if server_delay is not None
+                    else min(base_delay * (2 ** attempt), max_delay)
+                )
+
+                print(
+                    f"[RETRY] Stream rate limited by {provider} (attempt {attempt + 1}/{max_retries}). "
+                    f"Retrying in {delay:.1f}s..."
+                )
+                await asyncio.sleep(delay)
+
+    # ═══════════════════════════════════════════════════════════════════════
+    # PROVIDER 1: GROQ (Primary — fastest inference, generous free tier)
+    # ═══════════════════════════════════════════════════════════════════════
+
+    async def _call_groq(
+        self, prompt: str, system_prompt: str, json_mode: bool = False
+    ) -> str:
+        """Call Groq API with semaphore + retry."""
+        client = self._get_groq_client()
+        if client is None:
+            raise RuntimeError("Groq client not available")
+
+        kwargs: dict = {
+            "model": self._settings.GROQ_MODEL,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": prompt},
+            ],
+            "temperature": 0.3,
+            "max_tokens": 4096,
+        }
+        if json_mode:
+            kwargs["response_format"] = {"type": "json_object"}
+
+        async def _do_call():
+            async with self._semaphore:
+                response = await client.chat.completions.create(**kwargs)
+                return response.choices[0].message.content
+
+        return await self._retry_with_backoff(_do_call, "groq")
+
+    async def _stream_groq(
+        self, prompt: str, system_prompt: str
+    ) -> AsyncGenerator[str, None]:
+        """Stream from Groq API with semaphore + retry."""
+        client = self._get_groq_client()
+        if client is None:
+            raise RuntimeError("Groq client not available")
+
+        async def _do_stream():
+            stream = await client.chat.completions.create(
+                model=self._settings.GROQ_MODEL,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=0.3,
+                max_tokens=4096,
+                stream=True,
+            )
+            async for chunk in stream:
+                delta = chunk.choices[0].delta
+                if delta.content:
+                    yield delta.content
+
+        async with self._semaphore:
+            async for text in self._retry_stream_with_backoff(_do_stream, "groq"):
+                yield text
+
+    # ═══════════════════════════════════════════════════════════════════════
+    # PROVIDER 2: GEMINI (Fallback 1)
+    # ═══════════════════════════════════════════════════════════════════════
 
     async def _call_gemini(
         self, prompt: str, system_prompt: str, json_mode: bool = False
@@ -220,7 +342,6 @@ class LLMClient:
 
         # Acquire semaphore for the duration of the stream
         async with self._semaphore:
-            # Retry logic for the stream initialization
             max_retries = self._settings.LLM_MAX_RETRIES
             base_delay = self._settings.LLM_RETRY_BASE_DELAY
             max_delay = self._settings.LLM_RETRY_MAX_DELAY
@@ -275,15 +396,21 @@ class LLMClient:
                         raise
 
                     server_delay = _parse_retry_delay(e)
-                    delay = min(server_delay + 1.0, max_delay) if server_delay else min(base_delay * (2 ** attempt), max_delay)
+                    delay = (
+                        min(server_delay + 1.0, max_delay)
+                        if server_delay is not None
+                        else min(base_delay * (2 ** attempt), max_delay)
+                    )
 
                     print(
-                        f"⏳ Stream rate limited by gemini (attempt {attempt + 1}/{max_retries}). "
+                        f"[RETRY] Stream rate limited by gemini (attempt {attempt + 1}/{max_retries}). "
                         f"Retrying in {delay:.1f}s..."
                     )
                     await asyncio.sleep(delay)
 
-    # ─── OpenAI ───────────────────────────────────────────────────────────
+    # ═══════════════════════════════════════════════════════════════════════
+    # PROVIDER 3: OPENAI (Fallback 2)
+    # ═══════════════════════════════════════════════════════════════════════
 
     async def _call_openai(
         self, prompt: str, system_prompt: str, json_mode: bool = False
@@ -319,43 +446,28 @@ class LLMClient:
         if client is None:
             raise RuntimeError("OpenAI client not available")
 
+        async def _do_stream():
+            stream = await client.chat.completions.create(
+                model=self._settings.OPENAI_MODEL,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=0.3,
+                stream=True,
+            )
+            async for chunk in stream:
+                delta = chunk.choices[0].delta
+                if delta.content:
+                    yield delta.content
+
         async with self._semaphore:
-            max_retries = self._settings.LLM_MAX_RETRIES
-            base_delay = self._settings.LLM_RETRY_BASE_DELAY
-            max_delay = self._settings.LLM_RETRY_MAX_DELAY
+            async for text in self._retry_stream_with_backoff(_do_stream, "openai"):
+                yield text
 
-            for attempt in range(max_retries + 1):
-                try:
-                    stream = await client.chat.completions.create(
-                        model=self._settings.OPENAI_MODEL,
-                        messages=[
-                            {"role": "system", "content": system_prompt},
-                            {"role": "user", "content": prompt},
-                        ],
-                        temperature=0.3,
-                        stream=True,
-                    )
-
-                    async for chunk in stream:
-                        delta = chunk.choices[0].delta
-                        if delta.content:
-                            yield delta.content
-                    return
-
-                except Exception as e:
-                    if not _is_rate_limit_error(e) or attempt >= max_retries:
-                        raise
-
-                    server_delay = _parse_retry_delay(e)
-                    delay = min(server_delay + 1.0, max_delay) if server_delay else min(base_delay * (2 ** attempt), max_delay)
-
-                    print(
-                        f"⏳ Stream rate limited by openai (attempt {attempt + 1}/{max_retries}). "
-                        f"Retrying in {delay:.1f}s..."
-                    )
-                    await asyncio.sleep(delay)
-
-    # ─── Anthropic ────────────────────────────────────────────────────────
+    # ═══════════════════════════════════════════════════════════════════════
+    # PROVIDER 4: ANTHROPIC (Fallback 3 — last resort)
+    # ═══════════════════════════════════════════════════════════════════════
 
     async def _call_anthropic(
         self, prompt: str, system_prompt: str, json_mode: bool = False
@@ -414,15 +526,21 @@ class LLMClient:
                         raise
 
                     server_delay = _parse_retry_delay(e)
-                    delay = min(server_delay + 1.0, max_delay) if server_delay else min(base_delay * (2 ** attempt), max_delay)
+                    delay = (
+                        min(server_delay + 1.0, max_delay)
+                        if server_delay is not None
+                        else min(base_delay * (2 ** attempt), max_delay)
+                    )
 
                     print(
-                        f"⏳ Stream rate limited by anthropic (attempt {attempt + 1}/{max_retries}). "
+                        f"[RETRY] Stream rate limited by anthropic (attempt {attempt + 1}/{max_retries}). "
                         f"Retrying in {delay:.1f}s..."
                     )
                     await asyncio.sleep(delay)
 
-    # ─── Public API ───────────────────────────────────────────────────────
+    # ═══════════════════════════════════════════════════════════════════════
+    # PUBLIC API — Standardized Output (plain string, provider-agnostic)
+    # ═══════════════════════════════════════════════════════════════════════
 
     async def call_llm(
         self,
@@ -431,7 +549,11 @@ class LLMClient:
         json_mode: bool = False,
     ) -> str:
         """
-        Call LLM with automatic provider fallback.
+        Call LLM with automatic cascading failover.
+
+        Tries each provider in order: Groq → Gemini → OpenAI → Anthropic.
+        If a provider fails (429, timeout, any error), logs a warning and
+        immediately attempts the next one.
 
         Args:
             prompt: User prompt
@@ -439,7 +561,7 @@ class LLMClient:
             json_mode: If True, request JSON-formatted output
 
         Returns:
-            LLM response text
+            LLM response text (standardized plain string)
 
         Raises:
             RuntimeError: If no LLM provider is available or all fail
@@ -447,23 +569,31 @@ class LLMClient:
         providers = self._get_provider_order()
         if not providers:
             raise RuntimeError(
-                "No LLM API key configured. Set GEMINI_API_KEY, OPENAI_API_KEY, "
-                "or ANTHROPIC_API_KEY in your .env file."
+                "No LLM API key configured. Set GROQ_API_KEY, GEMINI_API_KEY, "
+                "OPENAI_API_KEY, or ANTHROPIC_API_KEY in your .env file."
             )
 
         call_map = {
+            "groq": self._call_groq,
             "gemini": self._call_gemini,
             "openai": self._call_openai,
             "anthropic": self._call_anthropic,
         }
 
         last_error = None
-        for provider in providers:
+        for i, provider in enumerate(providers):
             try:
                 result = await call_map[provider](prompt, system_prompt, json_mode)
                 return result
             except Exception as e:
-                print(f"⚠ LLM call failed with {provider}: {e}")
+                next_provider = providers[i + 1] if i + 1 < len(providers) else None
+                if next_provider:
+                    print(
+                        f"[WARN] {provider.capitalize()} failed, switching to "
+                        f"{next_provider.capitalize()}... (Error: {type(e).__name__})"
+                    )
+                else:
+                    print(f"[WARN] {provider.capitalize()} failed (last provider): {e}")
                 last_error = e
                 continue
 
@@ -504,36 +634,46 @@ class LLMClient:
         system_prompt: str = "You are a helpful assistant.",
     ) -> AsyncGenerator[str, None]:
         """
-        Stream LLM response with automatic provider fallback.
+        Stream LLM response with automatic cascading failover.
+
+        Tries each provider in order: Groq → Gemini → OpenAI → Anthropic.
 
         Args:
             prompt: User prompt
             system_prompt: System instruction
 
         Yields:
-            Text chunks as they arrive
+            Text chunks as they arrive (standardized plain strings)
         """
         providers = self._get_provider_order()
         if not providers:
             raise RuntimeError(
-                "No LLM API key configured. Set GEMINI_API_KEY, OPENAI_API_KEY, "
-                "or ANTHROPIC_API_KEY in your .env file."
+                "No LLM API key configured. Set GROQ_API_KEY, GEMINI_API_KEY, "
+                "OPENAI_API_KEY, or ANTHROPIC_API_KEY in your .env file."
             )
 
         stream_map = {
+            "groq": self._stream_groq,
             "gemini": self._stream_gemini,
             "openai": self._stream_openai,
             "anthropic": self._stream_anthropic,
         }
 
         last_error = None
-        for provider in providers:
+        for i, provider in enumerate(providers):
             try:
                 async for chunk in stream_map[provider](prompt, system_prompt):
                     yield chunk
                 return  # Success — stream completed
             except Exception as e:
-                print(f"⚠ LLM stream failed with {provider}: {e}")
+                next_provider = providers[i + 1] if i + 1 < len(providers) else None
+                if next_provider:
+                    print(
+                        f"[WARN] {provider.capitalize()} stream failed, switching to "
+                        f"{next_provider.capitalize()}... (Error: {type(e).__name__})"
+                    )
+                else:
+                    print(f"[WARN] {provider.capitalize()} stream failed (last provider): {e}")
                 last_error = e
                 continue
 
