@@ -1,0 +1,35 @@
+# === Core Framework ===
+fastapi>=0.115.0,<1.0.0
+uvicorn[standard]>=0.30.0
+python-multipart>=0.0.9
+
+# === Database ===
+sqlalchemy[asyncio]>=2.0.0
+aiosqlite>=0.20.0        # SQLite async driver (swap to asyncpg for PostgreSQL)
+
+# === Document Parsing ===
+pymupdf>=1.24.0
+pymupdf4llm>=0.0.10
+python-docx>=1.1.0
+
+# === Embeddings & ML (CPU-only) ===
+sentence-transformers>=3.0.0
+torch --index-url https://download.pytorch.org/whl/cpu
+
+# === Vector Database ===
+qdrant-client>=1.10.0
+
+# === BM25 Search ===
+rank-bm25>=0.2.2
+
+# === Reranker ===
+# Uses sentence-transformers CrossEncoder (included above)
+
+# === LLM Providers (priority: Gemini > OpenAI > Anthropic) ===
+google-genai>=1.0.0
+openai>=1.30.0
+anthropic>=0.30.0
+
+# === Config & Utilities ===
+pydantic-settings>=2.3.0
+python-dotenv>=1.0.0
