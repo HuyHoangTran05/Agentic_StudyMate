@@ -127,9 +127,10 @@ class VectorStore:
                     ]
                 )
 
-            results = client.search(
+            # qdrant-client >= 1.12 uses query_points() instead of search()
+            results = client.query_points(
                 collection_name=self._collection_name,
-                query_vector=query_vector,
+                query=query_vector,
                 query_filter=query_filter,
                 limit=top_k,
             )
@@ -145,7 +146,7 @@ class VectorStore:
                     "score": hit.score,
                     "source": "vector",
                 }
-                for hit in results
+                for hit in results.points
             ]
 
         return await asyncio.to_thread(_search)
