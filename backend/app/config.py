@@ -47,6 +47,12 @@ class Settings(BaseSettings):
     RERANK_TOP_N: int = 5
     MAX_RETRIES: int = 2
 
+    # --- LLM Rate Limiting ---
+    LLM_MAX_CONCURRENT: int = 2       # Max simultaneous LLM API calls
+    LLM_MAX_RETRIES: int = 3          # Max retries on 429 errors
+    LLM_RETRY_BASE_DELAY: float = 2.0 # Base delay in seconds for exponential backoff
+    LLM_RETRY_MAX_DELAY: float = 60.0 # Max delay cap in seconds
+
     # --- Server ---
     CORS_ORIGINS: list[str] = ["http://localhost:5173", "http://localhost:3000"]
     UPLOAD_DIR: str = "uploads"

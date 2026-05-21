@@ -6,18 +6,67 @@ Supports both structured (JSON) responses and streaming text.
 
 Fallback chain: Gemini → OpenAI → Anthropic.
 If the primary provider fails, automatically tries the next.
+
+Rate-limiting features:
+  • Concurrency semaphore — caps simultaneous API calls
+  • Exponential backoff — retries on 429/rate-limit errors with increasing delay
+  • Retry-delay parsing — extracts server-suggested wait from Gemini error messages
 """
 
 import json
+import re
 import asyncio
 from typing import AsyncGenerator
 
 from app.config import get_settings
 
 
+# ─── Rate-limit Helpers ──────────────────────────────────────────────────────
+
+def _is_rate_limit_error(error: Exception) -> bool:
+    """Check if an exception is a rate-limit (429) error."""
+    err_str = str(error)
+    return (
+        "429" in err_str
+        or "RESOURCE_EXHAUSTED" in err_str
+        or "rate limit" in err_str.lower()
+        or "quota" in err_str.lower()
+        or "too many requests" in err_str.lower()
+    )
+
+
+def _parse_retry_delay(error: Exception) -> float | None:
+    """
+    Extract the server-suggested retry delay from the error message.
+
+    Gemini errors include a `retryDelay` field like `'retryDelay': '51s'`
+    or `'retryDelay': '41.709722063s'`. We parse that to seconds.
+    """
+    err_str = str(error)
+
+    # Match patterns like: retryDelay': '51s' or retryDelay': '41.709s'
+    match = re.search(r"retryDelay['\"]?\s*:\s*['\"]?([\d.]+)s", err_str)
+    if match:
+        try:
+            return float(match.group(1))
+        except ValueError:
+            pass
+
+    # Match "Please retry in Xs" pattern
+    match = re.search(r"retry in ([\d.]+)s", err_str)
+    if match:
+        try:
+            return float(match.group(1))
+        except ValueError:
+            pass
+
+    return None
+
+
 class LLMClient:
     """
-    Unified LLM client with multi-provider fallback.
+    Unified LLM client with multi-provider fallback, concurrency limiting,
+    and exponential backoff on rate-limit errors.
 
     Usage:
         client = get_llm_client()
@@ -31,6 +80,9 @@ class LLMClient:
         self._gemini_client = None
         self._openai_client = None
         self._anthropic_client = None
+
+        # Concurrency semaphore — limits simultaneous LLM API calls
+        self._semaphore = asyncio.Semaphore(self._settings.LLM_MAX_CONCURRENT)
 
     # ─── Provider Initialization (Lazy) ───────────────────────────────────
 
@@ -74,12 +126,58 @@ class LLMClient:
             providers.append("anthropic")
         return providers
 
+    # ─── Retry Logic ──────────────────────────────────────────────────────
+
+    async def _retry_with_backoff(self, coro_factory, provider: str):
+        """
+        Execute an async callable with exponential backoff on rate-limit errors.
+
+        Args:
+            coro_factory: A zero-arg callable that returns a new coroutine each call
+            provider: Provider name for logging
+
+        Returns:
+            The result of the coroutine
+
+        Raises:
+            The last exception if all retries fail, or immediately if not rate-limited
+        """
+        max_retries = self._settings.LLM_MAX_RETRIES
+        base_delay = self._settings.LLM_RETRY_BASE_DELAY
+        max_delay = self._settings.LLM_RETRY_MAX_DELAY
+
+        for attempt in range(max_retries + 1):
+            try:
+                return await coro_factory()
+            except Exception as e:
+                if not _is_rate_limit_error(e):
+                    raise  # Not a rate limit — fail immediately
+
+                if attempt >= max_retries:
+                    raise  # Out of retries
+
+                # Calculate delay: use server-suggested delay if available,
+                # otherwise use exponential backoff
+                server_delay = _parse_retry_delay(e)
+                if server_delay is not None:
+                    # Use the server's suggestion but cap it
+                    delay = min(server_delay + 1.0, max_delay)
+                else:
+                    # Exponential backoff: 2s, 4s, 8s, ...
+                    delay = min(base_delay * (2 ** attempt), max_delay)
+
+                print(
+                    f"⏳ Rate limited by {provider} (attempt {attempt + 1}/{max_retries}). "
+                    f"Retrying in {delay:.1f}s..."
+                )
+                await asyncio.sleep(delay)
+
     # ─── Gemini ───────────────────────────────────────────────────────────
 
     async def _call_gemini(
         self, prompt: str, system_prompt: str, json_mode: bool = False
     ) -> str:
-        """Call Gemini API (sync SDK wrapped in thread)."""
+        """Call Gemini API with semaphore + retry."""
         client = self._get_gemini_client()
         if client is None:
             raise RuntimeError("Gemini client not available")
@@ -93,18 +191,22 @@ class LLMClient:
         if json_mode:
             config.response_mime_type = "application/json"
 
-        response = await asyncio.to_thread(
-            client.models.generate_content,
-            model=self._settings.GEMINI_MODEL,
-            contents=prompt,
-            config=config,
-        )
-        return response.text
+        async def _do_call():
+            async with self._semaphore:
+                response = await asyncio.to_thread(
+                    client.models.generate_content,
+                    model=self._settings.GEMINI_MODEL,
+                    contents=prompt,
+                    config=config,
+                )
+                return response.text
+
+        return await self._retry_with_backoff(_do_call, "gemini")
 
     async def _stream_gemini(
         self, prompt: str, system_prompt: str
     ) -> AsyncGenerator[str, None]:
-        """Stream from Gemini API."""
+        """Stream from Gemini API with semaphore + retry on initial connection."""
         client = self._get_gemini_client()
         if client is None:
             raise RuntimeError("Gemini client not available")
@@ -116,39 +218,77 @@ class LLMClient:
             temperature=0.3,
         )
 
-        # Gemini's stream is sync — run in thread and yield via queue
-        queue: asyncio.Queue[str | None] = asyncio.Queue()
+        # Acquire semaphore for the duration of the stream
+        async with self._semaphore:
+            # Retry logic for the stream initialization
+            max_retries = self._settings.LLM_MAX_RETRIES
+            base_delay = self._settings.LLM_RETRY_BASE_DELAY
+            max_delay = self._settings.LLM_RETRY_MAX_DELAY
 
-        def _stream_sync():
-            response = client.models.generate_content_stream(
-                model=self._settings.GEMINI_MODEL,
-                contents=prompt,
-                config=config,
-            )
-            for chunk in response:
-                if chunk.text:
-                    queue.put_nowait(chunk.text)
-            queue.put_nowait(None)  # sentinel
+            for attempt in range(max_retries + 1):
+                try:
+                    queue: asyncio.Queue[str | None | Exception] = asyncio.Queue()
 
-        task = asyncio.get_event_loop().run_in_executor(None, _stream_sync)
+                    def _stream_sync():
+                        try:
+                            response = client.models.generate_content_stream(
+                                model=self._settings.GEMINI_MODEL,
+                                contents=prompt,
+                                config=config,
+                            )
+                            for chunk in response:
+                                if chunk.text:
+                                    queue.put_nowait(chunk.text)
+                            queue.put_nowait(None)  # sentinel
+                        except Exception as e:
+                            queue.put_nowait(e)  # pass error to async side
 
-        while True:
-            try:
-                text = await asyncio.wait_for(queue.get(), timeout=60.0)
-            except asyncio.TimeoutError:
-                break
-            if text is None:
-                break
-            yield text
+                    task = asyncio.get_event_loop().run_in_executor(None, _stream_sync)
 
-        await task  # ensure thread completes
+                    # Read the first item to check for immediate errors
+                    first = await asyncio.wait_for(queue.get(), timeout=120.0)
+
+                    if isinstance(first, Exception):
+                        raise first
+                    if first is None:
+                        await task
+                        return
+                    yield first
+
+                    # Stream remaining chunks
+                    while True:
+                        try:
+                            text = await asyncio.wait_for(queue.get(), timeout=120.0)
+                        except asyncio.TimeoutError:
+                            break
+                        if text is None:
+                            break
+                        if isinstance(text, Exception):
+                            raise text
+                        yield text
+
+                    await task
+                    return  # Stream completed successfully
+
+                except Exception as e:
+                    if not _is_rate_limit_error(e) or attempt >= max_retries:
+                        raise
+
+                    server_delay = _parse_retry_delay(e)
+                    delay = min(server_delay + 1.0, max_delay) if server_delay else min(base_delay * (2 ** attempt), max_delay)
+
+                    print(
+                        f"⏳ Stream rate limited by gemini (attempt {attempt + 1}/{max_retries}). "
+                        f"Retrying in {delay:.1f}s..."
+                    )
+                    await asyncio.sleep(delay)
 
     # ─── OpenAI ───────────────────────────────────────────────────────────
 
     async def _call_openai(
         self, prompt: str, system_prompt: str, json_mode: bool = False
     ) -> str:
-        """Call OpenAI API."""
+        """Call OpenAI API with semaphore + retry."""
         client = self._get_openai_client()
         if client is None:
             raise RuntimeError("OpenAI client not available")
@@ -164,38 +304,63 @@ class LLMClient:
         if json_mode:
             kwargs["response_format"] = {"type": "json_object"}
 
-        response = await client.chat.completions.create(**kwargs)
-        return response.choices[0].message.content
+        async def _do_call():
+            async with self._semaphore:
+                response = await client.chat.completions.create(**kwargs)
+                return response.choices[0].message.content
+
+        return await self._retry_with_backoff(_do_call, "openai")
 
     async def _stream_openai(
         self, prompt: str, system_prompt: str
     ) -> AsyncGenerator[str, None]:
-        """Stream from OpenAI API."""
+        """Stream from OpenAI API with semaphore + retry."""
         client = self._get_openai_client()
         if client is None:
             raise RuntimeError("OpenAI client not available")
 
-        stream = await client.chat.completions.create(
-            model=self._settings.OPENAI_MODEL,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": prompt},
-            ],
-            temperature=0.3,
-            stream=True,
-        )
+        async with self._semaphore:
+            max_retries = self._settings.LLM_MAX_RETRIES
+            base_delay = self._settings.LLM_RETRY_BASE_DELAY
+            max_delay = self._settings.LLM_RETRY_MAX_DELAY
 
-        async for chunk in stream:
-            delta = chunk.choices[0].delta
-            if delta.content:
-                yield delta.content
+            for attempt in range(max_retries + 1):
+                try:
+                    stream = await client.chat.completions.create(
+                        model=self._settings.OPENAI_MODEL,
+                        messages=[
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": prompt},
+                        ],
+                        temperature=0.3,
+                        stream=True,
+                    )
+
+                    async for chunk in stream:
+                        delta = chunk.choices[0].delta
+                        if delta.content:
+                            yield delta.content
+                    return
+
+                except Exception as e:
+                    if not _is_rate_limit_error(e) or attempt >= max_retries:
+                        raise
+
+                    server_delay = _parse_retry_delay(e)
+                    delay = min(server_delay + 1.0, max_delay) if server_delay else min(base_delay * (2 ** attempt), max_delay)
+
+                    print(
+                        f"⏳ Stream rate limited by openai (attempt {attempt + 1}/{max_retries}). "
+                        f"Retrying in {delay:.1f}s..."
+                    )
+                    await asyncio.sleep(delay)
 
     # ─── Anthropic ────────────────────────────────────────────────────────
 
     async def _call_anthropic(
         self, prompt: str, system_prompt: str, json_mode: bool = False
     ) -> str:
-        """Call Anthropic API."""
+        """Call Anthropic API with semaphore + retry."""
         client = self._get_anthropic_client()
         if client is None:
             raise RuntimeError("Anthropic client not available")
@@ -205,32 +370,57 @@ class LLMClient:
         if json_mode:
             effective_system += "\n\nIMPORTANT: Respond ONLY with valid JSON. No markdown fences, no extra text."
 
-        response = await client.messages.create(
-            model=self._settings.ANTHROPIC_MODEL,
-            max_tokens=4096,
-            system=effective_system,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.3,
-        )
-        return response.content[0].text
+        async def _do_call():
+            async with self._semaphore:
+                response = await client.messages.create(
+                    model=self._settings.ANTHROPIC_MODEL,
+                    max_tokens=4096,
+                    system=effective_system,
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=0.3,
+                )
+                return response.content[0].text
+
+        return await self._retry_with_backoff(_do_call, "anthropic")
 
     async def _stream_anthropic(
         self, prompt: str, system_prompt: str
     ) -> AsyncGenerator[str, None]:
-        """Stream from Anthropic API."""
+        """Stream from Anthropic API with semaphore + retry."""
         client = self._get_anthropic_client()
         if client is None:
             raise RuntimeError("Anthropic client not available")
 
-        async with client.messages.stream(
-            model=self._settings.ANTHROPIC_MODEL,
-            max_tokens=4096,
-            system=system_prompt,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.3,
-        ) as stream:
-            async for text in stream.text_stream:
-                yield text
+        async with self._semaphore:
+            max_retries = self._settings.LLM_MAX_RETRIES
+            base_delay = self._settings.LLM_RETRY_BASE_DELAY
+            max_delay = self._settings.LLM_RETRY_MAX_DELAY
+
+            for attempt in range(max_retries + 1):
+                try:
+                    async with client.messages.stream(
+                        model=self._settings.ANTHROPIC_MODEL,
+                        max_tokens=4096,
+                        system=system_prompt,
+                        messages=[{"role": "user", "content": prompt}],
+                        temperature=0.3,
+                    ) as stream:
+                        async for text in stream.text_stream:
+                            yield text
+                    return
+
+                except Exception as e:
+                    if not _is_rate_limit_error(e) or attempt >= max_retries:
+                        raise
+
+                    server_delay = _parse_retry_delay(e)
+                    delay = min(server_delay + 1.0, max_delay) if server_delay else min(base_delay * (2 ** attempt), max_delay)
+
+                    print(
+                        f"⏳ Stream rate limited by anthropic (attempt {attempt + 1}/{max_retries}). "
+                        f"Retrying in {delay:.1f}s..."
+                    )
+                    await asyncio.sleep(delay)
 
     # ─── Public API ───────────────────────────────────────────────────────
 
