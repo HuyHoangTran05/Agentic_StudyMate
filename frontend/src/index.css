@@ -267,27 +267,139 @@ body {
   font-weight: 600;
 }
 
+.markdown-content em {
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+.markdown-content del {
+  color: var(--color-text-muted);
+  text-decoration: line-through;
+}
+
+.markdown-content blockquote {
+  border-left: 3px solid var(--color-accent-violet);
+  padding: 0.5em 1em;
+  margin: 0.75em 0;
+  background: rgba(124, 58, 237, 0.06);
+  border-radius: 0 0.5rem 0.5rem 0;
+  color: var(--color-text-secondary);
+}
+
+.markdown-content blockquote p {
+  margin: 0.25em 0;
+}
+
+.markdown-content hr {
+  border: none;
+  border-top: 1px solid var(--color-surface-500);
+  margin: 1.25em 0;
+}
+
+/* ─── Markdown Tables (GFM) ──────────────────────────────────────────────── */
+
+.markdown-content .table-wrapper,
 .markdown-content table {
   width: 100%;
-  border-collapse: collapse;
   margin: 1em 0;
 }
 
-.markdown-content th,
-.markdown-content td {
+/* Scrollable container for wide tables */
+.markdown-content table {
+  display: block;
+  overflow-x: auto;
+  border-collapse: separate;
+  border-spacing: 0;
   border: 1px solid var(--color-surface-500);
-  padding: 0.5em 0.75em;
-  text-align: left;
+  border-radius: 0.5rem;
+  font-size: 0.8125rem;
+}
+
+.markdown-content thead {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+}
+
+.markdown-content tbody {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
 }
 
 .markdown-content th {
-  background: var(--color-surface-600);
+  background: linear-gradient(
+    180deg,
+    var(--color-surface-600),
+    rgba(45, 45, 61, 0.9)
+  );
   font-weight: 600;
   color: var(--color-text-primary);
+  text-align: left;
+  padding: 0.625rem 0.875rem;
+  border-bottom: 1px solid var(--color-surface-500);
+  border-right: 1px solid rgba(255, 255, 255, 0.04);
+  white-space: nowrap;
+}
+
+.markdown-content th:last-child {
+  border-right: none;
 }
 
 .markdown-content td {
+  padding: 0.5rem 0.875rem;
   color: var(--color-text-secondary);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  border-right: 1px solid rgba(255, 255, 255, 0.04);
+  line-height: 1.5;
+}
+
+.markdown-content td:last-child {
+  border-right: none;
+}
+
+.markdown-content tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Alternating row stripes */
+.markdown-content tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* Row hover highlight */
+.markdown-content tbody tr:hover {
+  background: rgba(124, 58, 237, 0.06);
+}
+
+/* ─── Task List Checkboxes (GFM) ─────────────────────────────────────────── */
+
+.markdown-content input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 1rem;
+  height: 1rem;
+  border: 1.5px solid var(--color-surface-500);
+  border-radius: 0.25rem;
+  margin-right: 0.5em;
+  vertical-align: middle;
+  position: relative;
+  cursor: default;
+}
+
+.markdown-content input[type="checkbox"]:checked {
+  background: var(--color-accent-violet);
+  border-color: var(--color-accent-violet);
+}
+
+.markdown-content input[type="checkbox"]:checked::after {
+  content: "✓";
+  position: absolute;
+  top: -1px;
+  left: 2px;
+  font-size: 0.7rem;
+  color: white;
+  font-weight: 700;
 }
 
 /* ─── Typing indicator ────────────────────────────────────────────────────── */

@@ -1,4 +1,5 @@
 import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { Bot, User, Copy, Check, FileText } from 'lucide-react'
 import { useState } from 'react'
 import type { Citation } from '../lib/api'
@@ -44,7 +45,7 @@ export default function ChatMessage({ role, content, citations, isStreaming }: P
           {/* Message content */}
           <div className="glass rounded-2xl rounded-bl-md px-4 py-3 relative group">
             <div className="markdown-content text-sm">
-              <ReactMarkdown>{content}</ReactMarkdown>
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
             </div>
 
             {isStreaming && (

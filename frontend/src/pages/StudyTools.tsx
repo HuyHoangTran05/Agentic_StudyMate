@@ -8,6 +8,7 @@ import {
   Sparkles,
 } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import QuizWidget from '../components/QuizWidget'
 import FlashcardViewer from '../components/FlashcardViewer'
 import {
@@ -210,7 +211,7 @@ export default function StudyTools() {
         <div className="glass rounded-2xl p-6 space-y-6 animate-fade-in">
           <h2 className="text-lg font-bold text-white">Summary</h2>
           <div className="markdown-content">
-            <ReactMarkdown>{summaryData.summary}</ReactMarkdown>
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{summaryData.summary}</ReactMarkdown>
           </div>
 
           {summaryData.key_points.length > 0 && (
