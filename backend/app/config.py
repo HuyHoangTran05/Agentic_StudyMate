@@ -55,6 +55,10 @@ class Settings(BaseSettings):
     LLM_RETRY_BASE_DELAY: float = 2.0 # Base delay in seconds for exponential backoff
     LLM_RETRY_MAX_DELAY: float = 60.0 # Max delay cap in seconds
 
+    # --- Map-Reduce Batch Processing ---
+    BATCH_CHUNK_SIZE: int = 5          # Chunks per LLM call (keep small for Groq free tier)
+    BATCH_THROTTLE_DELAY: float = 2.0  # Seconds to wait between batch calls
+
     # --- Server ---
     CORS_ORIGINS: list[str] = ["http://localhost:5173", "http://localhost:3000"]
     UPLOAD_DIR: str = "uploads"
