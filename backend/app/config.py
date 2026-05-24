@@ -57,7 +57,8 @@ class Settings(BaseSettings):
 
     # --- Map-Reduce Batch Processing ---
     BATCH_CHUNK_SIZE: int = 5          # Chunks per LLM call (keep small for Groq free tier)
-    BATCH_THROTTLE_DELAY: float = 2.0  # Seconds to wait between batch calls
+    BATCH_THROTTLE_DELAY: float = 3.5  # Seconds to wait between batch calls
+    REDUCE_COOLDOWN: float = 10.0      # Seconds to wait before the final Reduce call
 
     # --- Server ---
     CORS_ORIGINS: list[str] = ["http://localhost:5173", "http://localhost:3000"]

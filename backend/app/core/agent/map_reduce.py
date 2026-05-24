@@ -5,16 +5,22 @@ Solves the TPM (Tokens Per Minute) problem when processing large documents
 through LLM APIs like Groq's free tier.
 
 Strategy:
-  MAP   → Split chunks into small batches (e.g., 5 chunks each)
-        → Call LLM on each batch with strict JSON output
-        → Throttle between calls to avoid 429 rate limits
+  MAP   -> Split chunks into small batches (e.g., 5 chunks each)
+        -> Call LLM on each batch with strict JSON output
+        -> Throttle between calls (3.5s default) to avoid 429 rate limits
 
-  REDUCE → Parse JSON from each batch response
-         → Aggregate all items into a single flat list
-         → Handle JSONDecodeError gracefully (skip bad batches)
+  REDUCE -> Parse JSON from each batch response
+         -> Aggregate all items into a single flat list
+         -> Handle JSONDecodeError gracefully (skip bad batches)
+
+Rate-limit safety:
+  - Inter-batch throttle delay (BATCH_THROTTLE_DELAY)
+  - Pre-reduce cooldown (REDUCE_COOLDOWN) to let TPM bucket refill
+  - Trimmed reduce prompts to fit within 8192 context window
+  - Partial summaries capped to prevent token overflow
 
 This is provider-agnostic — it uses the unified LLMClient which
-handles Groq → Gemini → OpenAI → Anthropic failover internally.
+handles Groq -> Gemini -> OpenAI -> Anthropic failover internally.
 """
 
 import json
@@ -24,6 +30,20 @@ from typing import Any
 from app.config import get_settings
 from app.core.agent.llm_client import get_llm_client
 from app.models.db_models import Chunk
+
+
+# ─── Constants ────────────────────────────────────────────────────────────────
+
+# Max characters for each partial summary in the reduce prompt.
+# Keeps the final reduce prompt under ~4000 tokens (safe for 8192 context).
+_MAX_PARTIAL_SUMMARY_CHARS = 300
+
+# Max key facts to include in the reduce prompt.
+_MAX_KEY_FACTS_FOR_REDUCE = 15
+
+# Max partial summaries to combine in the reduce step.
+# If there are more, we take evenly-spaced ones.
+_MAX_PARTIALS_FOR_REDUCE = 10
 
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -68,6 +88,21 @@ def _safe_parse_json(raw: str) -> dict | None:
     except (json.JSONDecodeError, ValueError) as e:
         print(f"[WARN] JSON parse failed for batch response: {e}")
         return None
+
+
+def _truncate(text: str, max_chars: int) -> str:
+    """Truncate text to max_chars, adding ellipsis if truncated."""
+    if len(text) <= max_chars:
+        return text
+    return text[:max_chars - 3] + "..."
+
+
+def _evenly_sample(items: list, max_count: int) -> list:
+    """Take evenly-spaced items from a list if it exceeds max_count."""
+    if len(items) <= max_count:
+        return items
+    step = len(items) / max_count
+    return [items[int(i * step)] for i in range(max_count)]
 
 
 # ─── Map-Reduce Engine ───────────────────────────────────────────────────────
@@ -187,6 +222,11 @@ async def map_reduce_summary(
     MAP: Generate a partial summary from each batch of chunks.
     REDUCE: Combine all partial summaries into a final summary via one more LLM call.
 
+    Safety features:
+      - Pre-reduce cooldown to let TPM bucket refill
+      - Partial summaries truncated to fit 8192 context window
+      - Key facts capped to prevent token overflow
+
     Args:
         chunks: List of Chunk ORM objects
         system_prompt: System prompt for partial summaries
@@ -201,6 +241,7 @@ async def map_reduce_summary(
 
     batch_size = settings.BATCH_CHUNK_SIZE
     throttle_delay = settings.BATCH_THROTTLE_DELAY
+    reduce_cooldown = settings.REDUCE_COOLDOWN
     batches = _split_into_batches(chunks, batch_size)
     num_batches = len(batches)
 
@@ -222,19 +263,21 @@ async def map_reduce_summary(
         }
 
     print(
-        f"[MAP-REDUCE SUMMARY] Processing {len(chunks)} chunks in {num_batches} batches"
+        f"[MAP-REDUCE SUMMARY] Processing {len(chunks)} chunks in {num_batches} batches "
+        f"(throttle={throttle_delay}s, reduce_cooldown={reduce_cooldown}s)"
     )
 
     # ─── MAP: Partial summaries from each batch ───────────────────────────
 
     PARTIAL_SYSTEM = """\
-You are an expert summarizer. Summarize the provided text passages concisely.
-Focus on the main ideas, key facts, and important details.
+You are an expert summarizer. Summarize the provided text passages.
+Be concise — keep your summary under 200 words.
+Extract only the 3-4 most important facts.
 
-Respond ONLY with a JSON object:
+Respond ONLY with a JSON object (no markdown, no code fences):
 {
-  "partial_summary": "concise summary of this section",
-  "key_facts": ["fact 1", "fact 2", ...]
+  "partial_summary": "concise summary of this section (under 200 words)",
+  "key_facts": ["fact 1", "fact 2", "fact 3"]
 }\
 """
 
@@ -250,7 +293,8 @@ Respond ONLY with a JSON object:
         try:
             result = await client.call_llm_json(
                 prompt=(
-                    f"Summarize these passages from '{file_name}':\n\n{context}"
+                    f"Summarize these passages from '{file_name}'. "
+                    f"Be concise (under 200 words):\n\n{context}"
                 ),
                 system_prompt=PARTIAL_SYSTEM,
             )
@@ -277,38 +321,54 @@ Respond ONLY with a JSON object:
     if not partial_summaries:
         return {"summary": "Unable to generate summary.", "key_points": []}
 
-    print(f"  [REDUCE] Combining {len(partial_summaries)} partial summaries...")
+    # ── Pre-reduce cooldown: let Groq's TPM bucket refill ──
+    print(
+        f"  [COOLDOWN] Waiting {reduce_cooldown}s before Reduce call "
+        f"(letting TPM bucket refill)..."
+    )
+    await asyncio.sleep(reduce_cooldown)
 
-    combined_text = "\n\n---\n\n".join(
-        f"Section {i+1}:\n{s}" for i, s in enumerate(partial_summaries)
+    # ── Trim partials to fit within context window ──
+    # Each partial is truncated to _MAX_PARTIAL_SUMMARY_CHARS chars.
+    # We also limit the number of partials to _MAX_PARTIALS_FOR_REDUCE.
+    sampled_partials = _evenly_sample(partial_summaries, _MAX_PARTIALS_FOR_REDUCE)
+    trimmed_partials = [
+        _truncate(s, _MAX_PARTIAL_SUMMARY_CHARS)
+        for s in sampled_partials
+    ]
+
+    print(
+        f"  [REDUCE] Combining {len(trimmed_partials)} partial summaries "
+        f"(from {len(partial_summaries)} originals)..."
     )
 
+    combined_text = "\n\n".join(
+        f"Section {i+1}: {s}" for i, s in enumerate(trimmed_partials)
+    )
+
+    # Trim key facts to prevent token overflow
+    sampled_facts = _evenly_sample(all_key_facts, _MAX_KEY_FACTS_FOR_REDUCE)
+    key_facts_text = "\n".join(f"- {f}" for f in sampled_facts)
+
     REDUCE_SYSTEM = """\
-You are an expert summarizer. You are given several partial summaries of different
-sections of a document. Combine them into ONE comprehensive, well-structured summary.
+You are given partial summaries of different sections of a document.
+Combine them into ONE well-structured summary. Be concise but comprehensive.
+Use markdown formatting (bold, lists) for readability. Do NOT repeat information.
+Select the 5-8 most important key points.
 
-The summary should:
-- Flow naturally as a single coherent text
-- Use markdown formatting (headings, bold, lists) for readability
-- Not repeat information
-
-Also select the 5-8 most important key points from the combined facts provided.
-
-Respond ONLY with a JSON object:
+Respond ONLY with a JSON object (no markdown fences, no extra text):
 {
-  "summary": "the final combined summary with markdown formatting",
+  "summary": "combined summary with markdown formatting",
   "key_points": ["point 1", "point 2", ...]
 }\
 """
 
-    key_facts_text = "\n".join(f"- {f}" for f in all_key_facts[:30])
-
     try:
         final = await client.call_llm_json(
             prompt=(
-                f"Combine these partial summaries of '{file_name}' into a single "
-                f"comprehensive summary:\n\n{combined_text}\n\n"
-                f"Key facts extracted:\n{key_facts_text}"
+                f"Combine these section summaries of '{file_name}':\n\n"
+                f"{combined_text}\n\n"
+                f"Key facts:\n{key_facts_text}"
             ),
             system_prompt=REDUCE_SYSTEM,
         )
@@ -319,8 +379,11 @@ Respond ONLY with a JSON object:
         }
     except Exception as e:
         print(f"  [REDUCE] Final combination failed: {e}")
-        # Fallback: just join the partials
+        # Fallback: join the partials directly (no LLM call needed)
+        fallback_summary = "\n\n".join(
+            f"**Section {i+1}:** {s}" for i, s in enumerate(partial_summaries)
+        )
         return {
-            "summary": "\n\n".join(partial_summaries),
+            "summary": fallback_summary,
             "key_points": all_key_facts[:8],
         }

@@ -252,7 +252,7 @@ class LLMClient:
                 {"role": "user", "content": prompt},
             ],
             "temperature": 0.3,
-            "max_tokens": 4096,
+            "max_tokens": 2048,
         }
         if json_mode:
             kwargs["response_format"] = {"type": "json_object"}
@@ -280,7 +280,7 @@ class LLMClient:
                     {"role": "user", "content": prompt},
                 ],
                 temperature=0.3,
-                max_tokens=4096,
+                max_tokens=2048,
                 stream=True,
             )
             async for chunk in stream:
