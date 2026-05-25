@@ -83,9 +83,14 @@ def _resize_image_for_vision(
 
 
 IMAGE_EXTRACTION_PROMPT = (
-    "Extract all readable study text from this image. Preserve headings, "
-    "lists, equations, labels, and table structure as plain markdown. "
-    "Return only the extracted text. If no readable text exists, return an empty string."
+    "Extract all text from this image perfectly. Additionally, if there are any "
+    "diagrams, charts, or visual elements, provide a highly detailed semantic "
+    "description of their structure, relationships, and meaning so it can be "
+    "effectively indexed for text-based vector search."
+)
+
+IMAGE_QUERY_PROMPT = (
+    "Briefly describe this image and extract its core keywords to formulate a search query."
 )
 
 
@@ -93,6 +98,28 @@ def _image_data_url(image_bytes: bytes, mime_type: str) -> str:
     """Build a base64 data URL for OpenAI-compatible vision APIs."""
     encoded = base64.b64encode(image_bytes).decode("ascii")
     return f"data:image/jpeg;base64,{encoded}"
+
+
+def persist_uploaded_image(image_bytes: bytes, mime_type: str) -> tuple[Path, str]:
+    """Persist original uploaded image bytes and return file path plus public URL."""
+    if mime_type not in ALLOWED_IMAGE_TYPES:
+        raise HTTPException(
+            status_code=400,
+            detail="Unsupported image type. Allowed: JPEG, PNG, WEBP.",
+        )
+    if not image_bytes:
+        raise HTTPException(status_code=400, detail="Uploaded image is empty.")
+
+    upload_dir = Path("static/uploads")
+    upload_dir.mkdir(parents=True, exist_ok=True)
+
+    extension = ALLOWED_IMAGE_TYPES[mime_type]
+    unique_filename = f"{uuid.uuid4()}{extension}"
+    file_path = upload_dir / unique_filename
+    file_path.write_bytes(image_bytes)
+    image_url = f"/static/uploads/{unique_filename}"
+
+    return file_path, image_url
 
 
 async def _extract_with_gemini(
@@ -158,11 +185,44 @@ async def _extract_with_groq(
 
 
 async def _extract_text_from_image(image_bytes: bytes, mime_type: str) -> str:
-    """Extract readable text from an image using Gemini -> Groq."""
+    """Extract searchable multimodal text from an image using Gemini -> Groq."""
     return await _run_vision_chain(
         image_bytes=image_bytes,
         mime_type=mime_type,
         prompt=IMAGE_EXTRACTION_PROMPT,
+    )
+
+
+async def generate_image_search_query(image_bytes: bytes, mime_type: str) -> str:
+    """Generate a concise text query from an image for vector retrieval."""
+    return await _run_vision_chain(
+        image_bytes=image_bytes,
+        mime_type=mime_type,
+        prompt=IMAGE_QUERY_PROMPT,
+    )
+
+
+async def answer_image_question_with_context(
+    image_bytes: bytes,
+    mime_type: str,
+    question: str,
+    context: str,
+) -> str:
+    """Answer using the uploaded image plus retrieved document context."""
+    prompt = (
+        "You are a multimodal RAG study assistant. Use the uploaded image and "
+        "the retrieved document context together to answer the user's question. "
+        "Ground document-specific facts in the retrieved context. Use the image "
+        "for visual observations. If no relevant document context is available, "
+        "clearly say that no matching knowledge-base context was found and only "
+        "answer what can be determined from the image.\n\n"
+        f"User message:\n{question}\n\n"
+        f"Retrieved context chunks:\n{context}"
+    )
+    return await _run_vision_chain(
+        image_bytes=image_bytes,
+        mime_type=mime_type,
+        prompt=prompt,
     )
 
 
@@ -276,23 +336,9 @@ async def process_image_document_bytes(
     file_name: str | None,
     db: AsyncSession,
 ) -> ImageUploadResponse:
-    """Persist an image byte payload, extract text, chunk it, and index it."""
-    if mime_type not in ALLOWED_IMAGE_TYPES:
-        raise HTTPException(
-            status_code=400,
-            detail="Unsupported image type. Allowed: JPEG, PNG, WEBP.",
-        )
-    if not image_bytes:
-        raise HTTPException(status_code=400, detail="Uploaded image is empty.")
-
-    upload_dir = Path("static/uploads")
-    upload_dir.mkdir(parents=True, exist_ok=True)
-
-    extension = ALLOWED_IMAGE_TYPES[mime_type]
-    unique_filename = f"{uuid.uuid4()}{extension}"
-    file_path = upload_dir / unique_filename
-    file_path.write_bytes(image_bytes)
-    image_url = f"/static/uploads/{unique_filename}"
+    """Persist an image, extract semantic text, chunk/embed it, and index it."""
+    file_path, image_url = persist_uploaded_image(image_bytes, mime_type)
+    unique_filename = file_path.name
 
     document = Document(
         id=str(uuid.uuid4()),

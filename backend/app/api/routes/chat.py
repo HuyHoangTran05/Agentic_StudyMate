@@ -19,7 +19,8 @@ from sqlalchemy.orm import selectinload
 
 from app.db.session import get_db
 from app.db.init_db import DEFAULT_USER_ID
-from app.models.db_models import ChatSession, Message, generate_uuid, utcnow
+from app.config import get_settings
+from app.models.db_models import ChatSession, Document, Message, generate_uuid, utcnow
 from app.models.schemas import (
     ChatSessionResponse,
     ChatHistoryResponse,
@@ -27,13 +28,97 @@ from app.models.schemas import (
     Citation,
 )
 from app.core.agent.controller import run_agent_stream, generate_session_title
+from app.core.ingest.embedder import get_embedder
+from app.core.retrieval.vector_store import get_vector_store
 from app.api.routes.documents import (
-    answer_image_question,
-    process_image_document_bytes,
+    answer_image_question_with_context,
+    generate_image_search_query,
+    persist_uploaded_image,
 )
 
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
+
+
+def _sse_event(event: str, data: str) -> str:
+    """Format one Server-Sent Event."""
+    return f"event: {event}\ndata: {data}\n\n"
+
+
+async def _get_file_names_for_results(
+    db: AsyncSession,
+    results: list[dict],
+) -> dict[str, str]:
+    """Return document_id -> file_name for retrieved vector results."""
+    document_ids = sorted({
+        result["document_id"]
+        for result in results
+        if result.get("document_id")
+    })
+    if not document_ids:
+        return {}
+
+    rows = await db.execute(
+        select(Document.id, Document.file_name).where(Document.id.in_(document_ids))
+    )
+    return {document_id: file_name for document_id, file_name in rows.all()}
+
+
+def _format_retrieved_context(
+    results: list[dict],
+    file_names: dict[str, str],
+) -> str:
+    """Format Qdrant vector hits for the multimodal synthesis prompt."""
+    if not results:
+        return "No relevant knowledge-base chunks were retrieved."
+
+    passages = []
+    for index, result in enumerate(results, 1):
+        document_id = result.get("document_id")
+        file_name = file_names.get(document_id, "unknown")
+        page_number = result.get("page_number")
+        section_title = result.get("section_title")
+        image_url = result.get("image_url")
+
+        meta_parts = [f"File: {file_name}"]
+        if page_number is not None:
+            meta_parts.append(f"Page: {page_number}")
+        if section_title:
+            meta_parts.append(f"Section: {section_title}")
+        if image_url:
+            meta_parts.append(f"Image URL: {image_url}")
+
+        passages.append(
+            f"--- Context {index} [{' | '.join(meta_parts)}] ---\n"
+            f"{result.get('content') or ''}"
+        )
+
+    return "\n\n".join(passages)
+
+
+def _build_citations_from_results(
+    results: list[dict],
+    file_names: dict[str, str],
+) -> list[Citation]:
+    """Expose retrieved chunks as citations for the frontend."""
+    citations = []
+    for result in results:
+        chunk_id = result.get("chunk_id")
+        if not chunk_id:
+            continue
+
+        content = result.get("content") or ""
+        citations.append(
+            Citation(
+                file_name=file_names.get(result.get("document_id"), "unknown"),
+                page_number=result.get("page_number"),
+                chunk_id=str(chunk_id),
+                section_title=result.get("section_title"),
+                snippet=content[:240] if content else None,
+                image_url=result.get("image_url"),
+            )
+        )
+    return citations
 
 
 # ─── POST /api/chat — Main Chat Endpoint (SSE Streaming) ─────────────────────
@@ -53,7 +138,8 @@ async def chat(
     """
     content_type = request.headers.get("content-type", "")
     uploaded_image_url = None
-    direct_vision_answer = None
+    image_bytes = None
+    image_mime_type = None
     if content_type.startswith("multipart/form-data"):
         form = await request.form()
         question = str(form.get("question") or "").strip()
@@ -64,17 +150,9 @@ async def chat(
         if isinstance(image_file, UploadFile):
             image_bytes = await image_file.read()
             image_mime_type = image_file.content_type or ""
-            image_doc = await process_image_document_bytes(
+            _, uploaded_image_url = persist_uploaded_image(
                 image_bytes=image_bytes,
                 mime_type=image_mime_type,
-                file_name=image_file.filename,
-                db=db,
-            )
-            uploaded_image_url = image_doc.image_url
-            direct_vision_answer = await answer_image_question(
-                image_bytes=image_bytes,
-                mime_type=image_mime_type,
-                question=question,
             )
     else:
         body = await request.json()
@@ -133,19 +211,55 @@ async def chat(
                 f"data: {json.dumps({'session_id': session_id, 'image_url': uploaded_image_url})}\n\n"
             )
 
-            if direct_vision_answer is not None:
-                full_answer = direct_vision_answer
-                yield f"event: status\ndata: Answering from uploaded image...\n\n"
-                yield f"event: chunk\ndata: {full_answer}\n\n"
-                yield f"event: citations\ndata: []\n\n"
+            if image_bytes is not None and image_mime_type is not None:
+                settings = get_settings()
+
+                yield _sse_event(
+                    "status",
+                    "Reading image and generating a retrieval query...",
+                )
+                image_search_query = await generate_image_search_query(
+                    image_bytes=image_bytes,
+                    mime_type=image_mime_type,
+                )
+
+                yield _sse_event("status", "Searching your documents with the image query...")
+                query_vector = await get_embedder().embed_query(image_search_query)
+                vector_results = await get_vector_store().search(
+                    query_vector=query_vector,
+                    document_ids=document_ids,
+                    top_k=settings.RETRIEVAL_TOP_K,
+                )
+
+                file_names = await _get_file_names_for_results(db, vector_results)
+                retrieved_context = _format_retrieved_context(vector_results, file_names)
+                citations = _build_citations_from_results(vector_results, file_names)
+                parsed_citations = [citation.model_dump() for citation in citations]
+
+                yield _sse_event(
+                    "status",
+                    f"Found {len(vector_results)} relevant passages; synthesizing with image...",
+                )
+                full_answer = await answer_image_question_with_context(
+                    image_bytes=image_bytes,
+                    mime_type=image_mime_type,
+                    question=question,
+                    context=retrieved_context,
+                )
+
+                yield _sse_event("chunk", full_answer)
+                yield _sse_event(
+                    "citations",
+                    json.dumps(parsed_citations, default=str),
+                )
                 done_data = json.dumps({
-                    "question_type": "image",
-                    "sub_questions": None,
-                    "sources_searched": 0,
+                    "question_type": "image_rag",
+                    "sub_questions": [image_search_query],
+                    "sources_searched": len(vector_results),
                     "citations_removed": 0,
                     "answer": full_answer,
                 })
-                yield f"event: done\ndata: {done_data}\n\n"
+                yield _sse_event("done", done_data)
             else:
                 async for event in run_agent_stream(
                     question=question,
