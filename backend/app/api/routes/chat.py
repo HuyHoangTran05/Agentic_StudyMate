@@ -9,6 +9,7 @@ Endpoints:
 """
 
 import json
+import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
@@ -38,6 +39,7 @@ from app.api.routes.documents import (
 
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
+logger = logging.getLogger(__name__)
 
 
 def _sse_event(event: str, data: str) -> str:
@@ -222,23 +224,25 @@ async def chat(
                     image_bytes=image_bytes,
                     mime_type=image_mime_type,
                 )
+                logger.info(f"Generated Search Query: {image_search_query}")
 
                 yield _sse_event("status", "Searching your documents with the image query...")
                 query_vector = await get_embedder().embed_query(image_search_query)
-                vector_results = await get_vector_store().search(
+                retrieved_docs = await get_vector_store().search(
                     query_vector=query_vector,
                     document_ids=document_ids,
                     top_k=settings.RETRIEVAL_TOP_K,
                 )
+                logger.info(f"Retrieved {len(retrieved_docs)} chunks from Vector DB")
 
-                file_names = await _get_file_names_for_results(db, vector_results)
-                retrieved_context = _format_retrieved_context(vector_results, file_names)
-                citations = _build_citations_from_results(vector_results, file_names)
+                file_names = await _get_file_names_for_results(db, retrieved_docs)
+                retrieved_context = _format_retrieved_context(retrieved_docs, file_names)
+                citations = _build_citations_from_results(retrieved_docs, file_names)
                 parsed_citations = [citation.model_dump() for citation in citations]
 
                 yield _sse_event(
                     "status",
-                    f"Found {len(vector_results)} relevant passages; synthesizing with image...",
+                    f"Found {len(retrieved_docs)} relevant passages; synthesizing with image...",
                 )
                 full_answer = await answer_image_question_with_context(
                     image_bytes=image_bytes,
@@ -255,7 +259,7 @@ async def chat(
                 done_data = json.dumps({
                     "question_type": "image_rag",
                     "sub_questions": [image_search_query],
-                    "sources_searched": len(vector_results),
+                    "sources_searched": len(retrieved_docs),
                     "citations_removed": 0,
                     "answer": full_answer,
                 })

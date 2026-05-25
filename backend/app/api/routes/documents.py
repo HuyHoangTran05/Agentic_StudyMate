@@ -90,7 +90,9 @@ IMAGE_EXTRACTION_PROMPT = (
 )
 
 IMAGE_QUERY_PROMPT = (
-    "Briefly describe this image and extract its core keywords to formulate a search query."
+    "Analyze this image and extract the most important technical keywords, "
+    "entities, and text to form a highly specific search query for a vector "
+    "database. Output ONLY the query string."
 )
 
 
@@ -209,15 +211,13 @@ async def answer_image_question_with_context(
     context: str,
 ) -> str:
     """Answer using the uploaded image plus retrieved document context."""
+    context_block = f"<context>\n{context}\n</context>"
     prompt = (
-        "You are a multimodal RAG study assistant. Use the uploaded image and "
-        "the retrieved document context together to answer the user's question. "
-        "Ground document-specific facts in the retrieved context. Use the image "
-        "for visual observations. If no relevant document context is available, "
-        "clearly say that no matching knowledge-base context was found and only "
-        "answer what can be determined from the image.\n\n"
-        f"User message:\n{question}\n\n"
-        f"Retrieved context chunks:\n{context}"
+        "You are a helpful AI assistant. Here is the context retrieved from "
+        f"the user's knowledge base:\n{context_block}\n\n"
+        "Based on the attached image and the provided context, answer the "
+        f"user's question: {question}. You MUST use the context to provide a "
+        "deep, technical explanation."
     )
     return await _run_vision_chain(
         image_bytes=image_bytes,
