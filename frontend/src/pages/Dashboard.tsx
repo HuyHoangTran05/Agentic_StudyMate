@@ -39,7 +39,7 @@ export default function Dashboard() {
   ]
 
   const quickActions = [
-    { label: 'Upload Document', icon: Upload, to: '/upload', desc: 'Add PDFs, DOCX, or TXT files' },
+    { label: 'Upload Document', icon: Upload, to: '/upload', desc: 'Add PDFs, DOCX, TXT, or Image files (PNG, JPG, etc.)' },
     { label: 'Start Chatting', icon: MessageSquare, to: '/chat', desc: 'Ask questions about your docs' },
     { label: 'Study Tools', icon: FlaskConical, to: '/study-tools', desc: 'Generate quizzes & flashcards' },
   ]
