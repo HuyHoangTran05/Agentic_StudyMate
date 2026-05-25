@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react'
 import {
   FlaskConical,
   BrainCircuit,
@@ -11,83 +10,31 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import QuizWidget from '../components/QuizWidget'
 import FlashcardViewer from '../components/FlashcardViewer'
-import {
-  getDocuments,
-  generateQuiz,
-  generateFlashcards,
-  generateSummary,
-} from '../lib/api'
-import type {
-  Document,
-  MCQuestion,
-  Flashcard,
-  SummaryResponse,
-} from '../lib/api'
+import { useStudyToolsStore } from '../stores/studyToolsStore'
+import type { StudyToolType } from '../stores/studyToolsStore'
 
-type ToolType = 'quiz' | 'flashcards' | 'summary'
-
-const tools: { id: ToolType; label: string; icon: typeof BrainCircuit; desc: string }[] = [
+const tools: { id: StudyToolType; label: string; icon: typeof BrainCircuit; desc: string }[] = [
   { id: 'quiz', label: 'Quiz', icon: BrainCircuit, desc: 'Multiple-choice questions' },
   { id: 'flashcards', label: 'Flashcards', icon: Layers, desc: 'Study cards with flip animation' },
   { id: 'summary', label: 'Summary', icon: FileTextIcon, desc: 'Key points & overview' },
 ]
 
 export default function StudyTools() {
-  const [documents, setDocuments] = useState<Document[]>([])
-  const [selectedDoc, setSelectedDoc] = useState<string>('')
-  const [activeTool, setActiveTool] = useState<ToolType>('quiz')
-  const [numItems, setNumItems] = useState(5)
-  const [loading, setLoading] = useState(false)
-
-  // Results
-  const [quizData, setQuizData] = useState<MCQuestion[] | null>(null)
-  const [flashcardsData, setFlashcardsData] = useState<Flashcard[] | null>(null)
-  const [summaryData, setSummaryData] = useState<SummaryResponse | null>(null)
-
-  useEffect(() => {
-    getDocuments()
-      .then((res) => {
-        const ready = res.documents.filter((d) => d.status === 'ready')
-        setDocuments(ready)
-        if (ready.length > 0) setSelectedDoc(ready[0].id)
-      })
-      .catch(console.error)
-  }, [])
-
-  const handleGenerate = async () => {
-    if (!selectedDoc) return
-    setLoading(true)
-
-    try {
-      switch (activeTool) {
-        case 'quiz': {
-          const res = await generateQuiz(selectedDoc, numItems)
-          setQuizData(res.questions)
-          setFlashcardsData(null)
-          setSummaryData(null)
-          break
-        }
-        case 'flashcards': {
-          const res = await generateFlashcards(selectedDoc, numItems)
-          setFlashcardsData(res.flashcards)
-          setQuizData(null)
-          setSummaryData(null)
-          break
-        }
-        case 'summary': {
-          const res = await generateSummary(selectedDoc)
-          setSummaryData(res)
-          setQuizData(null)
-          setFlashcardsData(null)
-          break
-        }
-      }
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
-  }
+  const {
+    documents,
+    selectedDoc,
+    activeTool,
+    numItems,
+    isGenerating,
+    error,
+    quizData,
+    flashcardsData,
+    summaryData,
+    setSelectedDoc,
+    setActiveTool,
+    setNumItems,
+    generateCurrentTool,
+  } = useStudyToolsStore()
 
   return (
     <div className="p-6 md:p-8 max-w-5xl mx-auto space-y-8">
@@ -114,6 +61,7 @@ export default function StudyTools() {
           <select
             value={selectedDoc}
             onChange={(e) => setSelectedDoc(e.target.value)}
+            disabled={isGenerating}
             className="w-full bg-surface-700 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-violet-500/50 transition-colors"
           >
             <option value="" disabled>Choose a document...</option>
@@ -132,6 +80,7 @@ export default function StudyTools() {
             {tools.map(({ id, label, icon: Icon, desc }) => (
               <button
                 key={id}
+                disabled={isGenerating}
                 onClick={() => setActiveTool(id)}
                 className={`p-4 rounded-xl text-left transition-all border ${
                   activeTool === id
@@ -161,6 +110,7 @@ export default function StudyTools() {
               max={15}
               value={numItems}
               onChange={(e) => setNumItems(Number(e.target.value))}
+              disabled={isGenerating}
               className="w-full accent-violet-500"
             />
             <div className="flex justify-between text-[11px] text-text-muted mt-1">
@@ -172,15 +122,15 @@ export default function StudyTools() {
 
         {/* Generate button */}
         <button
-          onClick={handleGenerate}
-          disabled={!selectedDoc || loading}
+          onClick={generateCurrentTool}
+          disabled={!selectedDoc || isGenerating}
           className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium transition-all ${
-            selectedDoc && !loading
+            selectedDoc && !isGenerating
               ? 'gradient-bg text-white hover:shadow-lg hover:shadow-violet-500/20'
               : 'bg-white/5 text-text-muted cursor-not-allowed'
           }`}
         >
-          {loading ? (
+          {isGenerating ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
               Generating...
@@ -192,6 +142,10 @@ export default function StudyTools() {
             </>
           )}
         </button>
+
+        {error && (
+          <p className="text-sm text-rose-300">{error}</p>
+        )}
       </div>
 
       {/* Results */}

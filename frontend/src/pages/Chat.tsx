@@ -7,7 +7,6 @@ import {
   Trash2,
   Loader2,
   Zap,
-  FileText,
 } from 'lucide-react'
 import ChatMessage from '../components/ChatMessage'
 import {
