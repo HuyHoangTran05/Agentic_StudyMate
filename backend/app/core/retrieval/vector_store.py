@@ -14,6 +14,7 @@ Features:
 from qdrant_client import QdrantClient, models
 from qdrant_client.http.exceptions import UnexpectedResponse
 from app.config import get_settings
+from app.models.db_models import generate_uuid
 
 
 class VectorStore:
@@ -68,8 +69,9 @@ class VectorStore:
             client = self._get_client()
             points = []
 
-            for i, (chunk, vector) in enumerate(zip(chunks, vectors)):
-                point_id = f"{document_id}_{i}"
+            for chunk, vector in zip(chunks, vectors):
+                point_id = str(generate_uuid())
+                chunk.vector_id = point_id
                 points.append(
                     models.PointStruct(
                         id=point_id,

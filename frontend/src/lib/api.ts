@@ -119,7 +119,7 @@ export interface ChatStreamCallbacks {
   onChunk?: (text: string) => void;
   onCitations?: (citations: Citation[]) => void;
   onDone?: (data: { question_type: string; sub_questions: string[] | null; sources_searched: number; answer: string }) => void;
-  onSession?: (data: { session_id: string }) => void;
+  onSession?: (data: { session_id: string; image_url?: string | null }) => void;
   onError?: (error: string) => void;
 }
 

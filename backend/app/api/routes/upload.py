@@ -151,7 +151,7 @@ async def run_ingestion_pipeline(document_id: str, file_path: str, file_type: st
                     content=chunk.content,
                     page_number=chunk.page_number,
                     section_title=chunk.section_title,
-                    vector_id=f"{document_id}_{i}",  # Will be updated when stored in Qdrant
+                    vector_id=None,  # Set to the generated Qdrant point UUID on upsert
                 )
                 chunk_records.append(chunk_record)
 

@@ -159,6 +159,34 @@ async def _extract_with_groq(
 
 async def _extract_text_from_image(image_bytes: bytes, mime_type: str) -> str:
     """Extract readable text from an image using Gemini -> Groq."""
+    return await _run_vision_chain(
+        image_bytes=image_bytes,
+        mime_type=mime_type,
+        prompt=IMAGE_EXTRACTION_PROMPT,
+    )
+
+
+async def answer_image_question(
+    image_bytes: bytes,
+    mime_type: str,
+    question: str,
+) -> str:
+    """Answer a user question directly from an uploaded image."""
+    prompt = (
+        "You are a strict visual study assistant. Answer the user's question "
+        "using only the provided image. If the image does not contain enough "
+        "information to answer, say so clearly.\n\n"
+        f"User question: {question}"
+    )
+    return await _run_vision_chain(
+        image_bytes=image_bytes,
+        mime_type=mime_type,
+        prompt=prompt,
+    )
+
+
+async def _run_vision_chain(image_bytes: bytes, mime_type: str, prompt: str) -> str:
+    """Run a vision prompt using Gemini -> Groq."""
     resized_bytes, resized_mime_type = _resize_image_for_vision(
         image_bytes=image_bytes,
         mime_type=mime_type,
@@ -175,7 +203,7 @@ async def _extract_text_from_image(image_bytes: bytes, mime_type: str) -> str:
             return await extractor(
                 resized_bytes,
                 resized_mime_type,
-                IMAGE_EXTRACTION_PROMPT,
+                prompt,
             )
         except Exception as e:
             last_error = e
@@ -234,6 +262,26 @@ async def process_image_document(
         )
 
     image_bytes = await file.read()
+    return await process_image_document_bytes(
+        image_bytes=image_bytes,
+        mime_type=mime_type,
+        file_name=file.filename,
+        db=db,
+    )
+
+
+async def process_image_document_bytes(
+    image_bytes: bytes,
+    mime_type: str,
+    file_name: str | None,
+    db: AsyncSession,
+) -> ImageUploadResponse:
+    """Persist an image byte payload, extract text, chunk it, and index it."""
+    if mime_type not in ALLOWED_IMAGE_TYPES:
+        raise HTTPException(
+            status_code=400,
+            detail="Unsupported image type. Allowed: JPEG, PNG, WEBP.",
+        )
     if not image_bytes:
         raise HTTPException(status_code=400, detail="Uploaded image is empty.")
 
@@ -249,7 +297,7 @@ async def process_image_document(
     document = Document(
         id=str(uuid.uuid4()),
         user_id=DEFAULT_USER_ID,
-        file_name=file.filename or unique_filename,
+        file_name=file_name or unique_filename,
         file_type="image",
         file_path=str(file_path),
         image_url=image_url,
@@ -290,7 +338,7 @@ async def process_image_document(
                 page_number=chunk.page_number,
                 section_title=chunk.section_title,
                 image_url=image_url,
-                vector_id=f"{document.id}_{i}",
+                vector_id=None,
             )
             chunk_records.append(chunk_record)
 

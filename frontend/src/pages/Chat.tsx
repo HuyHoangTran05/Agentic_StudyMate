@@ -20,6 +20,43 @@ import {
 } from '../lib/api'
 import type { ChatSession, Message, Citation, Document } from '../lib/api'
 
+function findMatchingLocalMessage(localMessages: Message[], incoming: Message): Message | undefined {
+  return localMessages.find((local) => local.id === incoming.id)
+    ?? localMessages.find((local) =>
+      local.role === incoming.role
+      && local.role === 'user'
+      && local.content === incoming.content
+      && Boolean(local.image_url)
+    )
+}
+
+function mergeMessagePreservingLocalImage(localMessages: Message[], incoming: Message): Message {
+  const local = findMatchingLocalMessage(localMessages, incoming)
+  return {
+    ...local,
+    ...incoming,
+    image_url: local?.image_url ?? incoming.image_url ?? null,
+    citations: incoming.citations ?? local?.citations ?? null,
+  }
+}
+
+function mergeMessagesPreservingImages(localMessages: Message[], incomingMessages: Message[]): Message[] {
+  return incomingMessages.map((incoming) =>
+    mergeMessagePreservingLocalImage(localMessages, incoming)
+  )
+}
+
+function appendMessagePreservingImages(localMessages: Message[], incoming: Message): Message[] {
+  const existingIndex = localMessages.findIndex((local) => local.id === incoming.id)
+  if (existingIndex === -1) {
+    return [...localMessages, mergeMessagePreservingLocalImage(localMessages, incoming)]
+  }
+
+  return localMessages.map((local, index) =>
+    index === existingIndex ? mergeMessagePreservingLocalImage([local], incoming) : local
+  )
+}
+
 export default function Chat() {
   const { sessionId: paramSessionId } = useParams()
   const navigate = useNavigate()
@@ -54,7 +91,9 @@ export default function Chat() {
     if (paramSessionId) {
       setCurrentSessionId(paramSessionId)
       getChatHistory(paramSessionId)
-        .then((res) => setMessages(res.messages))
+        .then((res) => {
+          setMessages((prev) => mergeMessagesPreservingImages(prev, res.messages))
+        })
         .catch(console.error)
     }
   }, [paramSessionId])
@@ -141,8 +180,15 @@ export default function Chat() {
       selectedDocIds,
       currentSessionId,
       {
-        onSession: ({ session_id }) => {
+        onSession: ({ session_id, image_url }) => {
           setCurrentSessionId(session_id)
+          if (image_url) {
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === userMsg.id ? { ...msg, image_url: msg.image_url ?? image_url } : msg
+              )
+            )
+          }
           navigate(`/chat/${session_id}`, { replace: true })
           // Refresh sessions list
           getChatSessions().then(setSessions).catch(console.error)
@@ -167,7 +213,7 @@ export default function Chat() {
             citations: streamingCitations.length > 0 ? streamingCitations : null,
             created_at: new Date().toISOString(),
           }
-          setMessages((prev) => [...prev, assistantMsg])
+          setMessages((prev) => appendMessagePreservingImages(prev, assistantMsg))
           setStreamingContent('')
           setStreamingCitations([])
           setStatusMessage('')
@@ -184,7 +230,7 @@ export default function Chat() {
             citations: null,
             created_at: new Date().toISOString(),
           }
-          setMessages((prev) => [...prev, errorMsg])
+          setMessages((prev) => appendMessagePreservingImages(prev, errorMsg))
           setStreamingContent('')
           setStatusMessage('')
           setIsStreaming(false)

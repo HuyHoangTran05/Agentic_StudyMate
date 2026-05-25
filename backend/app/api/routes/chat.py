@@ -27,7 +27,10 @@ from app.models.schemas import (
     Citation,
 )
 from app.core.agent.controller import run_agent_stream, generate_session_title
-from app.api.routes.documents import process_image_document
+from app.api.routes.documents import (
+    answer_image_question,
+    process_image_document_bytes,
+)
 
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
@@ -50,6 +53,7 @@ async def chat(
     """
     content_type = request.headers.get("content-type", "")
     uploaded_image_url = None
+    direct_vision_answer = None
     if content_type.startswith("multipart/form-data"):
         form = await request.form()
         question = str(form.get("question") or "").strip()
@@ -58,9 +62,20 @@ async def chat(
         document_ids = json.loads(document_ids_raw) if document_ids_raw else None
         image_file = form.get("image")
         if isinstance(image_file, UploadFile):
-            image_doc = await process_image_document(image_file, db)
+            image_bytes = await image_file.read()
+            image_mime_type = image_file.content_type or ""
+            image_doc = await process_image_document_bytes(
+                image_bytes=image_bytes,
+                mime_type=image_mime_type,
+                file_name=image_file.filename,
+                db=db,
+            )
             uploaded_image_url = image_doc.image_url
-            document_ids = [*(document_ids or []), image_doc.document_id]
+            direct_vision_answer = await answer_image_question(
+                image_bytes=image_bytes,
+                mime_type=image_mime_type,
+                question=question,
+            )
     else:
         body = await request.json()
         question = str(body.get("question") or "").strip()
@@ -113,23 +128,40 @@ async def chat(
 
         try:
             # Send session_id as first event (for new sessions)
-            yield f"event: session\ndata: {json.dumps({'session_id': session_id})}\n\n"
+            yield (
+                "event: session\n"
+                f"data: {json.dumps({'session_id': session_id, 'image_url': uploaded_image_url})}\n\n"
+            )
 
-            async for event in run_agent_stream(
-                question=question,
-                document_ids=document_ids,
-                db=db,
-            ):
-                yield event
+            if direct_vision_answer is not None:
+                full_answer = direct_vision_answer
+                yield f"event: status\ndata: Answering from uploaded image...\n\n"
+                yield f"event: chunk\ndata: {full_answer}\n\n"
+                yield f"event: citations\ndata: []\n\n"
+                done_data = json.dumps({
+                    "question_type": "image",
+                    "sub_questions": None,
+                    "sources_searched": 0,
+                    "citations_removed": 0,
+                    "answer": full_answer,
+                })
+                yield f"event: done\ndata: {done_data}\n\n"
+            else:
+                async for event in run_agent_stream(
+                    question=question,
+                    document_ids=document_ids,
+                    db=db,
+                ):
+                    yield event
 
-                if event.startswith("event: citations"):
-                    data_line = event.split("data: ", 1)[1].strip()
-                    parsed_citations = json.loads(data_line)
+                    if event.startswith("event: citations"):
+                        data_line = event.split("data: ", 1)[1].strip()
+                        parsed_citations = json.loads(data_line)
 
-                if event.startswith("event: done"):
-                    data_line = event.split("data: ", 1)[1].strip()
-                    done_data = json.loads(data_line)
-                    full_answer = done_data.get("answer", "")
+                    if event.startswith("event: done"):
+                        data_line = event.split("data: ", 1)[1].strip()
+                        done_data = json.loads(data_line)
+                        full_answer = done_data.get("answer", "")
 
             # Save assistant message to DB
             assistant_message = Message(
