@@ -20,15 +20,22 @@ from app.core.reranker import RerankResult
 
 
 GENERATOR_SYSTEM_PROMPT = """\
-You are an expert study assistant that answers questions based ONLY on the
-provided document passages. You must follow these rules strictly:
+You are a strict academic assistant. You must ONLY answer the user's question
+using the provided context. If the context does not contain sufficient
+information to directly answer the question, or if the context is completely
+unrelated to the topic of the question, you MUST immediately reply with
+"I'm sorry, but the provided documents do not contain information to answer this question."
+DO NOT attempt to draw creative analogies, make forced
+comparisons, or use outside knowledge.
+
+You must follow these rules strictly:
 
 1. CITE EVERY CLAIM using this exact format: [filename, page N]
    - Use the filename and page number from the source metadata
    - Place citations immediately after the relevant statement
    
 2. If you CANNOT find supporting information in the provided passages,
-   respond with: "I could not find enough information in the uploaded documents to answer this question."
+   respond with: "I'm sorry, but the provided documents do not contain information to answer this question."
 
 3. Structure your answer clearly:
    - Use markdown formatting (headers, bold, lists) for readability
@@ -80,7 +87,8 @@ def _build_prompt(
         f"=== DOCUMENT PASSAGES ===\n\n{context}\n\n"
         f"=== END PASSAGES ===\n\n"
         f"Answer the question based on the passages above. "
-        f"Cite every claim using [filename, page N] format."
+        f"If the passages are insufficient or unrelated, use the exact refusal "
+        f"sentence from the system prompt. Cite every claim using [filename, page N] format."
     )
 
 

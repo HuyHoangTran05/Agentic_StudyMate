@@ -133,6 +133,7 @@ class VectorStore:
                 query=query_vector,
                 query_filter=query_filter,
                 limit=top_k,
+                score_threshold=self._settings.VECTOR_SCORE_THRESHOLD,
             )
 
             return [

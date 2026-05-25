@@ -39,6 +39,7 @@ class Settings(BaseSettings):
     QDRANT_HOST: str = "localhost"
     QDRANT_PORT: int = 6333
     QDRANT_COLLECTION: str = "studymate_chunks"
+    VECTOR_SCORE_THRESHOLD: float = 0.75
 
     # --- Chunking ---
     CHUNK_SIZE: int = 512
