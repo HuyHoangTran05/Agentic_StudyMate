@@ -7,11 +7,12 @@ import type { Citation } from '../lib/api'
 interface Props {
   role: 'user' | 'assistant'
   content: string
+  imageUrl?: string | null
   citations?: Citation[] | null
   isStreaming?: boolean
 }
 
-export default function ChatMessage({ role, content, citations, isStreaming }: Props) {
+export default function ChatMessage({ role, content, imageUrl, citations, isStreaming }: Props) {
   const [copied, setCopied] = useState(false)
 
   const handleCopy = () => {
@@ -25,6 +26,13 @@ export default function ChatMessage({ role, content, citations, isStreaming }: P
       <div className="flex justify-end animate-fade-in">
         <div className="flex items-start gap-3 max-w-[80%]">
           <div className="rounded-2xl rounded-br-md px-4 py-3 bg-gradient-to-br from-violet-600/80 to-violet-700/80 backdrop-blur border border-violet-500/20">
+            {imageUrl && (
+              <img
+                src={imageUrl}
+                alt="Uploaded attachment"
+                className="mb-3 max-w-full sm:max-w-xs max-h-72 rounded-xl object-contain border border-white/15"
+              />
+            )}
             <p className="text-sm text-white leading-relaxed">{content}</p>
           </div>
           <div className="w-8 h-8 rounded-xl bg-violet-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">

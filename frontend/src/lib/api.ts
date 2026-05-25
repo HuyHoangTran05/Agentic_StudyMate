@@ -36,6 +36,7 @@ export interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
+  image_url: string | null;
   citations: Citation[] | null;
   created_at: string;
 }

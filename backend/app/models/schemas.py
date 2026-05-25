@@ -74,6 +74,7 @@ class MessageResponse(BaseModel):
     id: str
     role: str
     content: str
+    image_url: str | None = None
     citations: list[Citation] | None = None
     created_at: datetime
 

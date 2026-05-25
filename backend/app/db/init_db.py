@@ -25,6 +25,11 @@ async def _ensure_image_columns(conn):
     if "image_url" not in chunk_columns:
         await conn.exec_driver_sql("ALTER TABLE chunks ADD COLUMN image_url VARCHAR")
 
+    messages_info = await conn.exec_driver_sql("PRAGMA table_info(messages)")
+    message_columns = {row[1] for row in messages_info.fetchall()}
+    if "image_url" not in message_columns:
+        await conn.exec_driver_sql("ALTER TABLE messages ADD COLUMN image_url VARCHAR")
+
 
 async def init_db():
     """Create all tables and seed default data."""

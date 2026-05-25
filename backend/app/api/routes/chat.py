@@ -49,6 +49,7 @@ async def chat(
     and streams the response as SSE events.
     """
     content_type = request.headers.get("content-type", "")
+    uploaded_image_url = None
     if content_type.startswith("multipart/form-data"):
         form = await request.form()
         question = str(form.get("question") or "").strip()
@@ -58,6 +59,7 @@ async def chat(
         image_file = form.get("image")
         if isinstance(image_file, UploadFile):
             image_doc = await process_image_document(image_file, db)
+            uploaded_image_url = image_doc.image_url
             document_ids = [*(document_ids or []), image_doc.document_id]
     else:
         body = await request.json()
@@ -97,6 +99,7 @@ async def chat(
         session_id=session_id,
         role="user",
         content=question,
+        image_url=uploaded_image_url,
         created_at=utcnow(),
     )
     db.add(user_message)
@@ -155,6 +158,7 @@ async def chat(
                 session_id=session_id,
                 role="assistant",
                 content=friendly_msg,
+                image_url=None,
                 created_at=utcnow(),
             )
             db.add(error_message)
@@ -217,6 +221,7 @@ async def get_session_history(
                 id=msg.id,
                 role=msg.role,
                 content=msg.content,
+                image_url=msg.image_url,
                 citations=[
                     Citation(**c) for c in (msg.citations or [])
                 ] if msg.citations else None,

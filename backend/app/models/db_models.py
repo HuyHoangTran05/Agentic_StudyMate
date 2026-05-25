@@ -115,6 +115,7 @@ class Message(Base):
     session_id = Column(String, ForeignKey("chat_sessions.id", ondelete="CASCADE"), nullable=False)
     role = Column(String, nullable=False)    # user | assistant
     content = Column(Text, nullable=False)
+    image_url = Column(String, nullable=True)
     citations = Column(JSON, nullable=True)  # [{file_name, page_number, chunk_id}]
     created_at = Column(DateTime, default=utcnow)
 

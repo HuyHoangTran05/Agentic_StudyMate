@@ -41,6 +41,7 @@ export default function Chat() {
   const abortRef = useRef<AbortController | null>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
+  const optimisticImageUrlsRef = useRef<string[]>([])
 
   // Load sessions and documents on mount
   useEffect(() => {
@@ -68,6 +69,12 @@ export default function Chat() {
       if (attachedImagePreview) URL.revokeObjectURL(attachedImagePreview)
     }
   }, [attachedImagePreview])
+
+  useEffect(() => {
+    return () => {
+      optimisticImageUrlsRef.current.forEach((url) => URL.revokeObjectURL(url))
+    }
+  }, [])
 
   const attachImage = (file: File) => {
     if (!['image/png', 'image/jpeg'].includes(file.type)) return
@@ -109,11 +116,15 @@ export default function Chat() {
     const imageForRequest = attachedImage
     if ((!question && !imageForRequest) || isStreaming) return
 
+    const optimisticImageUrl = imageForRequest ? URL.createObjectURL(imageForRequest) : null
+    if (optimisticImageUrl) optimisticImageUrlsRef.current.push(optimisticImageUrl)
+
     // Add user message optimistically
     const userMsg: Message = {
       id: Date.now().toString(),
       role: 'user',
       content: question,
+      image_url: optimisticImageUrl,
       citations: null,
       created_at: new Date().toISOString(),
     }
@@ -152,6 +163,7 @@ export default function Chat() {
             id: (Date.now() + 1).toString(),
             role: 'assistant',
             content: data.answer,
+            image_url: null,
             citations: streamingCitations.length > 0 ? streamingCitations : null,
             created_at: new Date().toISOString(),
           }
@@ -168,6 +180,7 @@ export default function Chat() {
             id: (Date.now() + 1).toString(),
             role: 'assistant',
             content: `⚠️ Error: ${error}`,
+            image_url: null,
             citations: null,
             created_at: new Date().toISOString(),
           }
@@ -295,6 +308,7 @@ export default function Chat() {
               key={msg.id}
               role={msg.role}
               content={msg.content}
+              imageUrl={msg.image_url}
               citations={msg.citations}
             />
           ))}
@@ -304,6 +318,7 @@ export default function Chat() {
             <ChatMessage
               role="assistant"
               content={streamingContent}
+              imageUrl={null}
               citations={streamingCitations.length > 0 ? streamingCitations : undefined}
               isStreaming
             />
