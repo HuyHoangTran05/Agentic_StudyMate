@@ -7,7 +7,9 @@ DELETE /api/documents/{id} — Delete a document and all its chunks + vectors
 """
 
 import asyncio
+import base64
 from io import BytesIO
+import logging
 import uuid
 from pathlib import Path
 
@@ -25,6 +27,7 @@ from app.models.schemas import (
 )
 
 router = APIRouter(prefix="/api", tags=["documents"])
+logger = logging.getLogger(__name__)
 
 ALLOWED_IMAGE_TYPES = {
     "image/jpeg": ".jpg",
@@ -46,7 +49,7 @@ def _is_rate_limit_error(error: Exception) -> bool:
     )
 
 
-def _resize_image_for_gemini(
+def _resize_image_for_vision(
     image_bytes: bytes,
     mime_type: str,
     max_dimension: int = IMAGE_MAX_DIMENSION,
@@ -55,83 +58,148 @@ def _resize_image_for_gemini(
     Resize an uploaded image to fit within max_dimension x max_dimension.
 
     The original uploaded image is still saved to disk. This resized copy is
-    only used for Gemini extraction to reduce image token usage.
+    only used for vision extraction to reduce image token usage.
+    The provider payload is normalized to JPEG for OpenAI-compatible APIs.
     """
     from PIL import Image, ImageOps
 
     output = BytesIO()
-    format_by_mime = {
-        "image/jpeg": "JPEG",
-        "image/png": "PNG",
-        "image/webp": "WEBP",
-    }
-    image_format = format_by_mime[mime_type]
 
     with Image.open(BytesIO(image_bytes)) as image:
         image = ImageOps.exif_transpose(image)
         image.thumbnail((max_dimension, max_dimension), Image.Resampling.LANCZOS)
 
-        if image_format == "JPEG" and image.mode not in ("RGB", "L"):
+        if image.mode in ("RGBA", "LA"):
+            background = Image.new("RGB", image.size, (255, 255, 255))
+            alpha = image.getchannel("A")
+            background.paste(image.convert("RGB"), mask=alpha)
+            image = background
+        elif image.mode not in ("RGB", "L"):
             image = image.convert("RGB")
 
-        save_kwargs = {"format": image_format, "optimize": True}
-        if image_format == "JPEG":
-            save_kwargs["quality"] = 85
+        image.save(output, format="JPEG", optimize=True, quality=85)
 
-        image.save(output, **save_kwargs)
-
-    return output.getvalue(), mime_type
+    return output.getvalue(), "image/jpeg"
 
 
-async def _extract_text_from_image(image_bytes: bytes, mime_type: str) -> str:
-    """Extract readable text from an image using Gemini 2.0 Flash."""
+IMAGE_EXTRACTION_PROMPT = (
+    "Extract all readable study text from this image. Preserve headings, "
+    "lists, equations, labels, and table structure as plain markdown. "
+    "Return only the extracted text. If no readable text exists, return an empty string."
+)
+
+
+def _image_data_url(image_bytes: bytes, mime_type: str) -> str:
+    """Build a base64 data URL for OpenAI-compatible vision APIs."""
+    encoded = base64.b64encode(image_bytes).decode("ascii")
+    return f"data:image/jpeg;base64,{encoded}"
+
+
+async def _extract_with_gemini(
+    resized_bytes: bytes,
+    mime_type: str,
+    prompt: str,
+) -> str:
+    """Extract text from an image with Gemini Vision."""
     from google import genai
     from google.genai import types
     from app.config import get_settings
 
     settings = get_settings()
     if not settings.GEMINI_API_KEY:
-        raise HTTPException(
-            status_code=503,
-            detail="Gemini API key is not configured for image text extraction.",
-        )
+        raise RuntimeError("Gemini API key is not configured")
 
     client = genai.Client(api_key=settings.GEMINI_API_KEY)
-    prompt = (
-        "Extract all readable study text from this image. Preserve headings, "
-        "lists, equations, labels, and table structure as plain markdown. "
-        "Return only the extracted text. If no readable text exists, return an empty string."
+    response = await asyncio.to_thread(
+        client.models.generate_content,
+        model=settings.GEMINI_VISION_MODEL,
+        contents=[
+            types.Part.from_bytes(data=resized_bytes, mime_type=mime_type),
+            prompt,
+        ],
     )
+    return (response.text or "").strip()
 
-    resized_bytes, resized_mime_type = _resize_image_for_gemini(
+
+async def _extract_with_groq(
+    resized_bytes: bytes,
+    mime_type: str,
+    prompt: str,
+) -> str:
+    """Extract text from an image with Groq's vision chat API."""
+    from groq import AsyncGroq
+    from app.config import get_settings
+
+    settings = get_settings()
+    if not settings.GROQ_API_KEY:
+        raise RuntimeError("Groq API key is not configured")
+
+    client = AsyncGroq(api_key=settings.GROQ_API_KEY)
+    response = await client.chat.completions.create(
+        model=settings.GROQ_VISION_MODEL,
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt},
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": _image_data_url(resized_bytes, mime_type),
+                        },
+                    },
+                ],
+            }
+        ],
+        temperature=0.0,
+        max_tokens=4096,
+    )
+    return (response.choices[0].message.content or "").strip()
+
+
+async def _extract_text_from_image(image_bytes: bytes, mime_type: str) -> str:
+    """Extract readable text from an image using Gemini -> Groq."""
+    resized_bytes, resized_mime_type = _resize_image_for_vision(
         image_bytes=image_bytes,
         mime_type=mime_type,
     )
 
-    contents = [
-        types.Part.from_bytes(data=resized_bytes, mime_type=resized_mime_type),
-        prompt,
+    providers = [
+        ("Gemini", _extract_with_gemini),
+        ("Groq", _extract_with_groq),
     ]
 
     last_error: Exception | None = None
-    for attempt in range(2):
+    for index, (provider_name, extractor) in enumerate(providers):
         try:
-            response = await asyncio.to_thread(
-                client.models.generate_content,
-                model=settings.GEMINI_VISION_MODEL,
-                contents=contents,
+            return await extractor(
+                resized_bytes,
+                resized_mime_type,
+                IMAGE_EXTRACTION_PROMPT,
             )
-            return (response.text or "").strip()
         except Exception as e:
             last_error = e
-            if attempt == 0 and _is_rate_limit_error(e):
-                await asyncio.sleep(20)
-                continue
-            raise
+            if provider_name == "Groq":
+                logger.error(f"Groq Vision failed: {str(e)}")
+
+            if index == len(providers) - 1:
+                break
+
+            next_provider = providers[index + 1][0]
+            if provider_name == "Gemini" and _is_rate_limit_error(e):
+                print(
+                    f"[WARN] Gemini Vision rate limit hit; falling back to "
+                    f"{next_provider}. Error: {type(e).__name__}"
+                )
+            else:
+                print(
+                    f"[WARN] {provider_name} Vision failed; falling back to "
+                    f"{next_provider}. Error: {type(e).__name__}"
+                )
 
     if last_error:
-        raise last_error
-    raise RuntimeError("Gemini image extraction failed without an error.")
+        raise RuntimeError(f"All vision providers failed. Last error: {last_error}") from last_error
+    raise RuntimeError("All vision providers failed without an error.")
 
 
 @router.get("/documents", response_model=DocumentListResponse)
