@@ -30,6 +30,7 @@ class BM25Result:
     section_title: str | None
     chunk_index: int
     score: float
+    image_url: str | None = None
     source: str = "bm25"
 
 
@@ -95,6 +96,7 @@ class BM25Store:
                 "content": chunk.content,
                 "page_number": chunk.page_number,
                 "section_title": chunk.section_title,
+                "image_url": chunk.image_url,
                 "chunk_index": chunk.chunk_index,
             })
 
@@ -192,6 +194,7 @@ class BM25Store:
                     section_title=data["section_title"],
                     chunk_index=data["chunk_index"],
                     score=float(score),
+                    image_url=data.get("image_url"),
                 ))
 
             # Sort by score descending and take top_k

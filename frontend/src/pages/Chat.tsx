@@ -7,6 +7,8 @@ import {
   Trash2,
   Loader2,
   Zap,
+  Paperclip,
+  X,
 } from 'lucide-react'
 import ChatMessage from '../components/ChatMessage'
 import {
@@ -32,10 +34,13 @@ export default function Chat() {
   const [streamingCitations, setStreamingCitations] = useState<Citation[]>([])
   const [statusMessage, setStatusMessage] = useState('')
   const [selectedDocIds, setSelectedDocIds] = useState<string[] | null>(null)
+  const [attachedImage, setAttachedImage] = useState<File | null>(null)
+  const [attachedImagePreview, setAttachedImagePreview] = useState<string | null>(null)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const abortRef = useRef<AbortController | null>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  const imageInputRef = useRef<HTMLInputElement>(null)
 
   // Load sessions and documents on mount
   useEffect(() => {
@@ -58,12 +63,33 @@ export default function Chat() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, streamingContent])
 
+  useEffect(() => {
+    return () => {
+      if (attachedImagePreview) URL.revokeObjectURL(attachedImagePreview)
+    }
+  }, [attachedImagePreview])
+
+  const attachImage = (file: File) => {
+    if (!['image/png', 'image/jpeg'].includes(file.type)) return
+    if (attachedImagePreview) URL.revokeObjectURL(attachedImagePreview)
+    setAttachedImage(file)
+    setAttachedImagePreview(URL.createObjectURL(file))
+  }
+
+  const removeAttachedImage = () => {
+    if (attachedImagePreview) URL.revokeObjectURL(attachedImagePreview)
+    setAttachedImage(null)
+    setAttachedImagePreview(null)
+    if (imageInputRef.current) imageInputRef.current.value = ''
+  }
+
   const handleNewChat = () => {
     setCurrentSessionId(null)
     setMessages([])
     setStreamingContent('')
     setStreamingCitations([])
     setStatusMessage('')
+    removeAttachedImage()
     navigate('/chat')
     inputRef.current?.focus()
   }
@@ -79,8 +105,9 @@ export default function Chat() {
   }
 
   const handleSubmit = useCallback(async () => {
-    const question = input.trim()
-    if (!question || isStreaming) return
+    const question = input.trim() || (attachedImage ? 'What information is in this image?' : '')
+    const imageForRequest = attachedImage
+    if ((!question && !imageForRequest) || isStreaming) return
 
     // Add user message optimistically
     const userMsg: Message = {
@@ -92,6 +119,7 @@ export default function Chat() {
     }
     setMessages((prev) => [...prev, userMsg])
     setInput('')
+    removeAttachedImage()
     setIsStreaming(true)
     setStreamingContent('')
     setStreamingCitations([])
@@ -149,13 +177,24 @@ export default function Chat() {
           setIsStreaming(false)
         },
       },
+      imageForRequest,
     )
-  }, [input, isStreaming, currentSessionId, selectedDocIds, navigate, streamingCitations])
+  }, [input, attachedImage, isStreaming, currentSessionId, selectedDocIds, navigate, streamingCitations, attachedImagePreview])
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       handleSubmit()
+    }
+  }
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const imageItem = Array.from(e.clipboardData.items).find((item) =>
+      item.type === 'image/png' || item.type === 'image/jpeg'
+    )
+    const file = imageItem?.getAsFile()
+    if (file) {
+      attachImage(file)
     }
   }
 
@@ -285,13 +324,51 @@ export default function Chat() {
 
         {/* Input area */}
         <div className="p-4 md:px-8 md:pb-6 border-t border-white/5">
-          <div className="flex items-end gap-3 max-w-4xl mx-auto">
+          <div className="max-w-4xl mx-auto space-y-3">
+            {attachedImagePreview && (
+              <div className="inline-flex items-start gap-2 glass rounded-xl p-2 border border-white/10">
+                <img
+                  src={attachedImagePreview}
+                  alt="Attached preview"
+                  className="w-20 h-20 rounded-lg object-cover border border-white/10"
+                />
+                <button
+                  onClick={removeAttachedImage}
+                  className="p-1.5 rounded-lg text-text-muted hover:text-white hover:bg-white/10 transition-colors"
+                  title="Remove image"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
+            <div className="flex items-end gap-3">
             <div className="flex-1 glass rounded-2xl flex items-end px-4 py-3 focus-within:border-violet-500/30 transition-colors">
+              <input
+                ref={imageInputRef}
+                type="file"
+                accept="image/png,image/jpeg"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) attachImage(file)
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => imageInputRef.current?.click()}
+                disabled={isStreaming}
+                className="p-1.5 mr-2 rounded-lg text-text-muted hover:text-white hover:bg-white/10 transition-colors disabled:opacity-50"
+                title="Attach image"
+              >
+                <Paperclip className="w-4 h-4" />
+              </button>
               <textarea
                 ref={inputRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
+                onPaste={handlePaste}
                 placeholder="Ask a question about your documents..."
                 rows={1}
                 className="flex-1 bg-transparent text-sm text-white placeholder:text-text-muted outline-none resize-none max-h-32 leading-relaxed"
@@ -305,9 +382,9 @@ export default function Chat() {
             </div>
             <button
               onClick={handleSubmit}
-              disabled={!input.trim() || isStreaming}
+              disabled={(!input.trim() && !attachedImage) || isStreaming}
               className={`p-3 rounded-xl transition-all flex-shrink-0 ${
-                input.trim() && !isStreaming
+                (input.trim() || attachedImage) && !isStreaming
                   ? 'gradient-bg text-white hover:shadow-lg hover:shadow-violet-500/20 hover:scale-105'
                   : 'bg-white/5 text-text-muted cursor-not-allowed'
               }`}
@@ -318,6 +395,7 @@ export default function Chat() {
                 <Send className="w-5 h-5" />
               )}
             </button>
+            </div>
           </div>
         </div>
       </div>

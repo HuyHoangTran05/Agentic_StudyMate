@@ -1,4 +1,4 @@
-import { FileText, FileType, FileType2, Trash2, Clock, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react'
+import { FileText, FileType, FileType2, Trash2, Clock, CheckCircle2, AlertCircle, Loader2, Image as ImageIcon } from 'lucide-react'
 import type { Document } from '../lib/api'
 
 interface Props {
@@ -10,6 +10,7 @@ const fileIcons: Record<string, typeof FileText> = {
   pdf: FileType,
   docx: FileType2,
   txt: FileText,
+  image: ImageIcon,
 }
 
 const statusConfig: Record<string, { icon: typeof CheckCircle2; color: string; label: string }> = {
@@ -33,9 +34,17 @@ export default function DocumentCard({ document: doc, onDelete }: Props) {
     <div className="glass glass-hover rounded-2xl p-5 transition-all duration-300 hover:shadow-lg hover:shadow-violet-500/5 hover:-translate-y-0.5 group animate-fade-in">
       {/* Header */}
       <div className="flex items-start gap-3 mb-4">
-        <div className="w-11 h-11 rounded-xl gradient-bg-subtle flex items-center justify-center flex-shrink-0">
-          <Icon className="w-5 h-5 text-violet-400" />
-        </div>
+        {doc.image_url ? (
+          <img
+            src={doc.image_url}
+            alt={doc.file_name}
+            className="w-11 h-11 rounded-xl object-cover border border-white/10 flex-shrink-0"
+          />
+        ) : (
+          <div className="w-11 h-11 rounded-xl gradient-bg-subtle flex items-center justify-center flex-shrink-0">
+            <Icon className="w-5 h-5 text-violet-400" />
+          </div>
+        )}
         <div className="min-w-0 flex-1">
           <h3 className="text-sm font-semibold text-white truncate" title={doc.file_name}>
             {doc.file_name}

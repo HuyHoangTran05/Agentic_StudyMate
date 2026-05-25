@@ -32,6 +32,7 @@ class RerankResult:
     content: str
     page_number: int | None = None
     section_title: str | None = None
+    image_url: str | None = None
     chunk_index: int = 0
     rerank_score: float = 0.0
     rrf_score: float = 0.0
@@ -109,6 +110,7 @@ class Reranker:
                 content=candidate.content,
                 page_number=candidate.page_number,
                 section_title=candidate.section_title,
+                image_url=candidate.image_url,
                 chunk_index=candidate.chunk_index,
                 rerank_score=score,
                 rrf_score=candidate.rrf_score,

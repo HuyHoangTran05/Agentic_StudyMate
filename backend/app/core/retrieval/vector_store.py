@@ -81,6 +81,7 @@ class VectorStore:
                             "content": chunk.content,
                             "page_number": chunk.page_number,
                             "section_title": chunk.section_title,
+                            "image_url": getattr(chunk, "image_url", None),
                         },
                     )
                 )
@@ -143,6 +144,7 @@ class VectorStore:
                     "content": hit.payload.get("content"),
                     "page_number": hit.payload.get("page_number"),
                     "section_title": hit.payload.get("section_title"),
+                    "image_url": hit.payload.get("image_url"),
                     "chunk_index": hit.payload.get("chunk_index"),
                     "score": hit.score,
                     "source": "vector",

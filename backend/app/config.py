@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     # --- LLM Model Names ---
     GROQ_MODEL: str = "llama-3.1-8b-instant"
     GEMINI_MODEL: str = "gemini-2.0-flash-lite"
+    GEMINI_VISION_MODEL: str = "gemini-2.0-flash"
     OPENAI_MODEL: str = "gpt-4o-mini"
     ANTHROPIC_MODEL: str = "claude-3-haiku-20240307"
 

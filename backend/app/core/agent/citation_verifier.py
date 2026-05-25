@@ -146,6 +146,7 @@ def verify_citations(
                         chunk_id=chunk_ref.chunk_id,
                         section_title=chunk_ref.section_title,
                         snippet=snippet,
+                        image_url=getattr(chunk_ref, "image_url", None),
                     ))
         else:
             # Unverified citation — remove from answer

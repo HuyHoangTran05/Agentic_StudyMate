@@ -10,8 +10,9 @@ Endpoints:
 
 import json
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
+from starlette.datastructures import UploadFile
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -20,13 +21,13 @@ from app.db.session import get_db
 from app.db.init_db import DEFAULT_USER_ID
 from app.models.db_models import ChatSession, Message, generate_uuid, utcnow
 from app.models.schemas import (
-    ChatRequest,
     ChatSessionResponse,
     ChatHistoryResponse,
     MessageResponse,
     Citation,
 )
 from app.core.agent.controller import run_agent_stream, generate_session_title
+from app.api.routes.documents import process_image_document
 
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
@@ -37,7 +38,7 @@ router = APIRouter(prefix="/api/chat", tags=["chat"])
 
 @router.post("")
 async def chat(
-    request: ChatRequest,
+    request: Request,
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -47,9 +48,29 @@ async def chat(
     Saves user message to DB, runs the agentic pipeline,
     and streams the response as SSE events.
     """
+    content_type = request.headers.get("content-type", "")
+    if content_type.startswith("multipart/form-data"):
+        form = await request.form()
+        question = str(form.get("question") or "").strip()
+        session_id_from_request = str(form.get("session_id") or "") or None
+        document_ids_raw = str(form.get("document_ids") or "")
+        document_ids = json.loads(document_ids_raw) if document_ids_raw else None
+        image_file = form.get("image")
+        if isinstance(image_file, UploadFile):
+            image_doc = await process_image_document(image_file, db)
+            document_ids = [*(document_ids or []), image_doc.document_id]
+    else:
+        body = await request.json()
+        question = str(body.get("question") or "").strip()
+        session_id_from_request = body.get("session_id")
+        document_ids = body.get("document_ids")
+
+    if not question:
+        raise HTTPException(status_code=400, detail="Question is required")
+
     # Get or create session
-    if request.session_id:
-        session_id = request.session_id
+    if session_id_from_request:
+        session_id = session_id_from_request
         # Verify session exists
         result = await db.execute(
             select(ChatSession).where(ChatSession.id == session_id)
@@ -59,7 +80,7 @@ async def chat(
             raise HTTPException(status_code=404, detail="Chat session not found")
     else:
         # Create new session with LLM-generated title
-        title = await generate_session_title(request.question)
+        title = await generate_session_title(question)
         session_id = generate_uuid()
         session = ChatSession(
             id=session_id,
@@ -75,7 +96,7 @@ async def chat(
         id=generate_uuid(),
         session_id=session_id,
         role="user",
-        content=request.question,
+        content=question,
         created_at=utcnow(),
     )
     db.add(user_message)
@@ -85,33 +106,29 @@ async def chat(
     async def event_stream():
         """Generate SSE event stream from the agentic pipeline."""
         full_answer = ""
-        citations_list = []
+        parsed_citations = None
 
         try:
             # Send session_id as first event (for new sessions)
             yield f"event: session\ndata: {json.dumps({'session_id': session_id})}\n\n"
 
             async for event in run_agent_stream(
-                question=request.question,
-                document_ids=request.document_ids,
+                question=question,
+                document_ids=document_ids,
                 db=db,
             ):
                 yield event
 
-                # Capture final answer and citations from done event
+                if event.startswith("event: citations"):
+                    data_line = event.split("data: ", 1)[1].strip()
+                    parsed_citations = json.loads(data_line)
+
                 if event.startswith("event: done"):
                     data_line = event.split("data: ", 1)[1].strip()
                     done_data = json.loads(data_line)
                     full_answer = done_data.get("answer", "")
-                    citations_list = done_data.get("citations", [])
 
             # Save assistant message to DB
-            # Parse citations from the done event
-            parsed_citations = None
-            if event.startswith("event: citations"):
-                data_line = event.split("data: ", 1)[1].strip()
-                parsed_citations = json.loads(data_line)
-
             assistant_message = Message(
                 id=generate_uuid(),
                 session_id=session_id,

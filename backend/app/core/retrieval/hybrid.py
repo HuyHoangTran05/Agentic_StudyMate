@@ -32,6 +32,7 @@ class RetrievalResult:
     content: str
     page_number: int | None = None
     section_title: str | None = None
+    image_url: str | None = None
     chunk_index: int = 0
     rrf_score: float = 0.0
     vector_score: float | None = None
@@ -74,6 +75,7 @@ def rrf_merge(
                 "content": result.content if hasattr(result, "content") else result["content"],
                 "page_number": result.page_number if hasattr(result, "page_number") else result.get("page_number"),
                 "section_title": result.section_title if hasattr(result, "section_title") else result.get("section_title"),
+                "image_url": result.image_url if hasattr(result, "image_url") else result.get("image_url"),
                 "chunk_index": result.chunk_index if hasattr(result, "chunk_index") else result.get("chunk_index", 0),
             }
             sources[chunk_id] = []
@@ -97,6 +99,7 @@ def rrf_merge(
                 "content": r.get("content", ""),
                 "page_number": r.get("page_number"),
                 "section_title": r.get("section_title"),
+                "image_url": r.get("image_url"),
                 "chunk_index": r.get("chunk_index", 0),
             }
             sources[chunk_id] = []
@@ -117,6 +120,7 @@ def rrf_merge(
             content=d["content"],
             page_number=d["page_number"],
             section_title=d["section_title"],
+            image_url=d.get("image_url"),
             chunk_index=d["chunk_index"],
             rrf_score=scores[chunk_id],
             vector_score=orig.get("vector"),

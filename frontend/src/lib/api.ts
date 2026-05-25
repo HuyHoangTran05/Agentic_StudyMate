@@ -11,6 +11,7 @@ export interface Document {
   id: string;
   file_name: string;
   file_type: string;
+  image_url: string | null;
   upload_time: string;
   total_chunks: number;
   status: string;
@@ -22,6 +23,7 @@ export interface Citation {
   chunk_id: string;
   section_title: string | null;
   snippet: string | null;
+  image_url: string | null;
 }
 
 export interface ChatSession {
@@ -71,12 +73,30 @@ export interface SummaryResponse {
   key_points: string[];
 }
 
+export interface ImageUploadResponse {
+  document_id: string;
+  file_name: string;
+  image_url: string;
+  extracted_text: string;
+  total_chunks: number;
+  status: string;
+}
+
 /* ─── Document APIs ───────────────────────────────────────────────────────── */
 
 export async function uploadDocument(file: File): Promise<{ document_id: string; file_name: string; status: string; message: string }> {
   const form = new FormData();
   form.append('file', file);
   const { data } = await api.post('/upload', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return data;
+}
+
+export async function uploadImageDocument(file: File): Promise<ImageUploadResponse> {
+  const form = new FormData();
+  form.append('file', file);
+  const { data } = await api.post('/documents/image', form, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
   return data;
@@ -107,18 +127,28 @@ export function streamChat(
   documentIds: string[] | null,
   sessionId: string | null,
   callbacks: ChatStreamCallbacks,
+  image?: File | null,
 ): AbortController {
   const controller = new AbortController();
 
-  const body = JSON.stringify({
-    question,
-    document_ids: documentIds,
-    session_id: sessionId,
-  });
+  const body = image
+    ? (() => {
+        const form = new FormData();
+        form.append('question', question);
+        if (documentIds) form.append('document_ids', JSON.stringify(documentIds));
+        if (sessionId) form.append('session_id', sessionId);
+        form.append('image', image);
+        return form;
+      })()
+    : JSON.stringify({
+        question,
+        document_ids: documentIds,
+        session_id: sessionId,
+      });
 
   fetch('/api/chat', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: image ? undefined : { 'Content-Type': 'application/json' },
     body,
     signal: controller.signal,
   })

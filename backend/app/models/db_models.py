@@ -61,8 +61,9 @@ class Document(Base):
     id = Column(String, primary_key=True, default=generate_uuid)
     user_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     file_name = Column(String, nullable=False)
-    file_type = Column(String, nullable=False)  # pdf, docx, txt
+    file_type = Column(String, nullable=False)  # pdf, docx, txt, image
     file_path = Column(String, nullable=True)    # path to stored file
+    image_url = Column(String, nullable=True)    # public URL for uploaded images
     upload_time = Column(DateTime, default=utcnow)
     total_chunks = Column(Integer, default=0)
     status = Column(String, default="processing")  # processing | ready | failed
@@ -83,6 +84,7 @@ class Chunk(Base):
     content = Column(Text, nullable=False)
     page_number = Column(Integer, nullable=True)
     section_title = Column(String, nullable=True)
+    image_url = Column(String, nullable=True)
     vector_id = Column(String, nullable=True)  # ID stored in Qdrant
 
     # Relationships

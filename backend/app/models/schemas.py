@@ -17,6 +17,7 @@ class Citation(BaseModel):
     chunk_id: str
     section_title: str | None = None
     snippet: str | None = None  # brief text excerpt
+    image_url: str | None = None
 
 
 # ─── Document Schemas ─────────────────────────────────────────────────────────
@@ -26,6 +27,7 @@ class DocumentResponse(BaseModel):
     id: str
     file_name: str
     file_type: str
+    image_url: str | None = None
     upload_time: datetime
     total_chunks: int
     status: str
@@ -139,3 +141,13 @@ class UploadResponse(BaseModel):
     file_name: str
     status: str
     message: str
+
+
+class ImageUploadResponse(BaseModel):
+    """Response after image upload and vision extraction."""
+    document_id: str
+    file_name: str
+    image_url: str
+    extracted_text: str
+    total_chunks: int
+    status: str

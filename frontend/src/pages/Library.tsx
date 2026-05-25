@@ -1,12 +1,25 @@
-import { useState, useEffect } from 'react'
-import { Library as LibraryIcon, Search, Loader2 } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
+import { useDropzone } from 'react-dropzone'
+import { Library as LibraryIcon, Search, Loader2, CloudUpload, Image as ImageIcon } from 'lucide-react'
 import DocumentCard from '../components/DocumentCard'
-import { getDocuments, deleteDocument } from '../lib/api'
+import { getDocuments, deleteDocument, uploadDocument, uploadImageDocument } from '../lib/api'
 import type { Document } from '../lib/api'
+
+const ACCEPTED_TYPES: Record<string, string[]> = {
+  'application/pdf': ['.pdf'],
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+  'text/plain': ['.txt'],
+  'image/png': ['.png'],
+  'image/jpeg': ['.jpg', '.jpeg'],
+}
+
+const isImageFile = (file: File) => file.type === 'image/png' || file.type === 'image/jpeg'
 
 export default function Library() {
   const [documents, setDocuments] = useState<Document[]>([])
   const [loading, setLoading] = useState(true)
+  const [uploading, setUploading] = useState(false)
+  const [uploadStatus, setUploadStatus] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
 
@@ -16,6 +29,54 @@ export default function Library() {
       .catch(console.error)
       .finally(() => setLoading(false))
   }, [])
+
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    if (acceptedFiles.length === 0) return
+
+    setUploading(true)
+    setUploadStatus(acceptedFiles.some(isImageFile) ? 'Extracting text via AI...' : 'Uploading documents...')
+
+    try {
+      let shouldRefresh = false
+
+      for (const file of acceptedFiles) {
+        if (isImageFile(file)) {
+          const res = await uploadImageDocument(file)
+          const newDoc: Document = {
+            id: res.document_id,
+            file_name: res.file_name,
+            file_type: 'image',
+            image_url: res.image_url,
+            upload_time: new Date().toISOString(),
+            total_chunks: res.total_chunks,
+            status: res.status,
+          }
+          setDocuments((prev) => [newDoc, ...prev.filter((doc) => doc.id !== newDoc.id)])
+        } else {
+          await uploadDocument(file)
+          shouldRefresh = true
+        }
+      }
+
+      if (shouldRefresh) {
+        const res = await getDocuments()
+        setDocuments(res.documents)
+      }
+      setUploadStatus('Upload complete')
+      setTimeout(() => setUploadStatus(null), 2000)
+    } catch (err: any) {
+      const msg = err?.response?.data?.detail || err.message || 'Upload failed'
+      setUploadStatus(msg)
+    } finally {
+      setUploading(false)
+    }
+  }, [])
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: ACCEPTED_TYPES,
+    disabled: uploading,
+  })
 
   const handleDelete = async (id: string) => {
     if (deleteConfirm !== id) {
@@ -61,6 +122,36 @@ export default function Library() {
             placeholder="Search documents..."
             className="bg-transparent text-sm text-white placeholder:text-text-muted outline-none flex-1"
           />
+        </div>
+      </div>
+
+      {/* Upload zone */}
+      <div
+        {...getRootProps()}
+        className={`rounded-2xl border border-dashed p-5 transition-all cursor-pointer ${
+          isDragActive
+            ? 'border-violet-500 bg-violet-500/10'
+            : 'border-white/10 hover:border-white/20 hover:bg-white/[0.02]'
+        } ${uploading ? 'pointer-events-none opacity-70' : ''}`}
+      >
+        <input {...getInputProps()} />
+        <div className="flex items-center gap-4">
+          <div className="w-11 h-11 rounded-xl glass flex items-center justify-center flex-shrink-0">
+            {uploading ? (
+              <Loader2 className="w-5 h-5 text-violet-400 animate-spin" />
+            ) : (
+              <CloudUpload className="w-5 h-5 text-violet-400" />
+            )}
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-white">
+              {uploading ? uploadStatus : 'Drop documents or images here, or browse'}
+            </p>
+            <p className="text-xs text-text-muted mt-1">
+              Supports PDF, DOCX, TXT, PNG, and JPG. Images are extracted with AI and stored with a thumbnail.
+            </p>
+          </div>
+          <ImageIcon className="w-4 h-4 text-text-muted ml-auto hidden sm:block" />
         </div>
       </div>
 

@@ -1,34 +1,51 @@
 import { useState, useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
-import { Upload as UploadIcon, FileText, CheckCircle2, XCircle, Loader2, CloudUpload } from 'lucide-react'
-import { uploadDocument } from '../lib/api'
+import { Upload as UploadIcon, FileText, CheckCircle2, XCircle, Loader2, CloudUpload, Image as ImageIcon } from 'lucide-react'
+import { uploadDocument, uploadImageDocument } from '../lib/api'
 
 interface UploadResult {
   file_name: string
   status: 'success' | 'error'
   message: string
+  image_url?: string
 }
 
 const ACCEPTED_TYPES: Record<string, string[]> = {
   'application/pdf': ['.pdf'],
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
   'text/plain': ['.txt'],
+  'image/png': ['.png'],
+  'image/jpeg': ['.jpg', '.jpeg'],
 }
+
+const isImageFile = (file: File) => file.type === 'image/png' || file.type === 'image/jpeg'
 
 export default function Upload() {
   const [uploading, setUploading] = useState(false)
+  const [uploadingImage, setUploadingImage] = useState(false)
   const [results, setResults] = useState<UploadResult[]>([])
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     if (acceptedFiles.length === 0) return
 
     setUploading(true)
+    setUploadingImage(acceptedFiles.some(isImageFile))
     const newResults: UploadResult[] = []
 
     for (const file of acceptedFiles) {
       try {
-        const res = await uploadDocument(file)
-        newResults.push({ file_name: res.file_name, status: 'success', message: res.message })
+        if (isImageFile(file)) {
+          const res = await uploadImageDocument(file)
+          newResults.push({
+            file_name: res.file_name,
+            status: 'success',
+            message: `Image processed. Extracted text into ${res.total_chunks} chunk${res.total_chunks !== 1 ? 's' : ''}.`,
+            image_url: res.image_url,
+          })
+        } else {
+          const res = await uploadDocument(file)
+          newResults.push({ file_name: res.file_name, status: 'success', message: res.message })
+        }
       } catch (err: any) {
         const msg = err?.response?.data?.detail || err.message || 'Upload failed'
         newResults.push({ file_name: file.name, status: 'error', message: msg })
@@ -37,6 +54,7 @@ export default function Upload() {
 
     setResults((prev) => [...newResults, ...prev])
     setUploading(false)
+    setUploadingImage(false)
   }, [])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -56,7 +74,7 @@ export default function Upload() {
           Upload Documents
         </h1>
         <p className="text-sm text-text-secondary mt-2 ml-[52px]">
-          Upload PDF, DOCX, or TXT files to start chatting with your study materials.
+          Upload PDF, DOCX, TXT, PNG, or JPG files to start chatting with your study materials.
         </p>
       </div>
 
@@ -90,8 +108,12 @@ export default function Upload() {
 
           {uploading ? (
             <div>
-              <p className="text-base font-medium text-white">Uploading...</p>
-              <p className="text-sm text-text-muted mt-1">Please wait while your files are processed</p>
+              <p className="text-base font-medium text-white">
+                {uploadingImage ? 'Extracting text via AI...' : 'Uploading...'}
+              </p>
+              <p className="text-sm text-text-muted mt-1">
+                {uploadingImage ? 'Please wait while the image is analyzed and embedded' : 'Please wait while your files are processed'}
+              </p>
             </div>
           ) : isDragActive ? (
             <div>
@@ -103,7 +125,7 @@ export default function Upload() {
               <p className="text-base font-medium text-white">
                 Drag & drop files here, or <span className="text-violet-400">browse</span>
               </p>
-              <p className="text-sm text-text-muted mt-1">Supports PDF, DOCX, and TXT</p>
+              <p className="text-sm text-text-muted mt-1">Supports PDF, DOCX, TXT, PNG, and JPG</p>
             </div>
           )}
         </div>
@@ -139,7 +161,11 @@ export default function Upload() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-white flex items-center gap-2">
-                  <FileText className="w-3.5 h-3.5 text-text-muted" />
+                  {r.image_url ? (
+                    <ImageIcon className="w-3.5 h-3.5 text-violet-400" />
+                  ) : (
+                    <FileText className="w-3.5 h-3.5 text-text-muted" />
+                  )}
                   {r.file_name}
                 </p>
                 <p className={`text-xs mt-0.5 ${
