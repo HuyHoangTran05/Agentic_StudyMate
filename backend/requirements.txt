@@ -11,6 +11,7 @@ aiosqlite>=0.20.0        # SQLite async driver (swap to asyncpg for PostgreSQL)
 pymupdf>=1.24.0
 pymupdf4llm>=0.0.10
 python-docx>=1.1.0
+pillow>=10.0.0
 
 # === Embeddings & ML (CPU-only) ===
 sentence-transformers>=3.0.0

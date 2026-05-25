@@ -7,6 +7,7 @@ DELETE /api/documents/{id} — Delete a document and all its chunks + vectors
 """
 
 import asyncio
+from io import BytesIO
 import uuid
 from pathlib import Path
 
@@ -31,6 +32,56 @@ ALLOWED_IMAGE_TYPES = {
     "image/webp": ".webp",
 }
 
+IMAGE_MAX_DIMENSION = 1024
+
+
+def _is_rate_limit_error(error: Exception) -> bool:
+    """Return True for Gemini quota / rate-limit errors."""
+    error_text = str(error)
+    return (
+        "429" in error_text
+        or "RESOURCE_EXHAUSTED" in error_text
+        or "rate limit" in error_text.lower()
+        or "quota" in error_text.lower()
+    )
+
+
+def _resize_image_for_gemini(
+    image_bytes: bytes,
+    mime_type: str,
+    max_dimension: int = IMAGE_MAX_DIMENSION,
+) -> tuple[bytes, str]:
+    """
+    Resize an uploaded image to fit within max_dimension x max_dimension.
+
+    The original uploaded image is still saved to disk. This resized copy is
+    only used for Gemini extraction to reduce image token usage.
+    """
+    from PIL import Image, ImageOps
+
+    output = BytesIO()
+    format_by_mime = {
+        "image/jpeg": "JPEG",
+        "image/png": "PNG",
+        "image/webp": "WEBP",
+    }
+    image_format = format_by_mime[mime_type]
+
+    with Image.open(BytesIO(image_bytes)) as image:
+        image = ImageOps.exif_transpose(image)
+        image.thumbnail((max_dimension, max_dimension), Image.Resampling.LANCZOS)
+
+        if image_format == "JPEG" and image.mode not in ("RGB", "L"):
+            image = image.convert("RGB")
+
+        save_kwargs = {"format": image_format, "optimize": True}
+        if image_format == "JPEG":
+            save_kwargs["quality"] = 85
+
+        image.save(output, **save_kwargs)
+
+    return output.getvalue(), mime_type
+
 
 async def _extract_text_from_image(image_bytes: bytes, mime_type: str) -> str:
     """Extract readable text from an image using Gemini 2.0 Flash."""
@@ -52,15 +103,35 @@ async def _extract_text_from_image(image_bytes: bytes, mime_type: str) -> str:
         "Return only the extracted text. If no readable text exists, return an empty string."
     )
 
-    response = await asyncio.to_thread(
-        client.models.generate_content,
-        model=settings.GEMINI_VISION_MODEL,
-        contents=[
-            types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
-            prompt,
-        ],
+    resized_bytes, resized_mime_type = _resize_image_for_gemini(
+        image_bytes=image_bytes,
+        mime_type=mime_type,
     )
-    return (response.text or "").strip()
+
+    contents = [
+        types.Part.from_bytes(data=resized_bytes, mime_type=resized_mime_type),
+        prompt,
+    ]
+
+    last_error: Exception | None = None
+    for attempt in range(2):
+        try:
+            response = await asyncio.to_thread(
+                client.models.generate_content,
+                model=settings.GEMINI_VISION_MODEL,
+                contents=contents,
+            )
+            return (response.text or "").strip()
+        except Exception as e:
+            last_error = e
+            if attempt == 0 and _is_rate_limit_error(e):
+                await asyncio.sleep(20)
+                continue
+            raise
+
+    if last_error:
+        raise last_error
+    raise RuntimeError("Gemini image extraction failed without an error.")
 
 
 @router.get("/documents", response_model=DocumentListResponse)
