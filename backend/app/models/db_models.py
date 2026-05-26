@@ -62,6 +62,7 @@ class Document(Base):
     user_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     file_name = Column(String, nullable=False)
     file_type = Column(String, nullable=False)  # pdf, docx, txt, image
+    file_hash = Column(String, unique=True, nullable=True)  # SHA-256 content hash
     file_path = Column(String, nullable=True)    # path to stored file
     image_url = Column(String, nullable=True)    # public URL for uploaded images
     upload_time = Column(DateTime, default=utcnow)

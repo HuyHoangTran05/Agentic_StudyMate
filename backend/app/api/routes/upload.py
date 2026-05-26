@@ -11,6 +11,7 @@ POST /api/upload — Accepts file upload, triggers the full ingestion pipeline:
 The ingestion runs as a background task so the upload returns immediately.
 """
 
+import hashlib
 import os
 import traceback
 from pathlib import Path
@@ -18,6 +19,7 @@ from pathlib import Path
 from fastapi import APIRouter, UploadFile, File, Depends, BackgroundTasks, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 
 from app.db.session import get_db
 from app.db.init_db import DEFAULT_USER_ID
@@ -56,6 +58,24 @@ async def upload_document(
             detail=f"Unsupported file type: .{file_ext}. Allowed: {', '.join(ALLOWED_EXTENSIONS)}",
         )
 
+    content = await file.read()
+    file_hash = hashlib.sha256(content).hexdigest()
+
+    existing_result = await db.execute(
+        select(Document).where(Document.file_hash == file_hash)
+    )
+    existing_document = existing_result.scalar_one_or_none()
+    if existing_document:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "message": "File already exists in the library",
+                "document_id": existing_document.id,
+                "file_name": existing_document.file_name,
+                "status": existing_document.status,
+            },
+        )
+
     # Ensure upload directory exists
     settings = get_settings()
     upload_dir = Path(settings.UPLOAD_DIR)
@@ -67,7 +87,6 @@ async def upload_document(
     safe_filename = f"{file_id}.{file_ext}"
     file_path = upload_dir / safe_filename
 
-    content = await file.read()
     file_path.write_bytes(content)
 
     # Create document record
@@ -76,11 +95,32 @@ async def upload_document(
         user_id=DEFAULT_USER_ID,
         file_name=file.filename or "unknown",
         file_type=file_ext,
+        file_hash=file_hash,
         file_path=str(file_path),
         status="processing",
     )
     db.add(document)
-    await db.commit()
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        if file_path.exists():
+            file_path.unlink()
+
+        existing_result = await db.execute(
+            select(Document).where(Document.file_hash == file_hash)
+        )
+        existing_document = existing_result.scalar_one_or_none()
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "message": "File already exists in the library",
+                "document_id": existing_document.id if existing_document else None,
+                "file_name": existing_document.file_name if existing_document else file.filename,
+                "status": existing_document.status if existing_document else "unknown",
+            },
+        )
+
     await db.refresh(document)
 
     # Schedule background ingestion
