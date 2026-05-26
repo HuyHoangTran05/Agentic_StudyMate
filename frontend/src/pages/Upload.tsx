@@ -20,6 +20,17 @@ const ACCEPTED_TYPES: Record<string, string[]> = {
 
 const isImageFile = (file: File) => file.type === 'image/png' || file.type === 'image/jpeg'
 
+const isDuplicateUploadError = (err: any) => err?.response?.status === 409
+
+const getUploadErrorMessage = (err: any) => {
+  if (isDuplicateUploadError(err)) return 'File already exists in the library!'
+
+  const detail = err?.response?.data?.detail
+  if (typeof detail === 'string') return detail
+  if (detail?.message) return detail.message
+  return err?.message || 'Upload failed'
+}
+
 export default function Upload() {
   const [uploading, setUploading] = useState(false)
   const [uploadingImage, setUploadingImage] = useState(false)
@@ -32,29 +43,32 @@ export default function Upload() {
     setUploadingImage(acceptedFiles.some(isImageFile))
     const newResults: UploadResult[] = []
 
-    for (const file of acceptedFiles) {
-      try {
-        if (isImageFile(file)) {
-          const res = await uploadImageDocument(file)
-          newResults.push({
-            file_name: res.file_name,
-            status: 'success',
-            message: `Image processed. Extracted text into ${res.total_chunks} chunk${res.total_chunks !== 1 ? 's' : ''}.`,
-            image_url: res.image_url,
-          })
-        } else {
-          const res = await uploadDocument(file)
-          newResults.push({ file_name: res.file_name, status: 'success', message: res.message })
+    try {
+      for (const file of acceptedFiles) {
+        try {
+          if (isImageFile(file)) {
+            const res = await uploadImageDocument(file)
+            newResults.push({
+              file_name: res.file_name,
+              status: 'success',
+              message: `Image processed. Extracted text into ${res.total_chunks} chunk${res.total_chunks !== 1 ? 's' : ''}.`,
+              image_url: res.image_url,
+            })
+          } else {
+            const res = await uploadDocument(file)
+            newResults.push({ file_name: res.file_name, status: 'success', message: res.message })
+          }
+        } catch (err: any) {
+          const msg = getUploadErrorMessage(err)
+          if (isDuplicateUploadError(err)) alert(msg)
+          newResults.push({ file_name: file.name, status: 'error', message: msg })
         }
-      } catch (err: any) {
-        const msg = err?.response?.data?.detail || err.message || 'Upload failed'
-        newResults.push({ file_name: file.name, status: 'error', message: msg })
       }
+    } finally {
+      setResults((prev) => [...newResults, ...prev])
+      setUploading(false)
+      setUploadingImage(false)
     }
-
-    setResults((prev) => [...newResults, ...prev])
-    setUploading(false)
-    setUploadingImage(false)
   }, [])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({

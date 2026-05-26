@@ -15,6 +15,17 @@ const ACCEPTED_TYPES: Record<string, string[]> = {
 
 const isImageFile = (file: File) => file.type === 'image/png' || file.type === 'image/jpeg'
 
+const isDuplicateUploadError = (err: any) => err?.response?.status === 409
+
+const getUploadErrorMessage = (err: any) => {
+  if (isDuplicateUploadError(err)) return 'File already exists in the library!'
+
+  const detail = err?.response?.data?.detail
+  if (typeof detail === 'string') return detail
+  if (detail?.message) return detail.message
+  return err?.message || 'Upload failed'
+}
+
 export default function Library() {
   const [documents, setDocuments] = useState<Document[]>([])
   const [loading, setLoading] = useState(true)
@@ -65,7 +76,8 @@ export default function Library() {
       setUploadStatus('Upload complete')
       setTimeout(() => setUploadStatus(null), 2000)
     } catch (err: any) {
-      const msg = err?.response?.data?.detail || err.message || 'Upload failed'
+      const msg = getUploadErrorMessage(err)
+      if (isDuplicateUploadError(err)) alert(msg)
       setUploadStatus(msg)
     } finally {
       setUploading(false)
