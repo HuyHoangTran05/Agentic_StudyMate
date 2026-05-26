@@ -11,6 +11,7 @@ POST /api/upload — Accepts file upload, triggers the full ingestion pipeline:
 The ingestion runs as a background task so the upload returns immediately.
 """
 
+import asyncio
 import os
 import traceback
 from pathlib import Path
@@ -109,6 +110,7 @@ async def run_ingestion_pipeline(document_id: str, file_path: str, file_type: st
     from app.core.ingest.extractor import extract_document
     from app.core.ingest.chunker import chunk_document
     from app.core.ingest.embedder import get_embedder
+    from app.core.ingest.graph_extractor import log_triplets_for_chunks
 
     async with async_session_factory() as db:
         try:
@@ -134,11 +136,17 @@ async def run_ingestion_pipeline(document_id: str, file_path: str, file_type: st
                 print(f"  ⚠ No text extracted from document")
                 return
 
-            # Step 3: Generate embeddings
+            # Step 3: Generate embeddings and extract graph triplets in parallel
             print(f"  → Generating embeddings (CPU, this may take a moment)...")
             embedder = get_embedder()
             texts = [chunk.content for chunk in chunks]
-            embedding_result = await embedder.embed_texts(texts)
+            embedding_task = asyncio.create_task(embedder.embed_texts(texts))
+            graph_extraction_task = asyncio.create_task(log_triplets_for_chunks(chunks))
+
+            embedding_result, _ = await asyncio.gather(
+                embedding_task,
+                graph_extraction_task,
+            )
             print(f"  ✓ Generated {len(embedding_result.vectors)} embeddings ({embedding_result.dimension}D)")
 
             # Step 4: Store chunks in database
