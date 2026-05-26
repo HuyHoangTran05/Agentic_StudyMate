@@ -122,10 +122,56 @@ class Neo4jClient:
 
         return submitted
 
+    async def search_triplets(self, query: str, limit: int = 20) -> list[dict]:
+        """
+        Search graph relationships by entity/relation text and return chunk IDs.
+
+        The returned chunk IDs allow the RAG layer to pull the original source
+        chunks from SQLite/Qdrant metadata and cite them normally.
+        """
+        terms = [
+            term.strip().lower()
+            for term in re.split(r"[,;\n]+|\s{2,}", query)
+            if term.strip()
+        ]
+        if not terms:
+            terms = [query.strip().lower()] if query.strip() else []
+        if not terms:
+            return []
+
+        driver = self._get_driver()
+        cypher = """
+        MATCH (source:Entity)-[relationship]->(target:Entity)
+        WHERE any(term IN $terms WHERE
+            toLower(source.name) CONTAINS term OR
+            toLower(target.name) CONTAINS term OR
+            toLower(coalesce(relationship.relation, type(relationship))) CONTAINS term
+        )
+        RETURN source.name AS source,
+               coalesce(relationship.relation, type(relationship)) AS relation,
+               target.name AS target,
+               relationship.chunk_id AS chunk_id
+        LIMIT $limit
+        """
+
+        async with driver.session() as session:
+            result = await session.execute_read(
+                self._run_search,
+                cypher,
+                {"terms": terms, "limit": limit},
+            )
+        return result
+
     @staticmethod
     async def _run_write(tx, query: str, parameters: dict):
         result = await tx.run(query, parameters)
         await result.consume()
+
+    @staticmethod
+    async def _run_search(tx, query: str, parameters: dict) -> list[dict]:
+        result = await tx.run(query, parameters)
+        records = await result.data()
+        return [dict(record) for record in records]
 
     async def close(self) -> None:
         """Close the underlying Neo4j driver."""

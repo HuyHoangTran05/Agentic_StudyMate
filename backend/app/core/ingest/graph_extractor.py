@@ -16,7 +16,17 @@ from app.core.ingest.chunker import TextChunk
 
 
 KNOWLEDGE_GRAPH_SYSTEM_PROMPT = """
-Extract entities and relationships from this text. Output ONLY a strict JSON array of objects with "source", "relation", and "target" keys. Example: [{"source": "Apache Spark", "relation": "MANAGES", "target": "Worker Node"}]
+Extract entities and relationships from this text.
+
+Output ONLY valid JSON. Do not include markdown fences or explanatory text.
+Because JSON mode requires a top-level object, use exactly this schema:
+{"triplets": [{"source": "Apache Spark", "relation": "MANAGES", "target": "Worker Node"}]}
+
+Rules:
+- "triplets" must always be present and must be an array.
+- Every triplet object must contain only "source", "relation", and "target".
+- Extract only relationships explicitly supported by the text.
+- If there are no relationships, return {"triplets": []}.
 """.strip()
 
 
@@ -67,6 +77,9 @@ def _normalize_triplets(raw: str) -> list[dict[str, str]]:
         )
         return []
 
+    if isinstance(parsed, dict):
+        parsed = parsed.get("triplets", [])
+
     if not isinstance(parsed, list):
         print(
             "[GraphRAG][WARN] LLM triplet response was not a JSON array. "
@@ -105,9 +118,8 @@ async def extract_triplets_for_chunk(chunk: TextChunk) -> list[dict[str, str]]:
     """
     Extract and log graph triplets for one chunk.
 
-    json_mode is intentionally not used here because some providers only
-    support JSON object response formats, while GraphRAG triplets are requested
-    as a top-level JSON array.
+    Groq JSON mode is used with a top-level object wrapper:
+    {"triplets": [...]}.
     """
     client = get_llm_client()
     prompt = f"""
@@ -124,7 +136,7 @@ Text:
     raw = await client.call_llm(
         prompt=prompt,
         system_prompt=KNOWLEDGE_GRAPH_SYSTEM_PROMPT,
-        json_mode=False,
+        json_mode=True,
     )
     triplets = _normalize_triplets(raw)
 

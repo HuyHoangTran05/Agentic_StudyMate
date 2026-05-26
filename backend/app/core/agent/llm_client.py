@@ -20,7 +20,7 @@ Rate-limiting features:
 import json
 import re
 import asyncio
-from typing import AsyncGenerator
+from typing import Any, AsyncGenerator
 
 from app.config import get_settings
 
@@ -246,13 +246,58 @@ class LLMClient:
             raise RuntimeError("Groq client not available")
 
         kwargs: dict = {
-            "model": self._settings.GROQ_MODEL,
+            "model": self._settings.TEXT_MODEL,
             "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": prompt},
             ],
             "temperature": 0.3,
             "max_tokens": 2048,
+        }
+        if json_mode:
+            kwargs["response_format"] = {"type": "json_object"}
+
+        async def _do_call():
+            async with self._semaphore:
+                response = await client.chat.completions.create(**kwargs)
+                return response.choices[0].message.content
+
+        return await self._retry_with_backoff(_do_call, "groq")
+
+    async def _call_groq_multimodal(
+        self,
+        prompt: str,
+        image_url: str,
+        system_prompt: str,
+        json_mode: bool = False,
+    ) -> str:
+        """
+        Call Groq's OpenAI-compatible multimodal chat endpoint.
+
+        image_url may be an HTTP(S) URL or a data URL such as
+        data:image/jpeg;base64,... .
+        """
+        client = self._get_groq_client()
+        if client is None:
+            raise RuntimeError("Groq client not available")
+
+        user_content: list[dict[str, Any]] = [
+            {"type": "text", "text": prompt},
+            {
+                "type": "image_url",
+                "image_url": {
+                    "url": image_url,
+                },
+            },
+        ]
+        kwargs: dict[str, Any] = {
+            "model": self._settings.VISION_MODEL,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_content},
+            ],
+            "temperature": 0.2,
+            "max_tokens": 4096,
         }
         if json_mode:
             kwargs["response_format"] = {"type": "json_object"}
@@ -274,7 +319,7 @@ class LLMClient:
 
         async def _do_stream():
             stream = await client.chat.completions.create(
-                model=self._settings.GROQ_MODEL,
+                model=self._settings.TEXT_MODEL,
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": prompt},
@@ -627,6 +672,29 @@ class LLMClient:
             cleaned = "\n".join(lines)
 
         return json.loads(cleaned)
+
+    async def call_multimodal(
+        self,
+        prompt: str,
+        image_url: str,
+        system_prompt: str = "You are a helpful multimodal assistant.",
+        json_mode: bool = False,
+    ) -> str:
+        """
+        Call the unified Groq Scout model with text plus one image.
+
+        The request follows the OpenAI/Groq multimodal message format:
+        user.content is an array of text and image_url parts.
+        """
+        if not self._settings.GROQ_API_KEY:
+            raise RuntimeError("GROQ_API_KEY is required for multimodal calls")
+
+        return await self._call_groq_multimodal(
+            prompt=prompt,
+            image_url=image_url,
+            system_prompt=system_prompt,
+            json_mode=json_mode,
+        )
 
     async def stream_llm(
         self,

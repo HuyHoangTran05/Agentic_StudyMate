@@ -15,7 +15,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.config import get_settings
+from app.config import ENV_FILE, get_settings
 from app.db.init_db import init_db
 
 
@@ -39,6 +39,7 @@ async def lifespan(app: FastAPI):
     # Initialize database
     await init_db()
     print(f"✓ Database ready: {settings.DATABASE_URL}")
+    print(f"✓ Settings loaded from: {ENV_FILE}")
 
     # Initialize BM25 search index from existing chunks
     from app.core.retrieval.bm25_store import get_bm25_store
@@ -50,7 +51,7 @@ async def lifespan(app: FastAPI):
     if llm_provider:
         available = []
         if settings.GROQ_API_KEY:
-            available.append(f"Groq ({settings.GROQ_MODEL})")
+            available.append(f"Groq ({settings.TEXT_MODEL})")
         if settings.GEMINI_API_KEY:
             available.append(f"Gemini ({settings.GEMINI_MODEL})")
         if settings.OPENAI_API_KEY:
@@ -61,7 +62,9 @@ async def lifespan(app: FastAPI):
     else:
         print("⚠ No LLM API key configured — chat will not work")
 
+    print(f"✓ Text model: {settings.TEXT_MODEL}")
     print(f"✓ Embedding model: {settings.EMBEDDING_MODEL}")
+    print(f"✓ Vision model: {settings.VISION_MODEL}")
     print(f"✓ Vector DB: Qdrant @ {settings.QDRANT_HOST}:{settings.QDRANT_PORT}")
     if settings.NEO4J_URI and settings.NEO4J_USER and settings.NEO4J_PASSWORD:
         print(f"✓ Graph DB: Neo4j @ {settings.NEO4J_URI}")

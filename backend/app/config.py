@@ -5,9 +5,14 @@ Loads configuration from environment variables (.env file).
 Supports multi-LLM providers with priority: Groq > Gemini > OpenAI > Anthropic.
 """
 
-from pydantic_settings import BaseSettings
-from pydantic import Field
 from functools import lru_cache
+from pathlib import Path
+
+from pydantic_settings import BaseSettings
+
+
+BACKEND_DIR = Path(__file__).resolve().parents[1]
+ENV_FILE = BACKEND_DIR / ".env"
 
 
 class Settings(BaseSettings):
@@ -27,8 +32,12 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = ""
     ANTHROPIC_API_KEY: str = ""
 
-    # --- LLM Model Names ---
-    GROQ_MODEL: str = "llama-3.1-8b-instant"
+    # --- Primary Task Models ---
+    TEXT_MODEL: str = "meta-llama/llama-4-scout-17b-16e-instruct"
+    VISION_MODEL: str = "meta-llama/llama-4-scout-17b-16e-instruct"
+
+    # --- Provider-Specific Model Names ---
+    GROQ_MODEL: str = "meta-llama/llama-4-scout-17b-16e-instruct"
     GROQ_VISION_MODEL: str = "meta-llama/llama-4-scout-17b-16e-instruct"
     GEMINI_MODEL: str = "gemini-2.0-flash-lite"
     GEMINI_VISION_MODEL: str = "gemini-2.0-flash-lite"
@@ -73,7 +82,7 @@ class Settings(BaseSettings):
     UPLOAD_DIR: str = "uploads"
 
     model_config = {
-        "env_file": ".env",
+        "env_file": ENV_FILE,
         "env_file_encoding": "utf-8",
         "case_sensitive": True,
     }

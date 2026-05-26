@@ -8,8 +8,13 @@ Endpoints:
 - DELETE /api/chat/sessions/{id} → Delete a session
 """
 
+import asyncio
+import base64
+import binascii
 import json
 import logging
+from pathlib import Path
+from urllib.request import Request as UrlRequest, urlopen
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
@@ -21,7 +26,7 @@ from sqlalchemy.orm import selectinload
 from app.db.session import get_db
 from app.db.init_db import DEFAULT_USER_ID
 from app.config import get_settings
-from app.models.db_models import ChatSession, Document, Message, generate_uuid, utcnow
+from app.models.db_models import ChatSession, Chunk, Document, Message, generate_uuid, utcnow
 from app.models.schemas import (
     ChatSessionResponse,
     ChatHistoryResponse,
@@ -29,8 +34,8 @@ from app.models.schemas import (
     Citation,
 )
 from app.core.agent.controller import run_agent_stream, generate_session_title
-from app.core.ingest.embedder import get_embedder
-from app.core.retrieval.vector_store import get_vector_store
+from app.core.retrieval.hybrid import get_hybrid_retriever
+from app.core.db.neo4j_client import get_neo4j_client
 from app.api.routes.documents import (
     answer_image_question_with_context,
     generate_image_search_query,
@@ -42,9 +47,88 @@ router = APIRouter(prefix="/api/chat", tags=["chat"])
 logger = logging.getLogger(__name__)
 
 
+SUPPORTED_JSON_IMAGE_FIELDS = (
+    "image_base64",
+    "imageBase64",
+    "image_data",
+    "imageData",
+    "image",
+)
+
+
 def _sse_event(event: str, data: str) -> str:
     """Format one Server-Sent Event."""
     return f"event: {event}\ndata: {data}\n\n"
+
+
+def _get_result_value(result, key: str, default=None):
+    """Read a value from either a dict result or a retrieval dataclass."""
+    if isinstance(result, dict):
+        return result.get(key, default)
+    return getattr(result, key, default)
+
+
+def _decode_base64_image(value: str) -> tuple[bytes, str]:
+    """Decode a JSON image payload that may be a data URL or raw base64."""
+    raw = value.strip()
+    mime_type = "image/jpeg"
+    if raw.startswith("data:"):
+        header, _, payload = raw.partition(",")
+        if not payload:
+            raise ValueError("Invalid image data URL")
+        mime_type = header.removeprefix("data:").split(";", 1)[0] or mime_type
+        raw = payload
+
+    return base64.b64decode(raw, validate=True), mime_type
+
+
+async def _load_image_from_url(image_url: str) -> tuple[bytes, str]:
+    """Load image bytes from a local /static URL, filesystem path, data URL, or HTTP URL."""
+    if image_url.startswith("data:"):
+        return _decode_base64_image(image_url)
+
+    if image_url.startswith(("http://", "https://")):
+        def _fetch():
+            request = UrlRequest(image_url, headers={"User-Agent": "AgenticStudyMate/1.0"})
+            with urlopen(request, timeout=10) as response:
+                content_type = response.headers.get("content-type", "image/jpeg").split(";", 1)[0]
+                return response.read(), content_type
+
+        return await asyncio.to_thread(_fetch)
+
+    path = Path(image_url.lstrip("/")) if image_url.startswith("/") else Path(image_url)
+    if not path.exists() or not path.is_file():
+        raise ValueError(f"Image URL is not accessible from the backend: {image_url}")
+
+    suffix_to_mime = {
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".png": "image/png",
+        ".webp": "image/webp",
+    }
+    return path.read_bytes(), suffix_to_mime.get(path.suffix.lower(), "image/jpeg")
+
+
+async def _extract_json_image(body: dict) -> tuple[bytes | None, str | None, str | None]:
+    """Detect and load image data supplied in a JSON chat request."""
+    image_url = body.get("image_url") or body.get("imageUrl")
+    if image_url:
+        image_bytes, mime_type = await _load_image_from_url(str(image_url))
+        return image_bytes, mime_type, str(image_url)
+
+    for field in SUPPORTED_JSON_IMAGE_FIELDS:
+        value = body.get(field)
+        if not value:
+            continue
+        try:
+            image_bytes, mime_type = _decode_base64_image(str(value))
+        except (binascii.Error, ValueError) as exc:
+            raise HTTPException(status_code=400, detail=f"Invalid base64 image payload: {exc}") from exc
+
+        _, stored_url = persist_uploaded_image(image_bytes=image_bytes, mime_type=mime_type)
+        return image_bytes, mime_type, stored_url
+
+    return None, None, None
 
 
 async def _get_file_names_for_results(
@@ -53,9 +137,9 @@ async def _get_file_names_for_results(
 ) -> dict[str, str]:
     """Return document_id -> file_name for retrieved vector results."""
     document_ids = sorted({
-        result["document_id"]
+        _get_result_value(result, "document_id")
         for result in results
-        if result.get("document_id")
+        if _get_result_value(result, "document_id")
     })
     if not document_ids:
         return {}
@@ -76,11 +160,11 @@ def _format_retrieved_context(
 
     passages = []
     for index, result in enumerate(results, 1):
-        document_id = result.get("document_id")
+        document_id = _get_result_value(result, "document_id")
         file_name = file_names.get(document_id, "unknown")
-        page_number = result.get("page_number")
-        section_title = result.get("section_title")
-        image_url = result.get("image_url")
+        page_number = _get_result_value(result, "page_number")
+        section_title = _get_result_value(result, "section_title")
+        image_url = _get_result_value(result, "image_url")
 
         meta_parts = [f"File: {file_name}"]
         if page_number is not None:
@@ -92,7 +176,7 @@ def _format_retrieved_context(
 
         passages.append(
             f"--- Context {index} [{' | '.join(meta_parts)}] ---\n"
-            f"{result.get('content') or ''}"
+            f"{_get_result_value(result, 'content') or ''}"
         )
 
     return "\n\n".join(passages)
@@ -105,22 +189,141 @@ def _build_citations_from_results(
     """Expose retrieved chunks as citations for the frontend."""
     citations = []
     for result in results:
-        chunk_id = result.get("chunk_id")
+        chunk_id = _get_result_value(result, "chunk_id")
         if not chunk_id:
             continue
 
-        content = result.get("content") or ""
+        content = _get_result_value(result, "content") or ""
         citations.append(
             Citation(
-                file_name=file_names.get(result.get("document_id"), "unknown"),
-                page_number=result.get("page_number"),
+                file_name=file_names.get(_get_result_value(result, "document_id"), "unknown"),
+                page_number=_get_result_value(result, "page_number"),
                 chunk_id=str(chunk_id),
-                section_title=result.get("section_title"),
+                section_title=_get_result_value(result, "section_title"),
                 snippet=content[:240] if content else None,
-                image_url=result.get("image_url"),
+                image_url=_get_result_value(result, "image_url"),
             )
         )
     return citations
+
+
+def _dedupe_citations(citations: list[Citation]) -> list[Citation]:
+    """Keep one citation per chunk_id while preserving order."""
+    seen = set()
+    deduped = []
+    for citation in citations:
+        if citation.chunk_id in seen:
+            continue
+        seen.add(citation.chunk_id)
+        deduped.append(citation)
+    return deduped
+
+
+async def _retrieve_graph_context(
+    query: str,
+    document_ids: list[str] | None,
+    db: AsyncSession,
+    limit: int = 20,
+) -> tuple[str, list[Citation], int]:
+    """Retrieve Neo4j triplets plus source chunk citations for a query."""
+    try:
+        graph_hits = await get_neo4j_client().search_triplets(query, limit=limit)
+    except Exception as exc:
+        logger.warning("Graph retrieval skipped: %s", exc)
+        return "No graph relationships were retrieved.", [], 0
+
+    if not graph_hits:
+        return "No graph relationships were retrieved.", [], 0
+
+    chunk_ids = [
+        hit.get("chunk_id")
+        for hit in graph_hits
+        if hit.get("chunk_id")
+    ]
+
+    chunks_by_id: dict[str, Chunk] = {}
+    file_names: dict[str, str] = {}
+    if chunk_ids:
+        stmt = (
+            select(Chunk, Document.file_name)
+            .join(Document, Chunk.document_id == Document.id)
+            .where(Chunk.id.in_(chunk_ids))
+        )
+        if document_ids:
+            stmt = stmt.where(Chunk.document_id.in_(document_ids))
+
+        rows = await db.execute(stmt)
+        for chunk, file_name in rows.all():
+            chunks_by_id[chunk.id] = chunk
+            file_names[chunk.document_id] = file_name
+
+    lines = []
+    citations = []
+    for index, hit in enumerate(graph_hits, 1):
+        chunk_id = hit.get("chunk_id")
+        chunk = chunks_by_id.get(chunk_id)
+        if document_ids and chunk is None:
+            continue
+
+        source = hit.get("source") or "Unknown"
+        relation = hit.get("relation") or "RELATED_TO"
+        target = hit.get("target") or "Unknown"
+        source_ref = f"chunk_id={chunk_id}" if chunk_id else "chunk_id=unknown"
+        if chunk:
+            source_ref += f", file={file_names.get(chunk.document_id, 'unknown')}"
+
+        lines.append(f"{index}. ({source}) -[{relation}]-> ({target}) [{source_ref}]")
+
+        if chunk:
+            citations.append(
+                Citation(
+                    file_name=file_names.get(chunk.document_id, "unknown"),
+                    page_number=chunk.page_number,
+                    chunk_id=chunk.id,
+                    section_title=chunk.section_title,
+                    snippet=chunk.content[:240] if chunk.content else None,
+                    image_url=chunk.image_url,
+                )
+            )
+
+    if not lines:
+        return "No graph relationships were retrieved.", [], 0
+
+    return "\n".join(lines), _dedupe_citations(citations), len(lines)
+
+
+async def _retrieve_multimodal_context(
+    query: str,
+    document_ids: list[str] | None,
+    db: AsyncSession,
+) -> tuple[str, list[Citation], int, int]:
+    """Retrieve vector/BM25 passages and Neo4j graph context for vision RAG."""
+    settings = get_settings()
+    retrieved_docs = await get_hybrid_retriever().search(
+        query=query,
+        document_ids=document_ids,
+        top_k=settings.RETRIEVAL_TOP_K,
+    )
+
+    file_names = await _get_file_names_for_results(db, retrieved_docs)
+    passage_context = _format_retrieved_context(retrieved_docs, file_names)
+    passage_citations = _build_citations_from_results(retrieved_docs, file_names)
+
+    graph_context, graph_citations, graph_count = await _retrieve_graph_context(
+        query=query,
+        document_ids=document_ids,
+        db=db,
+        limit=settings.RETRIEVAL_TOP_K,
+    )
+
+    combined_context = (
+        "=== VECTOR/BM25 RETRIEVED PASSAGES ===\n"
+        f"{passage_context}\n\n"
+        "=== NEO4J GRAPH RELATIONSHIPS ===\n"
+        f"{graph_context}"
+    )
+    citations = _dedupe_citations([*passage_citations, *graph_citations])
+    return combined_context, citations, len(retrieved_docs), graph_count
 
 
 # ─── POST /api/chat — Main Chat Endpoint (SSE Streaming) ─────────────────────
@@ -161,6 +364,7 @@ async def chat(
         question = str(body.get("question") or "").strip()
         session_id_from_request = body.get("session_id")
         document_ids = body.get("document_ids")
+        image_bytes, image_mime_type, uploaded_image_url = await _extract_json_image(body)
 
     if not question:
         raise HTTPException(status_code=400, detail="Question is required")
@@ -214,35 +418,39 @@ async def chat(
             )
 
             if image_bytes is not None and image_mime_type is not None:
-                settings = get_settings()
-
                 yield _sse_event(
                     "status",
-                    "Reading image and generating a retrieval query...",
+                    "Reading image and extracting retrieval keywords...",
                 )
-                image_search_query = await generate_image_search_query(
-                    image_bytes=image_bytes,
-                    mime_type=image_mime_type,
-                )
+                try:
+                    image_search_query = await generate_image_search_query(
+                        image_bytes=image_bytes,
+                        mime_type=image_mime_type,
+                        question=question,
+                    )
+                except Exception as exc:
+                    logger.warning("Vision keyword extraction failed; falling back to user prompt: %s", exc)
+                    image_search_query = question
+
+                image_search_query = (image_search_query or "").strip()
+                if not image_search_query:
+                    image_search_query = question
                 logger.info(f"Generated Search Query: {image_search_query}")
 
-                yield _sse_event("status", "Searching your documents with the image query...")
-                query_vector = await get_embedder().embed_query(image_search_query)
-                retrieved_docs = await get_vector_store().search(
-                    query_vector=query_vector,
+                yield _sse_event("status", "Searching vector and graph context with image keywords...")
+                retrieved_context, citations, passage_count, graph_count = await _retrieve_multimodal_context(
+                    query=image_search_query,
                     document_ids=document_ids,
-                    top_k=settings.RETRIEVAL_TOP_K,
+                    db=db,
                 )
-                logger.info(f"Retrieved {len(retrieved_docs)} chunks from Vector DB")
-
-                file_names = await _get_file_names_for_results(db, retrieved_docs)
-                retrieved_context = _format_retrieved_context(retrieved_docs, file_names)
-                citations = _build_citations_from_results(retrieved_docs, file_names)
                 parsed_citations = [citation.model_dump() for citation in citations]
 
                 yield _sse_event(
                     "status",
-                    f"Found {len(retrieved_docs)} relevant passages; synthesizing with image...",
+                    (
+                        f"Found {passage_count} passages and {graph_count} graph "
+                        "relationships; synthesizing with image..."
+                    ),
                 )
                 full_answer = await answer_image_question_with_context(
                     image_bytes=image_bytes,
@@ -259,7 +467,7 @@ async def chat(
                 done_data = json.dumps({
                     "question_type": "image_rag",
                     "sub_questions": [image_search_query],
-                    "sources_searched": len(retrieved_docs),
+                    "sources_searched": passage_count + graph_count,
                     "citations_removed": 0,
                     "answer": full_answer,
                 })

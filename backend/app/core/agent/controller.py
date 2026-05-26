@@ -26,6 +26,7 @@ from app.core.agent.context_evaluator import evaluate_context
 from app.core.agent.answer_generator import generate_answer, generate_answer_stream
 from app.core.agent.citation_verifier import verify_citations, VerifiedAnswer
 from app.core.agent.llm_client import get_llm_client
+from app.core.db.neo4j_client import get_neo4j_client
 from app.models.schemas import ChatResponse, Citation
 
 
@@ -63,6 +64,60 @@ def _deduplicate_chunks(chunks: list[RerankResult]) -> list[RerankResult]:
         elif chunk.rerank_score > seen[chunk.chunk_id].rerank_score:
             seen[chunk.chunk_id] = chunk
     return list(seen.values())
+
+
+async def _graph_chunks_for_query(
+    query: str,
+    document_ids: list[str] | None,
+    db: AsyncSession,
+    limit: int = 10,
+) -> list[RerankResult]:
+    """Retrieve source chunks linked to matching Neo4j relationships."""
+    try:
+        graph_hits = await get_neo4j_client().search_triplets(query, limit=limit)
+    except Exception as exc:
+        print(f"⚠ Graph search skipped: {exc}")
+        return []
+
+    chunk_ids = [
+        hit.get("chunk_id")
+        for hit in graph_hits
+        if hit.get("chunk_id")
+    ]
+    if not chunk_ids:
+        return []
+
+    stmt = select(Chunk).where(Chunk.id.in_(chunk_ids))
+    if document_ids:
+        stmt = stmt.where(Chunk.document_id.in_(document_ids))
+
+    result = await db.execute(stmt)
+    chunks_by_id = {chunk.id: chunk for chunk in result.scalars().all()}
+
+    graph_chunks: list[RerankResult] = []
+    seen = set()
+    for hit in graph_hits:
+        chunk_id = hit.get("chunk_id")
+        if not chunk_id or chunk_id in seen or chunk_id not in chunks_by_id:
+            continue
+        seen.add(chunk_id)
+        chunk = chunks_by_id[chunk_id]
+        graph_chunks.append(
+            RerankResult(
+                chunk_id=chunk.id,
+                document_id=chunk.document_id,
+                content=chunk.content,
+                page_number=chunk.page_number,
+                section_title=chunk.section_title,
+                image_url=chunk.image_url,
+                chunk_index=chunk.chunk_index,
+                rerank_score=0.0,
+                rrf_score=0.0,
+                sources=["neo4j"],
+            )
+        )
+
+    return graph_chunks
 
 
 async def generate_session_title(question: str) -> str:
@@ -129,6 +184,9 @@ async def run_agent(
         )
         ranked = await reranker.rerank(sub_q, candidates, top_n=settings.RERANK_TOP_N)
         all_chunks.extend(ranked)
+        all_chunks.extend(
+            await _graph_chunks_for_query(sub_q, document_ids, db, limit=settings.RERANK_TOP_N)
+        )
 
     all_chunks = _deduplicate_chunks(all_chunks)
     all_chunks = _attach_file_names(all_chunks, file_names)
@@ -236,6 +294,9 @@ async def run_agent_stream(
         )
         ranked = await reranker.rerank(sub_q, candidates, top_n=settings.RERANK_TOP_N)
         all_chunks.extend(ranked)
+        all_chunks.extend(
+            await _graph_chunks_for_query(sub_q, document_ids, db, limit=settings.RERANK_TOP_N)
+        )
 
     all_chunks = _deduplicate_chunks(all_chunks)
     all_chunks = _attach_file_names(all_chunks, file_names)

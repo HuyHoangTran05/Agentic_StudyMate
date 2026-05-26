@@ -6,7 +6,6 @@ GET  /api/documents/{id}  — Get a single document's details
 DELETE /api/documents/{id} — Delete a document and all its chunks + vectors
 """
 
-import asyncio
 import base64
 from io import BytesIO
 import logging
@@ -36,17 +35,6 @@ ALLOWED_IMAGE_TYPES = {
 }
 
 IMAGE_MAX_DIMENSION = 1024
-
-
-def _is_rate_limit_error(error: Exception) -> bool:
-    """Return True for Gemini quota / rate-limit errors."""
-    error_text = str(error)
-    return (
-        "429" in error_text
-        or "RESOURCE_EXHAUSTED" in error_text
-        or "rate limit" in error_text.lower()
-        or "quota" in error_text.lower()
-    )
 
 
 def _resize_image_for_vision(
@@ -90,16 +78,17 @@ IMAGE_EXTRACTION_PROMPT = (
 )
 
 IMAGE_QUERY_PROMPT = (
-    "Analyze this image and extract the most important technical keywords, "
-    "entities, and text to form a highly specific search query for a vector "
-    "database. Output ONLY the query string."
+    "You are a precise data extractor. Look at this image and the user's "
+    "prompt. Extract 3 to 5 core technical keywords, entities, or concepts "
+    "that are essential for querying a technical knowledge base. Output ONLY "
+    "a comma-separated list of these keywords. Do not add any conversational text."
 )
 
 
 def _image_data_url(image_bytes: bytes, mime_type: str) -> str:
     """Build a base64 data URL for OpenAI-compatible vision APIs."""
     encoded = base64.b64encode(image_bytes).decode("ascii")
-    return f"data:image/jpeg;base64,{encoded}"
+    return f"data:{mime_type};base64,{encoded}"
 
 
 def persist_uploaded_image(image_bytes: bytes, mime_type: str) -> tuple[Path, str]:
@@ -124,68 +113,6 @@ def persist_uploaded_image(image_bytes: bytes, mime_type: str) -> tuple[Path, st
     return file_path, image_url
 
 
-async def _extract_with_gemini(
-    resized_bytes: bytes,
-    mime_type: str,
-    prompt: str,
-) -> str:
-    """Extract text from an image with Gemini Vision."""
-    from google import genai
-    from google.genai import types
-    from app.config import get_settings
-
-    settings = get_settings()
-    if not settings.GEMINI_API_KEY:
-        raise RuntimeError("Gemini API key is not configured")
-
-    client = genai.Client(api_key=settings.GEMINI_API_KEY)
-    response = await asyncio.to_thread(
-        client.models.generate_content,
-        model=settings.GEMINI_VISION_MODEL,
-        contents=[
-            types.Part.from_bytes(data=resized_bytes, mime_type=mime_type),
-            prompt,
-        ],
-    )
-    return (response.text or "").strip()
-
-
-async def _extract_with_groq(
-    resized_bytes: bytes,
-    mime_type: str,
-    prompt: str,
-) -> str:
-    """Extract text from an image with Groq's vision chat API."""
-    from groq import AsyncGroq
-    from app.config import get_settings
-
-    settings = get_settings()
-    if not settings.GROQ_API_KEY:
-        raise RuntimeError("Groq API key is not configured")
-
-    client = AsyncGroq(api_key=settings.GROQ_API_KEY)
-    response = await client.chat.completions.create(
-        model=settings.GROQ_VISION_MODEL,
-        messages=[
-            {
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": prompt},
-                    {
-                        "type": "image_url",
-                        "image_url": {
-                            "url": _image_data_url(resized_bytes, mime_type),
-                        },
-                    },
-                ],
-            }
-        ],
-        temperature=0.0,
-        max_tokens=4096,
-    )
-    return (response.choices[0].message.content or "").strip()
-
-
 async def _extract_text_from_image(image_bytes: bytes, mime_type: str) -> str:
     """Extract searchable multimodal text from an image using Gemini -> Groq."""
     return await _run_vision_chain(
@@ -195,12 +122,20 @@ async def _extract_text_from_image(image_bytes: bytes, mime_type: str) -> str:
     )
 
 
-async def generate_image_search_query(image_bytes: bytes, mime_type: str) -> str:
+async def generate_image_search_query(
+    image_bytes: bytes,
+    mime_type: str,
+    question: str = "",
+) -> str:
     """Generate a concise text query from an image for vector retrieval."""
+    prompt = IMAGE_QUERY_PROMPT
+    if question:
+        prompt = f"{IMAGE_QUERY_PROMPT}\n\nUser prompt: {question}"
+
     return await _run_vision_chain(
         image_bytes=image_bytes,
         mime_type=mime_type,
-        prompt=IMAGE_QUERY_PROMPT,
+        prompt=prompt,
     )
 
 
@@ -213,11 +148,13 @@ async def answer_image_question_with_context(
     """Answer using the uploaded image plus retrieved document context."""
     context_block = f"<context>\n{context}\n</context>"
     prompt = (
-        "You are a helpful AI assistant. Here is the context retrieved from "
-        f"the user's knowledge base:\n{context_block}\n\n"
-        "Based on the attached image and the provided context, answer the "
-        f"user's question: {question}. You MUST use the context to provide a "
-        "deep, technical explanation."
+        "You are a helpful AI assistant using a two-pass multimodal RAG flow.\n\n"
+        "A) Original image: attached to this request.\n"
+        f"B) User's original text prompt: {question}\n"
+        f"C) Retrieved knowledge-base context:\n{context_block}\n\n"
+        "Use the image and the retrieved context together to answer the user's "
+        "prompt. Prefer the retrieved context for technical details and explain "
+        "how it relates to the visible image."
     )
     return await _run_vision_chain(
         image_bytes=image_bytes,
@@ -246,48 +183,23 @@ async def answer_image_question(
 
 
 async def _run_vision_chain(image_bytes: bytes, mime_type: str, prompt: str) -> str:
-    """Run a vision prompt using Gemini -> Groq."""
+    """Run a vision prompt through the unified Groq multimodal model."""
     resized_bytes, resized_mime_type = _resize_image_for_vision(
         image_bytes=image_bytes,
         mime_type=mime_type,
     )
 
-    providers = [
-        ("Gemini", _extract_with_gemini),
-        ("Groq", _extract_with_groq),
-    ]
+    from app.core.agent.llm_client import get_llm_client
 
-    last_error: Exception | None = None
-    for index, (provider_name, extractor) in enumerate(providers):
-        try:
-            return await extractor(
-                resized_bytes,
-                resized_mime_type,
-                prompt,
-            )
-        except Exception as e:
-            last_error = e
-            if provider_name == "Groq":
-                logger.error(f"Groq Vision failed: {str(e)}")
-
-            if index == len(providers) - 1:
-                break
-
-            next_provider = providers[index + 1][0]
-            if provider_name == "Gemini" and _is_rate_limit_error(e):
-                print(
-                    f"[WARN] Gemini Vision rate limit hit; falling back to "
-                    f"{next_provider}. Error: {type(e).__name__}"
-                )
-            else:
-                print(
-                    f"[WARN] {provider_name} Vision failed; falling back to "
-                    f"{next_provider}. Error: {type(e).__name__}"
-                )
-
-    if last_error:
-        raise RuntimeError(f"All vision providers failed. Last error: {last_error}") from last_error
-    raise RuntimeError("All vision providers failed without an error.")
+    try:
+        return await get_llm_client().call_multimodal(
+            prompt=prompt,
+            image_url=_image_data_url(resized_bytes, resized_mime_type),
+            system_prompt="You are a precise multimodal AI assistant.",
+        )
+    except Exception as e:
+        logger.error(f"Groq multimodal call failed: {str(e)}")
+        raise
 
 
 @router.get("/documents", response_model=DocumentListResponse)
