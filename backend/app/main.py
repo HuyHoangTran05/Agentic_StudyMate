@@ -63,6 +63,10 @@ async def lifespan(app: FastAPI):
 
     print(f"✓ Embedding model: {settings.EMBEDDING_MODEL}")
     print(f"✓ Vector DB: Qdrant @ {settings.QDRANT_HOST}:{settings.QDRANT_PORT}")
+    if settings.NEO4J_URI and settings.NEO4J_USER and settings.NEO4J_PASSWORD:
+        print(f"✓ Graph DB: Neo4j @ {settings.NEO4J_URI}")
+    else:
+        print("⚠ Neo4j not configured — graph ingestion will log triplets only")
     print(f"✓ CORS origins: {settings.CORS_ORIGINS}")
     print("=" * 60)
     print("🚀 Ready to accept requests!")
@@ -71,6 +75,8 @@ async def lifespan(app: FastAPI):
     yield  # App is running
 
     # Shutdown
+    from app.core.db.neo4j_client import close_neo4j_client
+    await close_neo4j_client()
     print("👋 Agentic StudyMate shutting down...")
 
 

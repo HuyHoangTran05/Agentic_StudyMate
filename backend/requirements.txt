@@ -19,6 +19,7 @@ torch --index-url https://download.pytorch.org/whl/cpu
 
 # === Vector Database ===
 qdrant-client>=1.10.0
+neo4j>=5.20.0
 
 # === BM25 Search ===
 rank-bm25>=0.2.2

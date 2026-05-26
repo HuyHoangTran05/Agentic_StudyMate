@@ -16,6 +16,11 @@ class Settings(BaseSettings):
     # --- Database ---
     DATABASE_URL: str = "sqlite+aiosqlite:///./studymate.db"
 
+    # --- Neo4j Graph Database ---
+    NEO4J_URI: str = "bolt://localhost:7687"
+    NEO4J_USER: str = "neo4j"
+    NEO4J_PASSWORD: str = ""
+
     # --- LLM API Keys (priority: Groq > Gemini > OpenAI > Anthropic) ---
     GROQ_API_KEY: str = ""
     GEMINI_API_KEY: str = ""

@@ -5,13 +5,12 @@ POST /api/upload — Accepts file upload, triggers the full ingestion pipeline:
 1. Validate file type (PDF, DOCX, TXT)
 2. Save file to disk
 3. Create document record in DB (status=processing)
-4. Extract text → chunk → embed → store vectors
+4. Extract text → chunk → store graph triplets → embed → store vectors
 5. Update document status to ready/failed
 
 The ingestion runs as a background task so the upload returns immediately.
 """
 
-import asyncio
 import os
 import traceback
 from pathlib import Path
@@ -102,7 +101,7 @@ async def upload_document(
 
 async def run_ingestion_pipeline(document_id: str, file_path: str, file_type: str):
     """
-    Background task: Extract → Chunk → Embed → Store.
+    Background task: Extract → Chunk → Graph → Embed → Store.
     
     Updates document status to 'ready' on success or 'failed' on error.
     """
@@ -110,7 +109,7 @@ async def run_ingestion_pipeline(document_id: str, file_path: str, file_type: st
     from app.core.ingest.extractor import extract_document
     from app.core.ingest.chunker import chunk_document
     from app.core.ingest.embedder import get_embedder
-    from app.core.ingest.graph_extractor import log_triplets_for_chunks
+    from app.core.ingest.graph_extractor import ingest_triplets_for_chunks
 
     async with async_session_factory() as db:
         try:
@@ -136,21 +135,8 @@ async def run_ingestion_pipeline(document_id: str, file_path: str, file_type: st
                 print(f"  ⚠ No text extracted from document")
                 return
 
-            # Step 3: Generate embeddings and extract graph triplets in parallel
-            print(f"  → Generating embeddings (CPU, this may take a moment)...")
-            embedder = get_embedder()
-            texts = [chunk.content for chunk in chunks]
-            embedding_task = asyncio.create_task(embedder.embed_texts(texts))
-            graph_extraction_task = asyncio.create_task(log_triplets_for_chunks(chunks))
-
-            embedding_result, _ = await asyncio.gather(
-                embedding_task,
-                graph_extraction_task,
-            )
-            print(f"  ✓ Generated {len(embedding_result.vectors)} embeddings ({embedding_result.dimension}D)")
-
-            # Step 4: Store chunks in database
-            print(f"  → Storing chunks in database...")
+            # Step 3: Store chunks in database so graph relationships can reference chunk IDs
+            print("  -> Storing chunks in database...")
             chunk_records = []
             for i, chunk in enumerate(chunks):
                 chunk_record = Chunk(
@@ -164,8 +150,22 @@ async def run_ingestion_pipeline(document_id: str, file_path: str, file_type: st
                 chunk_records.append(chunk_record)
 
             db.add_all(chunk_records)
+            await db.flush()
 
-            # Step 5: Store vectors in Qdrant (if available)
+            # Step 4: Extract and store knowledge graph triplets before embedding
+            await ingest_triplets_for_chunks([
+                (chunk, chunk_record.id)
+                for chunk, chunk_record in zip(chunks, chunk_records)
+            ])
+
+            # Step 5: Generate embeddings
+            print(f"  → Generating embeddings (CPU, this may take a moment)...")
+            embedder = get_embedder()
+            texts = [chunk.content for chunk in chunks]
+            embedding_result = await embedder.embed_texts(texts)
+            print(f"  ✓ Generated {len(embedding_result.vectors)} embeddings ({embedding_result.dimension}D)")
+
+            # Step 6: Store vectors in Qdrant (if available)
             try:
                 from app.core.retrieval.vector_store import get_vector_store
                 vector_store = get_vector_store()
@@ -179,7 +179,7 @@ async def run_ingestion_pipeline(document_id: str, file_path: str, file_type: st
                 print(f"  ⚠ Qdrant not available, skipping vector storage: {e}")
                 # Continue without Qdrant — BM25 still works
 
-            # Step 6: Add chunks to BM25 index
+            # Step 7: Add chunks to BM25 index
             try:
                 from app.core.retrieval.bm25_store import get_bm25_store
                 bm25_store = get_bm25_store()
