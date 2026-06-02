@@ -1,9 +1,7 @@
-# Agentic StudyMate Project Instructions
+# Agentic StudyMate Cursor Rules
 
 This file is the canonical architecture and AI-collaboration guide for Agentic StudyMate.
 Future AI assistants must follow these rules before suggesting or changing code.
-
-For Cursor compatibility, the same rules are also captured in `.cursorrules`.
 
 ## Project Snapshot
 
