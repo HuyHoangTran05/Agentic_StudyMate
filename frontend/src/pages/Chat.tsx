@@ -61,6 +61,15 @@ function appendMessagePreservingImages(localMessages: Message[], incoming: Messa
   )
 }
 
+function previousUserMessageHasImage(messages: Message[], messageIndex: number): boolean {
+  for (let index = messageIndex - 1; index >= 0; index -= 1) {
+    const message = messages[index]
+    if (message.role === 'user') return Boolean(message.image_url)
+  }
+
+  return false
+}
+
 export default function Chat() {
   const { sessionId: paramSessionId } = useParams()
   const navigate = useNavigate()
@@ -284,6 +293,8 @@ export default function Chat() {
       description: `${doc.total_chunks} chunks`,
     })),
   ]
+  const lastUserMessage = [...messages].reverse().find((message) => message.role === 'user')
+  const streamingHasVisionSource = Boolean(lastUserMessage?.image_url)
 
   return (
     <div className="flex h-[calc(100dvh-3.5rem)] min-h-0 overflow-hidden md:h-screen">
@@ -393,13 +404,14 @@ export default function Chat() {
               />
             )}
 
-            {messages.map((message) => (
+            {messages.map((message, index) => (
               <ChatMessage
                 key={message.id}
                 role={message.role}
                 content={message.content}
                 imageUrl={message.image_url}
                 citations={message.citations}
+                hasVisionSource={message.role === 'assistant' ? previousUserMessageHasImage(messages, index) : undefined}
               />
             ))}
 
@@ -410,6 +422,7 @@ export default function Chat() {
                 imageUrl={null}
                 citations={streamingCitations.length > 0 ? streamingCitations : undefined}
                 isStreaming
+                hasVisionSource={streamingHasVisionSource}
               />
             )}
 
