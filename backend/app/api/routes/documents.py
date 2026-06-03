@@ -144,17 +144,33 @@ async def answer_image_question_with_context(
     mime_type: str,
     question: str,
     context: str,
+    has_retrieved_context: bool = True,
 ) -> str:
     """Answer using the uploaded image plus retrieved document context."""
     context_block = f"<context>\n{context}\n</context>"
+    context_instruction = (
+        'Start from: "Based on the image and the retrieved document context..."'
+        if has_retrieved_context
+        else 'Start from: "I can explain this from the image, but no matching document context was found."'
+    )
     prompt = (
-        "You are a helpful AI assistant using a two-pass multimodal RAG flow.\n\n"
+        "You are a precise multimodal study assistant using an image + RAG flow.\n\n"
         "A) Original image: attached to this request.\n"
         f"B) User's original text prompt: {question}\n"
         f"C) Retrieved knowledge-base context:\n{context_block}\n\n"
-        "Use the image and the retrieved context together to answer the user's "
-        "prompt. Prefer the retrieved context for technical details and explain "
-        "how it relates to the visible image."
+        f"{context_instruction}\n\n"
+        "Answer clearly for students using this structure:\n"
+        "1. What the image shows\n"
+        "2. Key components in the image\n"
+        "3. How the process/architecture works\n"
+        "4. How this connects to the retrieved document context\n"
+        "5. Key takeaway\n\n"
+        "Rules:\n"
+        "- If the image appears to be an architecture or process diagram, explain the flow step by step.\n"
+        "- Prefer bullet points for diagrams and technical architectures.\n"
+        "- Use retrieved context for grounding when it is relevant, but do not overclaim citations inside the text.\n"
+        "- Avoid vague filler such as 'The image and retrieved context are useful.'\n"
+        "- If context is weak or absent, be explicit about that and rely on visible image understanding."
     )
     return await _run_vision_chain(
         image_bytes=image_bytes,

@@ -83,6 +83,24 @@ export interface ImageUploadResponse {
   status: string;
 }
 
+export interface RagMetadata {
+  mode?: string;
+  used_image?: boolean;
+  search_query?: string;
+  passage_count?: number;
+  graph_count?: number;
+  citation_count?: number;
+  sources?: string[];
+}
+
+export interface ChatDoneData {
+  question_type: string;
+  sub_questions: string[] | null;
+  sources_searched: number;
+  answer: string;
+  metadata?: RagMetadata | null;
+}
+
 /* ─── Document APIs ───────────────────────────────────────────────────────── */
 
 export async function uploadDocument(file: File): Promise<{ document_id: string; file_name: string; status: string; message: string }> {
@@ -118,7 +136,7 @@ export interface ChatStreamCallbacks {
   onStatus?: (msg: string) => void;
   onChunk?: (text: string) => void;
   onCitations?: (citations: Citation[]) => void;
-  onDone?: (data: { question_type: string; sub_questions: string[] | null; sources_searched: number; answer: string }) => void;
+  onDone?: (data: ChatDoneData) => void;
   onSession?: (data: { session_id: string; image_url?: string | null }) => void;
   onError?: (error: string) => void;
 }

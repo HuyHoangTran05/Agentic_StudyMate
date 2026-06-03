@@ -14,6 +14,7 @@ import {
   Zap,
 } from 'lucide-react'
 import ChatMessage from '../components/ChatMessage'
+import type { ChatMessageMetadata } from '../components/ChatMessage'
 import {
   deleteChatSession,
   getChatHistory,
@@ -22,11 +23,16 @@ import {
   streamChat,
 } from '../lib/api'
 import type { ChatSession, Citation, Document, Message } from '../lib/api'
+import type { ChatDoneData } from '../lib/api'
 import { Badge, Button, Card, EmptyState } from '../components/ui'
 import SelectDropdown from '../components/ui/SelectDropdown'
 import { cx } from '../lib/cx'
 
-function findMatchingLocalMessage(localMessages: Message[], incoming: Message): Message | undefined {
+type ChatUiMessage = Message & {
+  metadata?: ChatMessageMetadata
+}
+
+function findMatchingLocalMessage(localMessages: ChatUiMessage[], incoming: ChatUiMessage): ChatUiMessage | undefined {
   return localMessages.find((local) => local.id === incoming.id)
     ?? localMessages.find((local) =>
       local.role === incoming.role
@@ -36,21 +42,22 @@ function findMatchingLocalMessage(localMessages: Message[], incoming: Message): 
     )
 }
 
-function mergeMessagePreservingLocalImage(localMessages: Message[], incoming: Message): Message {
+function mergeMessagePreservingLocalImage(localMessages: ChatUiMessage[], incoming: ChatUiMessage): ChatUiMessage {
   const local = findMatchingLocalMessage(localMessages, incoming)
   return {
     ...local,
     ...incoming,
     image_url: local?.image_url ?? incoming.image_url ?? null,
     citations: incoming.citations ?? local?.citations ?? null,
+    metadata: incoming.metadata ?? local?.metadata,
   }
 }
 
-function mergeMessagesPreservingImages(localMessages: Message[], incomingMessages: Message[]): Message[] {
+function mergeMessagesPreservingImages(localMessages: ChatUiMessage[], incomingMessages: ChatUiMessage[]): ChatUiMessage[] {
   return incomingMessages.map((incoming) => mergeMessagePreservingLocalImage(localMessages, incoming))
 }
 
-function appendMessagePreservingImages(localMessages: Message[], incoming: Message): Message[] {
+function appendMessagePreservingImages(localMessages: ChatUiMessage[], incoming: ChatUiMessage): ChatUiMessage[] {
   const existingIndex = localMessages.findIndex((local) => local.id === incoming.id)
   if (existingIndex === -1) {
     return [...localMessages, mergeMessagePreservingLocalImage(localMessages, incoming)]
@@ -61,6 +68,31 @@ function appendMessagePreservingImages(localMessages: Message[], incoming: Messa
   )
 }
 
+function previousUserMessageHasImage(messages: ChatUiMessage[], messageIndex: number): boolean {
+  for (let index = messageIndex - 1; index >= 0; index -= 1) {
+    const message = messages[index]
+    if (message.role === 'user') return Boolean(message.image_url)
+  }
+
+  return false
+}
+
+function buildMessageMetadata(data: ChatDoneData, usedImage: boolean): ChatMessageMetadata {
+  return {
+    mode: data.metadata?.mode,
+    questionType: data.question_type || undefined,
+    searchQuery: data.metadata?.search_query || data.sub_questions?.[0] || undefined,
+    sourcesSearched: data.metadata?.passage_count != null || data.metadata?.graph_count != null
+      ? (data.metadata?.passage_count ?? 0) + (data.metadata?.graph_count ?? 0)
+      : data.sources_searched,
+    usedImage: data.metadata?.used_image ?? usedImage,
+    passageCount: data.metadata?.passage_count,
+    graphCount: data.metadata?.graph_count,
+    citationCount: data.metadata?.citation_count,
+    sources: data.metadata?.sources,
+  }
+}
+
 export default function Chat() {
   const { sessionId: paramSessionId } = useParams()
   const navigate = useNavigate()
@@ -68,7 +100,7 @@ export default function Chat() {
   const [sessions, setSessions] = useState<ChatSession[]>([])
   const [documents, setDocuments] = useState<Document[]>([])
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(paramSessionId || null)
-  const [messages, setMessages] = useState<Message[]>([])
+  const [messages, setMessages] = useState<ChatUiMessage[]>([])
   const [input, setInput] = useState('')
   const [isStreaming, setIsStreaming] = useState(false)
   const [streamingContent, setStreamingContent] = useState('')
@@ -176,7 +208,7 @@ export default function Chat() {
     const optimisticImageUrl = imageForRequest ? URL.createObjectURL(imageForRequest) : null
     if (optimisticImageUrl) optimisticImageUrlsRef.current.push(optimisticImageUrl)
 
-    const userMsg: Message = {
+    const userMsg: ChatUiMessage = {
       id: Date.now().toString(),
       role: 'user',
       content: question,
@@ -223,13 +255,14 @@ export default function Chat() {
           setStreamingCitations(citations)
         },
         onDone: (data) => {
-          const assistantMsg: Message = {
+          const assistantMsg: ChatUiMessage = {
             id: (Date.now() + 1).toString(),
             role: 'assistant',
             content: data.answer,
             image_url: null,
             citations: citationsRef.current.length > 0 ? citationsRef.current : null,
             created_at: new Date().toISOString(),
+            metadata: buildMessageMetadata(data, Boolean(imageForRequest || userMsg.image_url)),
           }
           setMessages((prev) => appendMessagePreservingImages(prev, assistantMsg))
           setStreamingContent('')
@@ -240,7 +273,7 @@ export default function Chat() {
           getChatSessions().then(setSessions).catch(console.error)
         },
         onError: (error) => {
-          const errorMsg: Message = {
+          const errorMsg: ChatUiMessage = {
             id: (Date.now() + 1).toString(),
             role: 'assistant',
             content: `Error: ${error}`,
@@ -284,6 +317,8 @@ export default function Chat() {
       description: `${doc.total_chunks} chunks`,
     })),
   ]
+  const lastUserMessage = [...messages].reverse().find((message) => message.role === 'user')
+  const streamingHasVisionSource = Boolean(lastUserMessage?.image_url)
 
   return (
     <div className="flex h-[calc(100dvh-3.5rem)] min-h-0 overflow-hidden md:h-screen">
@@ -393,13 +428,15 @@ export default function Chat() {
               />
             )}
 
-            {messages.map((message) => (
+            {messages.map((message, index) => (
               <ChatMessage
                 key={message.id}
                 role={message.role}
                 content={message.content}
                 imageUrl={message.image_url}
                 citations={message.citations}
+                hasVisionSource={message.role === 'assistant' ? previousUserMessageHasImage(messages, index) : undefined}
+                metadata={message.role === 'assistant' ? message.metadata : undefined}
               />
             ))}
 
@@ -410,6 +447,8 @@ export default function Chat() {
                 imageUrl={null}
                 citations={streamingCitations.length > 0 ? streamingCitations : undefined}
                 isStreaming
+                hasVisionSource={streamingHasVisionSource}
+                metadata={{ usedImage: streamingHasVisionSource }}
               />
             )}
 

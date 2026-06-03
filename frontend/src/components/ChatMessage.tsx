@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { Bot, Check, Copy, FileText, User } from 'lucide-react'
+import { Bot, Check, Copy, FileText, Image, User } from 'lucide-react'
 import type { Citation } from '../lib/api'
-import { cx } from '../lib/cx'
+
+const DEFAULT_VISIBLE_CITATIONS = 5
 
 interface Props {
   role: 'user' | 'assistant'
@@ -11,10 +12,60 @@ interface Props {
   imageUrl?: string | null
   citations?: Citation[] | null
   isStreaming?: boolean
+  hasVisionSource?: boolean
+  metadata?: ChatMessageMetadata
 }
 
-export default function ChatMessage({ role, content, imageUrl, citations, isStreaming }: Props) {
+export interface ChatMessageMetadata {
+  mode?: string
+  questionType?: string
+  searchQuery?: string
+  sourcesSearched?: number
+  usedImage?: boolean
+  passageCount?: number
+  graphCount?: number
+  citationCount?: number
+  sources?: string[]
+}
+
+function getCitationKey(citation: Citation) {
+  return `${citation.file_name}::${citation.page_number ?? 'none'}::${citation.chunk_id}`
+}
+
+function getUniqueCitations(citations: Citation[]) {
+  const seen = new Set<string>()
+  return citations.filter((citation) => {
+    const key = getCitationKey(citation)
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+}
+
+function groupCitationsByFile(citations: Citation[]) {
+  return citations.reduce<Array<{ fileName: string; citations: Citation[] }>>((groups, citation) => {
+    const existingGroup = groups.find((group) => group.fileName === citation.file_name)
+    if (existingGroup) {
+      existingGroup.citations.push(citation)
+      return groups
+    }
+
+    groups.push({ fileName: citation.file_name, citations: [citation] })
+    return groups
+  }, [])
+}
+
+export default function ChatMessage({
+  role,
+  content,
+  imageUrl,
+  citations,
+  isStreaming,
+  hasVisionSource,
+  metadata,
+}: Props) {
   const [copied, setCopied] = useState(false)
+  const [showAllSources, setShowAllSources] = useState(false)
 
   const handleCopy = () => {
     navigator.clipboard.writeText(content)
@@ -48,6 +99,37 @@ export default function ChatMessage({ role, content, imageUrl, citations, isStre
     )
   }
 
+  const uniqueCitations = getUniqueCitations(citations ?? [])
+  const visibleCitations = showAllSources
+    ? uniqueCitations
+    : uniqueCitations.slice(0, DEFAULT_VISIBLE_CITATIONS)
+  const citationGroups = groupCitationsByFile(visibleCitations)
+  const hasDocumentSources = uniqueCitations.length > 0
+  const metadataSources = new Set((metadata?.sources ?? []).map((source) => source.toLowerCase()))
+  const isVisionRag =
+    metadata?.mode === 'image_rag'
+    || metadata?.questionType === 'image_rag'
+    || metadata?.usedImage
+    || metadataSources.has('vision')
+    || hasVisionSource
+  const hasDocumentMetadata = metadataSources.has('documents')
+  const hasGraphMetadata = metadataSources.has('graph')
+  const hasSearchQuery = Boolean(metadata?.searchQuery)
+  const hasSourcesSearched = typeof metadata?.sourcesSearched === 'number'
+  const hasPassageCount = typeof metadata?.passageCount === 'number'
+  const hasGraphCount = typeof metadata?.graphCount === 'number'
+  const displayedCitationCount = metadata?.citationCount ?? uniqueCitations.length
+  const shouldShowSourceSummary = Boolean(
+    isVisionRag
+    || hasDocumentSources
+    || hasDocumentMetadata
+    || hasGraphMetadata
+    || hasSearchQuery
+    || hasSourcesSearched
+    || hasPassageCount
+    || hasGraphCount,
+  )
+
   return (
     <div className="flex justify-start animate-fade-in">
       <div className="flex max-w-full gap-3 lg:max-w-[90%]">
@@ -80,24 +162,115 @@ export default function ChatMessage({ role, content, imageUrl, citations, isStre
             )}
           </div>
 
-          {citations && citations.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 px-1">
-              {citations.map((citation, index) => (
-                <span
-                  key={`${citation.file_name}-${citation.chunk_id}-${index}`}
-                  className={cx(
-                    'inline-flex max-w-full items-center gap-1.5 rounded-full border border-accent-cyan/22 bg-accent-cyan/10 px-2.5 py-1 text-[11px] font-medium text-accent-cyan',
-                    'hover:border-accent-cyan/40 hover:bg-accent-cyan/14',
-                  )}
-                  title={citation.snippet || undefined}
-                >
-                  <FileText className="h-3 w-3 shrink-0" />
-                  <span className="max-w-48 truncate">{citation.file_name}</span>
-                  {citation.page_number != null && (
-                    <span className="text-accent-cyan/70">p.{citation.page_number}</span>
-                  )}
-                </span>
-              ))}
+          {shouldShowSourceSummary && (
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center gap-1.5 px-1">
+                {isVisionRag && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-accent-violet/20 bg-accent-violet/10 px-2.5 py-1 text-[11px] font-medium text-accent-violet">
+                    <Image className="h-3 w-3" />
+                    Vision RAG
+                  </span>
+                )}
+                {(hasDocumentSources || hasDocumentMetadata) && (
+                  <>
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-accent-cyan/20 bg-accent-cyan/10 px-2.5 py-1 text-[11px] font-medium text-accent-cyan">
+                      <FileText className="h-3 w-3" />
+                      Documents
+                    </span>
+                    {displayedCitationCount > 0 && (
+                      <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] font-medium text-text-secondary">
+                        {displayedCitationCount} source{displayedCitationCount === 1 ? '' : 's'}
+                      </span>
+                    )}
+                  </>
+                )}
+                {hasGraphMetadata && (
+                  <span className="inline-flex items-center rounded-full border border-accent-violet/20 bg-accent-violet/10 px-2.5 py-1 text-[11px] font-medium text-accent-violet">
+                    Graph
+                  </span>
+                )}
+                {hasSourcesSearched && (
+                  <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] font-medium text-text-secondary">
+                    Sources searched: {metadata?.sourcesSearched}
+                  </span>
+                )}
+                {hasPassageCount && (
+                  <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] font-medium text-text-secondary">
+                    Passages: {metadata?.passageCount}
+                  </span>
+                )}
+                {hasGraphCount && (
+                  <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] font-medium text-text-secondary">
+                    Graph relationships: {metadata?.graphCount}
+                  </span>
+                )}
+              </div>
+
+              {hasSearchQuery && (
+                <div className="rounded-xl border border-accent-violet/15 bg-accent-violet/[0.055] px-3 py-2">
+                  <p className="text-[11px] font-medium text-accent-violet">Search query</p>
+                  <p className="mt-0.5 break-words text-xs leading-5 text-text-secondary">
+                    {metadata?.searchQuery}
+                  </p>
+                </div>
+              )}
+
+              {isVisionRag && !hasDocumentSources && (
+                <div className="rounded-xl border border-white/10 bg-white/[0.035] px-3 py-2 text-xs leading-5 text-text-secondary">
+                  Generated from image understanding. No document citations were returned.
+                </div>
+              )}
+
+              {hasDocumentSources && (
+                <div className="overflow-hidden rounded-2xl border border-white/10 bg-surface-850/78 shadow-lg shadow-black/20">
+                  <div className="flex items-center justify-between gap-3 border-b border-white/10 px-3 py-2">
+                    <p className="text-xs font-semibold text-white">Sources</p>
+                    {uniqueCitations.length > DEFAULT_VISIBLE_CITATIONS && (
+                      <button
+                        type="button"
+                        onClick={() => setShowAllSources((current) => !current)}
+                        className="rounded-md px-2 py-1 text-xs font-medium text-accent-cyan transition-colors hover:bg-accent-cyan/10 hover:text-accent-cyan"
+                      >
+                        {showAllSources ? 'Hide sources' : 'Show all sources'}
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="divide-y divide-white/10">
+                    {citationGroups.map((group) => (
+                      <div key={group.fileName} className="bg-white/[0.015]">
+                        {group.citations.map((citation) => (
+                          <div
+                            key={getCitationKey(citation)}
+                            className="px-3 py-2.5 transition-colors hover:bg-white/[0.035]"
+                          >
+                            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                              <span className="min-w-0 max-w-full truncate text-xs font-semibold text-white">
+                                {citation.file_name}
+                              </span>
+                              {citation.page_number != null && (
+                                <span className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[10px] font-medium text-text-secondary">
+                                  p.{citation.page_number}
+                                </span>
+                              )}
+                            </div>
+                            {citation.section_title && (
+                              <p className="mt-1 truncate text-[11px] font-medium text-accent-violet">
+                                {citation.section_title}
+                              </p>
+                            )}
+                            {citation.snippet && (
+                              <p className="mt-1 max-h-10 overflow-hidden text-xs leading-5 text-text-muted">
+                                {citation.snippet}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
