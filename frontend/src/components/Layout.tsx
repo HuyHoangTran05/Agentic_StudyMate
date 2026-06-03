@@ -4,6 +4,7 @@ import {
   BrainCircuit,
   FlaskConical,
   GraduationCap,
+  Activity,
   LayoutDashboard,
   Library,
   Menu,
@@ -20,6 +21,7 @@ const navItems = [
   { to: '/chat', icon: MessageSquare, label: 'Chat' },
   { to: '/library', icon: Library, label: 'Library' },
   { to: '/study-tools', icon: FlaskConical, label: 'Study Tools' },
+  { to: '/system', icon: Activity, label: 'System Status' },
 ]
 
 export default function Layout({ children }: { children: ReactNode }) {

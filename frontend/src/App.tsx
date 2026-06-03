@@ -5,6 +5,7 @@ import Upload from './pages/Upload'
 import Chat from './pages/Chat'
 import Library from './pages/Library'
 import StudyTools from './pages/StudyTools'
+import SystemStatus from './pages/SystemStatus'
 import { StudyToolsProvider } from './stores/studyToolsStore'
 import { UploadProvider } from './stores/uploadStore'
 
@@ -20,6 +21,7 @@ export default function App() {
             <Route path="/chat/:sessionId" element={<Chat />} />
             <Route path="/library" element={<Library />} />
             <Route path="/study-tools" element={<StudyTools />} />
+            <Route path="/system" element={<SystemStatus />} />
           </Routes>
         </Layout>
       </UploadProvider>

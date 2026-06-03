@@ -101,6 +101,49 @@ export interface ChatDoneData {
   metadata?: RagMetadata | null;
 }
 
+export type SystemServiceStatus = 'ok' | 'warning' | 'error' | 'not_configured' | 'configured';
+
+export interface SystemStatus {
+  api: {
+    status: SystemServiceStatus;
+    error?: string;
+  };
+  database: {
+    status: SystemServiceStatus;
+    documents: number;
+    chunks: number;
+    ready_documents: number;
+    processing_documents: number;
+    failed_documents: number;
+    error?: string;
+  };
+  qdrant: {
+    status: SystemServiceStatus;
+    host: string;
+    port: number;
+    collection: string;
+    points: number | null;
+    error?: string;
+  };
+  neo4j: {
+    status: SystemServiceStatus;
+    uri: string;
+    triplets: number | null;
+    error?: string;
+  };
+  llm: {
+    status: SystemServiceStatus;
+    provider: string | null;
+    text_model: string;
+    vision_model: string;
+    error?: string;
+  };
+  models: {
+    embedding_model: string;
+    reranker_model: string;
+  };
+}
+
 /* ─── Document APIs ───────────────────────────────────────────────────────── */
 
 export async function uploadDocument(file: File): Promise<{ document_id: string; file_name: string; status: string; message: string }> {
@@ -128,6 +171,11 @@ export async function getDocuments(): Promise<{ documents: Document[]; total: nu
 
 export async function deleteDocument(id: string): Promise<void> {
   await api.delete(`/documents/${id}`);
+}
+
+export async function getSystemStatus(): Promise<SystemStatus> {
+  const { data } = await api.get('/system/status');
+  return data;
 }
 
 /* ─── Chat APIs ───────────────────────────────────────────────────────────── */
