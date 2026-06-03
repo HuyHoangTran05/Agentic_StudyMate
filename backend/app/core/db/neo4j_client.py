@@ -69,6 +69,13 @@ class Neo4jClient:
         driver = self._get_driver()
         await driver.verify_connectivity()
 
+    async def count_triplets(self) -> int:
+        """Count stored graph relationships."""
+        driver = self._get_driver()
+        cypher = "MATCH ()-[relationship]->() RETURN count(relationship) AS triplets"
+        async with driver.session() as session:
+            return await session.execute_read(self._run_count, cypher)
+
     async def ingest_triplets(
         self,
         triplets: list[dict[str, str]],
@@ -172,6 +179,12 @@ class Neo4jClient:
         result = await tx.run(query, parameters)
         records = await result.data()
         return [dict(record) for record in records]
+
+    @staticmethod
+    async def _run_count(tx, query: str) -> int:
+        result = await tx.run(query)
+        record = await result.single()
+        return int(record["triplets"]) if record else 0
 
     async def close(self) -> None:
         """Close the underlying Neo4j driver."""

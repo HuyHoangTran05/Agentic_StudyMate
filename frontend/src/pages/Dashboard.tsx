@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   ArrowRight,
+  Activity,
   Bot,
   BrainCircuit,
   Clock,
@@ -78,6 +79,7 @@ export default function Dashboard() {
     { label: 'Upload Document', icon: Upload, to: '/upload', desc: 'Index PDF, DOCX, TXT, PNG, or JPG.' },
     { label: 'Start Chat', icon: MessageSquare, to: '/chat', desc: 'Ask cited questions across your sources.' },
     { label: 'Study Tools', icon: FlaskConical, to: '/study-tools', desc: 'Generate quiz, flashcard, or summary sets.' },
+    { label: 'System Status', icon: Activity, to: '/system', desc: 'Check API, databases, and model configuration.' },
   ]
 
   return (
