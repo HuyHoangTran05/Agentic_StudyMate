@@ -230,6 +230,51 @@ def print_retrieved_chunks(
         print(f"       {preview_text(result.content)}")
 
 
+def source_distribution(retrieved: list[RetrievalResult]) -> dict[str, int]:
+    distribution = {
+        "bm25": 0,
+        "vector": 0,
+        "graph": 0,
+        "unknown": 0,
+    }
+
+    for result in retrieved:
+        sources = {source.lower() for source in (result.sources or [])}
+        recognized = False
+
+        if "bm25" in sources:
+            distribution["bm25"] += 1
+            recognized = True
+        if "vector" in sources:
+            distribution["vector"] += 1
+            recognized = True
+        if "graph" in sources or "neo4j" in sources:
+            distribution["graph"] += 1
+            recognized = True
+        if not recognized:
+            distribution["unknown"] += 1
+
+    return distribution
+
+
+def vector_absence_warning(retrieved: list[RetrievalResult]) -> str | None:
+    if not retrieved:
+        return None
+
+    all_bm25_only = all(
+        {source.lower() for source in (result.sources or [])} == {"bm25"}
+        for result in retrieved
+    )
+    vector_score_missing = all(result.vector_score is None for result in retrieved)
+
+    if all_bm25_only or vector_score_missing:
+        return (
+            "Vector retrieval did not appear in the top-k results. "
+            "Check Qdrant indexing or hybrid fusion settings."
+        )
+    return None
+
+
 def score_retrieval(
     item: EvalItem,
     retrieved: list[RetrievalResult],
@@ -239,10 +284,29 @@ def score_retrieval(
     expected_pages = set(item.expected_pages or [])
     retrieved_files = [file_names.get(result.document_id, "unknown") for result in retrieved]
     retrieved_pages = [result.page_number for result in retrieved]
+    top1_file = retrieved_files[0] if retrieved_files else None
+    top1_page = retrieved_pages[0] if retrieved_pages else None
 
     file_hit = None
+    hit_at_1 = None
+    hit_at_3 = None
+    hit_at_5 = None
+    first_relevant_rank = None
+    mrr_contribution = None
+    top1_is_expected_file = None
     if expected_file:
-        file_hit = any(normalize(file_name) == expected_file for file_name in retrieved_files)
+        relevant_ranks = [
+            rank
+            for rank, file_name in enumerate(retrieved_files, 1)
+            if normalize(file_name) == expected_file
+        ]
+        first_relevant_rank = relevant_ranks[0] if relevant_ranks else None
+        file_hit = first_relevant_rank is not None
+        hit_at_1 = bool(first_relevant_rank and first_relevant_rank <= 1)
+        hit_at_3 = bool(first_relevant_rank and first_relevant_rank <= 3)
+        hit_at_5 = bool(first_relevant_rank and first_relevant_rank <= 5)
+        mrr_contribution = 1 / first_relevant_rank if first_relevant_rank else 0
+        top1_is_expected_file = normalize(top1_file) == expected_file if top1_file else False
 
     page_hit = None
     if expected_pages:
@@ -252,12 +316,21 @@ def score_retrieval(
     overlap = keyword_overlap(item.expected_keywords, combined_context)
 
     return {
+        "hit_at_1": hit_at_1,
+        "hit_at_3": hit_at_3,
+        "hit_at_5": hit_at_5,
         "hit_at_k": file_hit,
+        "first_relevant_rank": first_relevant_rank,
+        "mrr_contribution": mrr_contribution,
+        "top1_file": top1_file,
+        "top1_page": top1_page,
+        "top1_is_expected_file": top1_is_expected_file,
         "page_hit_at_k": page_hit,
         "keyword_overlap": overlap,
         "retrieved_count": len(retrieved),
         "top_files": retrieved_files,
         "top_pages": retrieved_pages,
+        "source_distribution": source_distribution(retrieved),
     }
 
 
@@ -293,15 +366,23 @@ async def evaluate_answer(
 
 
 def summarize(results: list[dict[str, Any]]) -> dict[str, Any]:
-    scored_file_hits = [
-        result["retrieval"]["hit_at_k"]
-        for result in results
-        if result["retrieval"]["hit_at_k"] is not None
-    ]
+    def average_bool(metric: str) -> float | None:
+        values = [
+            result["retrieval"][metric]
+            for result in results
+            if result["retrieval"][metric] is not None
+        ]
+        return sum(1 for value in values if value) / len(values) if values else None
+
     scored_page_hits = [
         result["retrieval"]["page_hit_at_k"]
         for result in results
         if result["retrieval"]["page_hit_at_k"] is not None
+    ]
+    mrr_scores = [
+        result["retrieval"]["mrr_contribution"]
+        for result in results
+        if result["retrieval"]["mrr_contribution"] is not None
     ]
     keyword_scores = [
         result["retrieval"]["keyword_overlap"]["score"]
@@ -309,13 +390,23 @@ def summarize(results: list[dict[str, Any]]) -> dict[str, Any]:
         if result["retrieval"]["keyword_overlap"]["score"] is not None
     ]
     retrieved_counts = [result["retrieval"]["retrieved_count"] for result in results]
+    aggregate_sources = {
+        "bm25": 0,
+        "vector": 0,
+        "graph": 0,
+        "unknown": 0,
+    }
+    for result in results:
+        for source, count in result["retrieval"]["source_distribution"].items():
+            aggregate_sources[source] = aggregate_sources.get(source, 0) + count
 
     return {
         "items": len(results),
-        "hit_at_k": (
-            sum(1 for value in scored_file_hits if value) / len(scored_file_hits)
-            if scored_file_hits else None
-        ),
+        "hit_at_1": average_bool("hit_at_1"),
+        "hit_at_3": average_bool("hit_at_3"),
+        "hit_at_5": average_bool("hit_at_5"),
+        "hit_at_k": average_bool("hit_at_k"),
+        "mrr": sum(mrr_scores) / len(mrr_scores) if mrr_scores else None,
         "page_hit_at_k": (
             sum(1 for value in scored_page_hits if value) / len(scored_page_hits)
             if scored_page_hits else None
@@ -326,6 +417,7 @@ def summarize(results: list[dict[str, Any]]) -> dict[str, Any]:
         "average_chunks_returned": (
             sum(retrieved_counts) / len(retrieved_counts) if retrieved_counts else 0
         ),
+        "source_distribution": aggregate_sources,
     }
 
 
@@ -333,7 +425,15 @@ def print_item_result(item: EvalItem, result: dict[str, Any]) -> None:
     retrieval = result["retrieval"]
     print(f"\n[{item.id}] {item.question}")
     print(f"  retrieved: {retrieval['retrieved_count']} chunks")
+    print(f"  hit@1: {retrieval['hit_at_1']}")
+    print(f"  hit@3: {retrieval['hit_at_3']}")
+    print(f"  hit@5: {retrieval['hit_at_5']}")
     print(f"  hit@k: {retrieval['hit_at_k']}")
+    print(f"  first_relevant_rank: {retrieval['first_relevant_rank']}")
+    print(f"  mrr_contribution: {retrieval['mrr_contribution']}")
+    print(f"  top1: file={retrieval['top1_file']} page={retrieval['top1_page']}")
+    print(f"  top1_is_expected_file: {retrieval['top1_is_expected_file']}")
+    print(f"  source_distribution: {retrieval['source_distribution']}")
     print(f"  page_hit@k: {retrieval['page_hit_at_k']}")
     overlap = retrieval["keyword_overlap"]
     print(f"  keyword_overlap: {overlap['score']} matched={overlap['matched']}")
@@ -392,6 +492,10 @@ async def run_evaluation(args: argparse.Namespace) -> dict[str, Any]:
             print(f"Retrieval failed for {item.id}: {error}")
             retrieved = []
             warnings.append(f"Retrieval failed: {error}")
+
+        vector_warning = vector_absence_warning(retrieved)
+        if vector_warning:
+            warnings.append(vector_warning)
 
         item_result: dict[str, Any] = {
             "item": asdict(item),
