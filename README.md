@@ -306,13 +306,34 @@ Evaluation files live in:
 
 - `backend/evaluation/sample_eval_set.json`
 
-Each item contains a question plus optional expected keywords, file name, page numbers, and notes. Update the sample placeholders to match files currently uploaded in your local library before treating the scores as meaningful.
+Each item contains a question plus optional expected keywords, file name, page numbers, and notes. The sample file is intentionally generic. For meaningful `hit@k` scores, create a local eval set from actual uploaded documents.
 
-Run retrieval-only evaluation from the backend directory:
+List uploaded documents from SQLite:
 
 ```powershell
 cd backend
-python evaluation/evaluate_retrieval.py --eval-file evaluation/sample_eval_set.json --top-k 10
+python evaluation/evaluate_retrieval.py --list-documents
+```
+
+Create a starter eval set using exact local file names:
+
+```powershell
+cd backend
+python evaluation/evaluate_retrieval.py --create-template evaluation/my_eval_set.json
+```
+
+Run retrieval-only evaluation:
+
+```powershell
+cd backend
+python evaluation/evaluate_retrieval.py --eval-file evaluation/my_eval_set.json --top-k 10
+```
+
+Show top retrieved chunks for each question:
+
+```powershell
+cd backend
+python evaluation/evaluate_retrieval.py --eval-file evaluation/my_eval_set.json --top-k 10 --show-results
 ```
 
 The retrieval-only mode:
@@ -321,12 +342,13 @@ The retrieval-only mode:
 - calls the existing hybrid retriever
 - reports `hit@k`, `page_hit@k`, keyword overlap, and average chunks returned
 - writes JSON reports to `backend/evaluation/reports/`
+- can print top-k file names, pages, chunk IDs, scores, retrieval sources, and previews with `--show-results`
 
 Optional answer evaluation may use configured LLM quota:
 
 ```powershell
 cd backend
-python evaluation/evaluate_retrieval.py --eval-file evaluation/sample_eval_set.json --top-k 10 --with-answer
+python evaluation/evaluate_retrieval.py --eval-file evaluation/my_eval_set.json --top-k 10 --with-answer
 ```
 
 The optional answer mode also reports answer length, citation count, expected keywords in the answer, and whether the expected file appears in citations.

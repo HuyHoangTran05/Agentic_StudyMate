@@ -41,6 +41,14 @@ class EvalItem:
     notes: str | None = None
 
 
+@dataclass
+class LocalDocument:
+    document_id: str
+    file_name: str
+    status: str
+    total_chunks: int
+
+
 def load_eval_set(path: Path) -> list[EvalItem]:
     with path.open("r", encoding="utf-8") as handle:
         raw_items = json.load(handle)
@@ -73,6 +81,42 @@ async def load_document_names() -> dict[str, str]:
         return {document_id: file_name for document_id, file_name in result.all()}
 
 
+async def load_local_documents() -> list[LocalDocument]:
+    async with async_session_factory() as db:
+        result = await db.execute(
+            select(Document.id, Document.file_name, Document.status, Document.total_chunks)
+            .order_by(Document.upload_time.desc())
+        )
+        return [
+            LocalDocument(
+                document_id=document_id,
+                file_name=file_name,
+                status=status,
+                total_chunks=int(total_chunks or 0),
+            )
+            for document_id, file_name, status, total_chunks in result.all()
+        ]
+
+
+async def print_local_documents() -> None:
+    try:
+        documents = await load_local_documents()
+    except Exception as error:
+        print(f"Unable to read local documents from SQLite: {error}")
+        return
+
+    if not documents:
+        print("No documents found. Upload documents first.")
+        return
+
+    print("Local documents")
+    for document in documents:
+        print(f"- file_name: {document.file_name}")
+        print(f"  status: {document.status}")
+        print(f"  total_chunks: {document.total_chunks}")
+        print(f"  document_id: {document.document_id}")
+
+
 def normalize(value: str | None) -> str:
     return (value or "").casefold().strip()
 
@@ -99,6 +143,45 @@ def keyword_overlap(expected_keywords: list[str], text: str) -> dict[str, Any]:
     }
 
 
+async def create_template(path: Path, force: bool = False) -> None:
+    if not path.is_absolute():
+        path = BACKEND_ROOT / path
+
+    if path.exists() and not force:
+        print(f"Template already exists: {path}")
+        print("Pass --force to overwrite it.")
+        return
+
+    try:
+        documents = await load_local_documents()
+    except Exception as error:
+        print(f"Unable to read local documents from SQLite: {error}")
+        return
+
+    if not documents:
+        print("No documents found. Upload documents first.")
+        return
+
+    template_items = [
+        {
+            "id": f"eval_{index:03d}",
+            "question": "Write your question here about this document.",
+            "expected_keywords": [],
+            "expected_file": document.file_name,
+            "expected_pages": [],
+            "notes": "Replace this with a meaningful expected source note.",
+        }
+        for index, document in enumerate(documents, 1)
+    ]
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8") as handle:
+        json.dump(template_items, handle, indent=2, ensure_ascii=False)
+
+    print(f"Created eval template: {path}")
+    print(f"Included {len(template_items)} document(s). Edit questions, keywords, and expected pages before scoring.")
+
+
 def retrieval_to_dict(result: RetrievalResult, file_name: str) -> dict[str, Any]:
     return {
         "chunk_id": result.chunk_id,
@@ -113,6 +196,38 @@ def retrieval_to_dict(result: RetrievalResult, file_name: str) -> dict[str, Any]
         "bm25_score": result.bm25_score,
         "snippet": " ".join(result.content.split())[:300],
     }
+
+
+def best_score(result: RetrievalResult) -> float:
+    scores = [
+        score
+        for score in (result.rrf_score, result.vector_score, result.bm25_score)
+        if score is not None
+    ]
+    return max(scores) if scores else 0.0
+
+
+def preview_text(text: str, max_length: int = 180) -> str:
+    preview = " ".join(text.split())
+    return preview if len(preview) <= max_length else f"{preview[:max_length].rstrip()}..."
+
+
+def print_retrieved_chunks(
+    retrieved: list[RetrievalResult],
+    file_names: dict[str, str],
+) -> None:
+    if not retrieved:
+        print("  top results: none")
+        return
+
+    print("  top results:")
+    for rank, result in enumerate(retrieved, 1):
+        file_name = file_names.get(result.document_id, "unknown")
+        page = result.page_number if result.page_number is not None else "-"
+        sources = ", ".join(result.sources or []) or "-"
+        print(f"    {rank}. {file_name} | page={page} | chunk_id={result.chunk_id}")
+        print(f"       score={best_score(result):.6f} | sources={sources}")
+        print(f"       {preview_text(result.content)}")
 
 
 def score_retrieval(
@@ -231,6 +346,16 @@ def print_item_result(item: EvalItem, result: dict[str, Any]) -> None:
         print(f"  citation_count: {answer.get('citation_count')}")
 
 
+def missing_expected_file_warning(expected_file: str, available_file_names: list[str]) -> str:
+    available = ", ".join(available_file_names) if available_file_names else "none"
+    return (
+        f"Expected file not found.\n"
+        f"    expected_file: {expected_file}\n"
+        f"    available local file names: {available}\n"
+        "    suggestion: Run --list-documents and update expected_file to match the exact uploaded file name."
+    )
+
+
 async def run_evaluation(args: argparse.Namespace) -> dict[str, Any]:
     eval_file = Path(args.eval_file)
     if not eval_file.is_absolute():
@@ -252,12 +377,13 @@ async def run_evaluation(args: argparse.Namespace) -> dict[str, Any]:
 
     retriever = get_hybrid_retriever()
     results: list[dict[str, Any]] = []
+    available_file_names = sorted(file_names.values())
 
     for item in items:
         warnings: list[str] = []
         if item.expected_file and item.expected_file not in file_names.values():
             warnings.append(
-                f"Expected file '{item.expected_file}' is not present in the local document database."
+                missing_expected_file_warning(item.expected_file, available_file_names)
             )
 
         try:
@@ -285,6 +411,8 @@ async def run_evaluation(args: argparse.Namespace) -> dict[str, Any]:
                 print(f"Answer evaluation failed for {item.id}: {error}")
 
         print_item_result(item, item_result)
+        if args.show_results:
+            print_retrieved_chunks(retrieved, file_names)
         results.append(item_result)
 
     report = {
@@ -311,9 +439,28 @@ async def run_evaluation(args: argparse.Namespace) -> dict[str, Any]:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Evaluate Agentic StudyMate retrieval quality.")
     parser.add_argument(
+        "--list-documents",
+        action="store_true",
+        help="Print local SQLite documents and exit.",
+    )
+    parser.add_argument(
+        "--create-template",
+        help="Create a starter eval JSON using actual local document file names.",
+    )
+    parser.add_argument(
         "--eval-file",
         default="evaluation/sample_eval_set.json",
         help="Path to evaluation JSON file, relative to backend/ unless absolute.",
+    )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Overwrite an existing file when used with --create-template.",
+    )
+    parser.add_argument(
+        "--show-results",
+        action="store_true",
+        help="Print top-k retrieved chunks for each eval item.",
     )
     parser.add_argument("--top-k", type=int, default=10, help="Number of chunks to retrieve per question.")
     parser.add_argument(
@@ -327,6 +474,12 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
     try:
+        if args.list_documents:
+            asyncio.run(print_local_documents())
+            return
+        if args.create_template:
+            asyncio.run(create_template(Path(args.create_template), force=args.force))
+            return
         asyncio.run(run_evaluation(args))
     except KeyboardInterrupt:
         print("Evaluation interrupted.")
