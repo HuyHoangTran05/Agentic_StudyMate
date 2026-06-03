@@ -1,22 +1,33 @@
 """Graph Explorer routes for inspecting Neo4j triplets."""
 
-from fastapi import APIRouter, Depends, Query
+import logging
+
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_settings
 from app.core.db.neo4j_client import get_neo4j_client
-from app.db.session import get_db
+from app.core.ingest.chunker import TextChunk
+from app.core.ingest.graph_extractor import ingest_triplets_for_chunks
+from app.db.session import async_session_factory, get_db
 from app.models.db_models import Chunk, Document
 
 router = APIRouter(prefix="/api/graph", tags=["graph"])
+logger = logging.getLogger(__name__)
 
 
 def _safe_error_message(error: Exception) -> str:
     """Return a compact error message without exposing configured secrets."""
     message = str(error) or error.__class__.__name__
     settings = get_settings()
-    for secret in (settings.NEO4J_PASSWORD, settings.GROQ_API_KEY, settings.OPENAI_API_KEY):
+    for secret in (
+        settings.NEO4J_PASSWORD,
+        settings.GROQ_API_KEY,
+        settings.GEMINI_API_KEY,
+        settings.OPENAI_API_KEY,
+        settings.ANTHROPIC_API_KEY,
+    ):
         if secret:
             message = message.replace(secret, "***")
     return message[:300]
@@ -27,6 +38,121 @@ def _compact_snippet(content: str | None, max_length: int = 260) -> str | None:
         return None
     snippet = " ".join(content.split())
     return snippet if len(snippet) <= max_length else f"{snippet[:max_length].rstrip()}..."
+
+
+def _chunk_to_text_chunk(chunk: Chunk) -> TextChunk:
+    return TextChunk(
+        content=chunk.content,
+        chunk_index=chunk.chunk_index,
+        page_number=chunk.page_number,
+        section_title=chunk.section_title,
+        metadata={
+            "document_id": chunk.document_id,
+            "image_url": chunk.image_url,
+        },
+    )
+
+
+async def _rebuild_document_graph_job(document_id: str) -> None:
+    """Rebuild Neo4j relationships for a document from existing SQLite chunks."""
+    try:
+        async with async_session_factory() as db:
+            document = await db.get(Document, document_id)
+            if not document:
+                logger.warning("Graph rebuild skipped; document %s no longer exists", document_id)
+                return
+
+            result = await db.execute(
+                select(Chunk)
+                .where(Chunk.document_id == document_id)
+                .order_by(Chunk.chunk_index.asc())
+            )
+            chunks = list(result.scalars().all())
+            if not chunks:
+                logger.warning("Graph rebuild skipped; document %s has no chunks", document_id)
+                return
+
+            chunk_ids = [chunk.id for chunk in chunks]
+            neo4j_client = get_neo4j_client()
+            deleted = await neo4j_client.delete_triplets_for_chunk_ids(chunk_ids)
+            logger.info(
+                "Graph rebuild removed %s existing relationships for document %s",
+                deleted,
+                document_id,
+            )
+
+            chunk_sources = [(_chunk_to_text_chunk(chunk), chunk.id) for chunk in chunks]
+            await ingest_triplets_for_chunks(chunk_sources)
+            logger.info(
+                "Graph rebuild finished for document %s (%s chunks)",
+                document_id,
+                len(chunks),
+            )
+    except Exception as error:
+        logger.error(
+            "Graph rebuild failed for document %s: %s",
+            document_id,
+            _safe_error_message(error),
+        )
+
+
+@router.post("/documents/{document_id}/rebuild")
+async def rebuild_document_graph(
+    document_id: str,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+):
+    """Queue a Knowledge Graph rebuild for an existing document's chunks."""
+    document = await db.get(Document, document_id)
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    result = await db.execute(
+        select(Chunk)
+        .where(Chunk.document_id == document_id)
+        .order_by(Chunk.chunk_index.asc())
+    )
+    chunks = list(result.scalars().all())
+    if not chunks:
+        return {
+            "status": "warning",
+            "document_id": document.id,
+            "file_name": document.file_name,
+            "chunks_processed": 0,
+            "message": "This document has no indexed chunks to rebuild from.",
+        }
+
+    settings = get_settings()
+    if not settings.get_available_llm():
+        return {
+            "status": "warning",
+            "document_id": document.id,
+            "file_name": document.file_name,
+            "chunks_processed": len(chunks),
+            "message": "No LLM provider is configured. Configure an LLM before rebuilding the graph.",
+        }
+
+    try:
+        await get_neo4j_client().verify_connection()
+    except Exception as error:
+        return {
+            "status": "error",
+            "document_id": document.id,
+            "file_name": document.file_name,
+            "chunks_processed": len(chunks),
+            "message": "Neo4j is unavailable. Start Neo4j before rebuilding the graph.",
+            "error": _safe_error_message(error),
+        }
+
+    background_tasks.add_task(_rebuild_document_graph_job, document_id)
+
+    return {
+        "status": "queued",
+        "document_id": document.id,
+        "file_name": document.file_name,
+        "chunks_processed": len(chunks),
+        "message": "Knowledge graph rebuild started. Refresh in a moment.",
+    }
 
 
 @router.get("/triplets")

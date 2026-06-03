@@ -15,7 +15,7 @@ import {
 } from 'lucide-react'
 import { Badge, Button, Card, EmptyState, LoadingState, PageHeader, PageShell } from '../components/ui'
 import SelectDropdown from '../components/ui/SelectDropdown'
-import { getDocuments, getGraphTriplets } from '../lib/api'
+import { getDocuments, getGraphTriplets, rebuildDocumentGraph } from '../lib/api'
 import type { Document, GraphTriplet } from '../lib/api'
 
 const limitOptions = [
@@ -33,6 +33,12 @@ function displayValue(value: string | null | undefined, fallback = '-') {
   return value && value.trim() ? value : fallback
 }
 
+type RebuildNotice = {
+  tone: 'emerald' | 'amber' | 'rose'
+  message: string
+  detail?: string
+} | null
+
 export default function GraphExplorer() {
   const [documents, setDocuments] = useState<Document[]>([])
   const [triplets, setTriplets] = useState<GraphTriplet[]>([])
@@ -42,8 +48,10 @@ export default function GraphExplorer() {
   const [limit, setLimit] = useState(100)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [rebuilding, setRebuilding] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [graphMessage, setGraphMessage] = useState<string | null>(null)
+  const [rebuildNotice, setRebuildNotice] = useState<RebuildNotice>(null)
 
   const documentOptions = useMemo(
     () => [
@@ -122,6 +130,36 @@ export default function GraphExplorer() {
     setQuery(searchInput.trim())
   }
 
+  const handleRebuildGraph = useCallback(async () => {
+    if (!selectedDocument || rebuilding) return
+
+    setRebuilding(true)
+    setRebuildNotice(null)
+    try {
+      const data = await rebuildDocumentGraph(selectedDocument.id)
+      const tone = data.status === 'error' ? 'rose' : data.status === 'warning' ? 'amber' : 'emerald'
+      setRebuildNotice({
+        tone,
+        message: data.message,
+        detail: `${data.chunks_processed.toLocaleString()} chunk${data.chunks_processed === 1 ? '' : 's'} checked for ${data.file_name}.`,
+      })
+
+      if (data.status === 'ok' || data.status === 'queued') {
+        window.setTimeout(() => {
+          loadTriplets().catch(console.error)
+        }, 3500)
+      }
+    } catch (err) {
+      const responseMessage = (err as { response?: { data?: { detail?: string; message?: string } } }).response?.data
+      setRebuildNotice({
+        tone: 'rose',
+        message: responseMessage?.message || responseMessage?.detail || 'Unable to start knowledge graph rebuild.',
+      })
+    } finally {
+      setRebuilding(false)
+    }
+  }, [loadTriplets, rebuilding, selectedDocument])
+
   return (
     <PageShell wide className="space-y-8">
       <PageHeader
@@ -173,6 +211,27 @@ export default function GraphExplorer() {
             Search
           </Button>
         </form>
+
+        {selectedDocument && (
+          <div className="mt-4 flex flex-col gap-3 rounded-xl border border-white/10 bg-white/[0.025] p-3 md:flex-row md:items-center md:justify-between">
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-white">{selectedDocument.file_name}</p>
+              <p className="mt-1 text-xs leading-5 text-text-muted">
+                Use this if the document was uploaded before Neo4j was configured or if graph extraction failed.
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={handleRebuildGraph}
+              disabled={rebuilding}
+              className="shrink-0"
+            >
+              {rebuilding ? <Loader2 className="h-4 w-4 animate-spin" /> : <GitBranch className="h-4 w-4" />}
+              Rebuild Knowledge Graph
+            </Button>
+          </div>
+        )}
       </Card>
 
       <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -194,6 +253,25 @@ export default function GraphExplorer() {
           <div className="flex gap-3">
             <Info className="mt-0.5 h-4 w-4 shrink-0 text-accent-amber" />
             <p className="text-sm leading-6 text-text-secondary">{graphMessage}</p>
+          </div>
+        </Card>
+      )}
+
+      {rebuildNotice && (
+        <Card className="p-4">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex gap-3">
+              <Info className="mt-0.5 h-4 w-4 shrink-0 text-accent-cyan" />
+              <div>
+                <p className="text-sm font-medium text-white">{rebuildNotice.message}</p>
+                {rebuildNotice.detail && (
+                  <p className="mt-1 text-xs text-text-muted">{rebuildNotice.detail}</p>
+                )}
+              </div>
+            </div>
+            <Badge tone={rebuildNotice.tone}>
+              {rebuildNotice.tone === 'emerald' ? 'Queued' : rebuildNotice.tone === 'amber' ? 'Warning' : 'Error'}
+            </Badge>
           </div>
         </Card>
       )}
@@ -239,10 +317,16 @@ export default function GraphExplorer() {
                 </ul>
               </div>
             </div>
-            <Button variant="ghost" onClick={() => loadTriplets()} disabled={refreshing}>
-              {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-              Refresh
-            </Button>
+            <div className="flex flex-col gap-2 sm:flex-row lg:flex-col">
+              <Button variant="secondary" onClick={handleRebuildGraph} disabled={rebuilding}>
+                {rebuilding ? <Loader2 className="h-4 w-4 animate-spin" /> : <GitBranch className="h-4 w-4" />}
+                Rebuild Knowledge Graph
+              </Button>
+              <Button variant="ghost" onClick={() => loadTriplets()} disabled={refreshing}>
+                {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                Refresh
+              </Button>
+            </div>
           </div>
         </Card>
       ) : triplets.length === 0 ? (

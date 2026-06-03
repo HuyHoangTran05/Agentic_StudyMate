@@ -166,6 +166,15 @@ export interface GraphTripletResponse {
   selected_document_has_triplets?: boolean | null;
 }
 
+export interface GraphRebuildResponse {
+  status: 'ok' | 'queued' | 'warning' | 'error';
+  document_id: string;
+  file_name: string;
+  chunks_processed: number;
+  message: string;
+  error?: string | null;
+}
+
 /* ─── Document APIs ───────────────────────────────────────────────────────── */
 
 export async function uploadDocument(file: File): Promise<{ document_id: string; file_name: string; status: string; message: string }> {
@@ -206,6 +215,11 @@ export async function getGraphTriplets(params?: {
   limit?: number;
 }): Promise<GraphTripletResponse> {
   const { data } = await api.get('/graph/triplets', { params });
+  return data;
+}
+
+export async function rebuildDocumentGraph(documentId: string): Promise<GraphRebuildResponse> {
+  const { data } = await api.post(`/graph/documents/${documentId}/rebuild`);
   return data;
 }
 
