@@ -1,8 +1,9 @@
+import { useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { Bot, User, Copy, Check, FileText } from 'lucide-react'
-import { useState } from 'react'
+import { Bot, Check, Copy, FileText, User } from 'lucide-react'
 import type { Citation } from '../lib/api'
+import { cx } from '../lib/cx'
 
 interface Props {
   role: 'user' | 'assistant'
@@ -24,19 +25,23 @@ export default function ChatMessage({ role, content, imageUrl, citations, isStre
   if (role === 'user') {
     return (
       <div className="flex justify-end animate-fade-in">
-        <div className="flex items-start gap-3 max-w-[80%]">
-          <div className="rounded-2xl rounded-br-md px-4 py-3 bg-gradient-to-br from-violet-600/80 to-violet-700/80 backdrop-blur border border-violet-500/20">
-            {imageUrl && (
+        <div className="flex max-w-[88%] flex-col items-end gap-2 sm:max-w-[78%]">
+          {imageUrl && (
+            <div className="overflow-hidden rounded-xl border border-white/10 bg-surface-750">
               <img
                 src={imageUrl}
                 alt="Uploaded attachment"
-                className="mb-3 max-w-full sm:max-w-xs max-h-72 rounded-xl object-contain border border-white/15"
+                className="max-h-72 max-w-full object-contain sm:max-w-sm"
               />
-            )}
-            <p className="text-sm text-white leading-relaxed">{content}</p>
-          </div>
-          <div className="w-8 h-8 rounded-xl bg-violet-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-            <User className="w-4 h-4 text-violet-400" />
+            </div>
+          )}
+          <div className="flex items-start gap-3">
+            <div className="rounded-2xl rounded-tr-md border border-white/10 bg-surface-600 px-4 py-3 shadow-lg shadow-black/20">
+              <p className="whitespace-pre-wrap text-sm leading-6 text-white">{content}</p>
+            </div>
+            <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent-violet/12 text-accent-violet ring-1 ring-accent-violet/18">
+              <User className="h-4 w-4" />
+            </div>
           </div>
         </div>
       </div>
@@ -45,53 +50,52 @@ export default function ChatMessage({ role, content, imageUrl, citations, isStre
 
   return (
     <div className="flex justify-start animate-fade-in">
-      <div className="flex items-start gap-3 max-w-[85%]">
-        <div className="w-8 h-8 rounded-xl gradient-bg-subtle flex items-center justify-center flex-shrink-0 mt-0.5">
-          <Bot className="w-4 h-4 text-cyan-400" />
+      <div className="flex max-w-full gap-3 lg:max-w-[90%]">
+        <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-accent-violet/25 bg-surface-650 text-accent-violet shadow-sm shadow-accent-violet/10">
+          <Bot className="h-4 w-4" />
         </div>
-        <div className="space-y-2 min-w-0">
-          {/* Message content */}
-          <div className="glass rounded-2xl rounded-bl-md px-4 py-3 relative group">
+        <div className="min-w-0 flex-1 space-y-3">
+          <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-surface-800/72 p-4 shadow-lg shadow-black/20 backdrop-blur-md">
+            <div className="absolute left-0 top-0 h-[2px] w-full bg-gradient-to-r from-accent-violet via-accent-cyan to-transparent opacity-60" />
             <div className="markdown-content text-sm">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
             </div>
 
             {isStreaming && (
-              <div className="flex gap-1 mt-2 pt-2 border-t border-white/5">
+              <div className="mt-3 flex gap-1 border-t border-white/10 pt-3">
                 <div className="typing-dot" />
                 <div className="typing-dot" />
                 <div className="typing-dot" />
               </div>
             )}
 
-            {/* Copy button */}
             {!isStreaming && content && (
               <button
                 onClick={handleCopy}
-                className="absolute top-2 right-2 p-1.5 rounded-lg bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white/10"
+                className="absolute right-2 top-2 rounded-lg bg-white/[0.04] p-1.5 text-text-muted opacity-0 transition-all hover:bg-white/[0.08] hover:text-white group-hover:opacity-100"
                 title="Copy"
               >
-                {copied ? (
-                  <Check className="w-3.5 h-3.5 text-emerald-400" />
-                ) : (
-                  <Copy className="w-3.5 h-3.5 text-text-muted" />
-                )}
+                {copied ? <Check className="h-3.5 w-3.5 text-accent-emerald" /> : <Copy className="h-3.5 w-3.5" />}
               </button>
             )}
           </div>
 
-          {/* Citations */}
           {citations && citations.length > 0 && (
             <div className="flex flex-wrap gap-1.5 px-1">
-              {citations.map((cite, i) => (
+              {citations.map((citation, index) => (
                 <span
-                  key={i}
-                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 hover:bg-cyan-500/15 transition-colors cursor-default"
-                  title={cite.snippet || undefined}
+                  key={`${citation.file_name}-${citation.chunk_id}-${index}`}
+                  className={cx(
+                    'inline-flex max-w-full items-center gap-1.5 rounded-full border border-accent-cyan/22 bg-accent-cyan/10 px-2.5 py-1 text-[11px] font-medium text-accent-cyan',
+                    'hover:border-accent-cyan/40 hover:bg-accent-cyan/14',
+                  )}
+                  title={citation.snippet || undefined}
                 >
-                  <FileText className="w-3 h-3" />
-                  {cite.file_name}
-                  {cite.page_number != null && <span className="text-cyan-400/60">p.{cite.page_number}</span>}
+                  <FileText className="h-3 w-3 shrink-0" />
+                  <span className="max-w-48 truncate">{citation.file_name}</span>
+                  {citation.page_number != null && (
+                    <span className="text-accent-cyan/70">p.{citation.page_number}</span>
+                  )}
                 </span>
               ))}
             </div>

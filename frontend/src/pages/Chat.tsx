@@ -1,24 +1,30 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import type { ClipboardEvent, KeyboardEvent } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import {
-  Send,
-  Plus,
-  MessageSquare,
-  Trash2,
+  FileSearch,
+  Image as ImageIcon,
   Loader2,
-  Zap,
+  MessageSquare,
   Paperclip,
+  Plus,
+  Send,
+  Trash2,
   X,
+  Zap,
 } from 'lucide-react'
 import ChatMessage from '../components/ChatMessage'
 import {
-  streamChat,
-  getChatSessions,
-  getChatHistory,
   deleteChatSession,
+  getChatHistory,
+  getChatSessions,
   getDocuments,
+  streamChat,
 } from '../lib/api'
-import type { ChatSession, Message, Citation, Document } from '../lib/api'
+import type { ChatSession, Citation, Document, Message } from '../lib/api'
+import { Badge, Button, Card, EmptyState } from '../components/ui'
+import SelectDropdown from '../components/ui/SelectDropdown'
+import { cx } from '../lib/cx'
 
 function findMatchingLocalMessage(localMessages: Message[], incoming: Message): Message | undefined {
   return localMessages.find((local) => local.id === incoming.id)
@@ -41,9 +47,7 @@ function mergeMessagePreservingLocalImage(localMessages: Message[], incoming: Me
 }
 
 function mergeMessagesPreservingImages(localMessages: Message[], incomingMessages: Message[]): Message[] {
-  return incomingMessages.map((incoming) =>
-    mergeMessagePreservingLocalImage(localMessages, incoming)
-  )
+  return incomingMessages.map((incoming) => mergeMessagePreservingLocalImage(localMessages, incoming))
 }
 
 function appendMessagePreservingImages(localMessages: Message[], incoming: Message): Message[] {
@@ -79,26 +83,37 @@ export default function Chat() {
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
   const optimisticImageUrlsRef = useRef<string[]>([])
+  const citationsRef = useRef<Citation[]>([])
 
-  // Load sessions and documents on mount
   useEffect(() => {
     getChatSessions().then(setSessions).catch(console.error)
-    getDocuments().then((res) => setDocuments(res.documents.filter(d => d.status === 'ready'))).catch(console.error)
+    getDocuments()
+      .then((res) => setDocuments(res.documents.filter((doc) => doc.status === 'ready')))
+      .catch(console.error)
   }, [])
 
-  // Load session history when sessionId changes
   useEffect(() => {
     if (paramSessionId) {
-      setCurrentSessionId(paramSessionId)
-      getChatHistory(paramSessionId)
+      let cancelled = false
+
+      void Promise.resolve()
+        .then(() => {
+          if (!cancelled) setCurrentSessionId(paramSessionId)
+          return getChatHistory(paramSessionId)
+        })
         .then((res) => {
-          setMessages((prev) => mergeMessagesPreservingImages(prev, res.messages))
+          if (!cancelled) {
+            setMessages((prev) => mergeMessagesPreservingImages(prev, res.messages))
+          }
         })
         .catch(console.error)
+
+      return () => {
+        cancelled = true
+      }
     }
   }, [paramSessionId])
 
-  // Auto-scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, streamingContent])
@@ -110,40 +125,43 @@ export default function Chat() {
   }, [attachedImagePreview])
 
   useEffect(() => {
+    const optimisticImageUrls = optimisticImageUrlsRef.current
     return () => {
-      optimisticImageUrlsRef.current.forEach((url) => URL.revokeObjectURL(url))
+      optimisticImageUrls.forEach((url) => URL.revokeObjectURL(url))
+      abortRef.current?.abort()
     }
   }, [])
 
-  const attachImage = (file: File) => {
-    if (!['image/png', 'image/jpeg'].includes(file.type)) return
-    if (attachedImagePreview) URL.revokeObjectURL(attachedImagePreview)
-    setAttachedImage(file)
-    setAttachedImagePreview(URL.createObjectURL(file))
-  }
-
-  const removeAttachedImage = () => {
+  const removeAttachedImage = useCallback(() => {
     if (attachedImagePreview) URL.revokeObjectURL(attachedImagePreview)
     setAttachedImage(null)
     setAttachedImagePreview(null)
     if (imageInputRef.current) imageInputRef.current.value = ''
-  }
+  }, [attachedImagePreview])
 
-  const handleNewChat = () => {
+  const attachImage = useCallback((file: File) => {
+    if (!['image/png', 'image/jpeg'].includes(file.type)) return
+    if (attachedImagePreview) URL.revokeObjectURL(attachedImagePreview)
+    setAttachedImage(file)
+    setAttachedImagePreview(URL.createObjectURL(file))
+  }, [attachedImagePreview])
+
+  const handleNewChat = useCallback(() => {
     setCurrentSessionId(null)
     setMessages([])
     setStreamingContent('')
     setStreamingCitations([])
+    citationsRef.current = []
     setStatusMessage('')
     removeAttachedImage()
     navigate('/chat')
     inputRef.current?.focus()
-  }
+  }, [navigate, removeAttachedImage])
 
   const handleDeleteSession = async (id: string) => {
     try {
       await deleteChatSession(id)
-      setSessions((prev) => prev.filter((s) => s.id !== id))
+      setSessions((prev) => prev.filter((session) => session.id !== id))
       if (currentSessionId === id) handleNewChat()
     } catch (err) {
       console.error(err)
@@ -158,7 +176,6 @@ export default function Chat() {
     const optimisticImageUrl = imageForRequest ? URL.createObjectURL(imageForRequest) : null
     if (optimisticImageUrl) optimisticImageUrlsRef.current.push(optimisticImageUrl)
 
-    // Add user message optimistically
     const userMsg: Message = {
       id: Date.now().toString(),
       role: 'user',
@@ -167,12 +184,14 @@ export default function Chat() {
       citations: null,
       created_at: new Date().toISOString(),
     }
+
     setMessages((prev) => [...prev, userMsg])
     setInput('')
     removeAttachedImage()
     setIsStreaming(true)
     setStreamingContent('')
     setStreamingCitations([])
+    citationsRef.current = []
     setStatusMessage('Connecting...')
 
     abortRef.current = streamChat(
@@ -184,234 +203,254 @@ export default function Chat() {
           setCurrentSessionId(session_id)
           if (image_url) {
             setMessages((prev) =>
-              prev.map((msg) =>
-                msg.id === userMsg.id ? { ...msg, image_url: msg.image_url ?? image_url } : msg
+              prev.map((message) =>
+                message.id === userMsg.id ? { ...message, image_url: message.image_url ?? image_url } : message
               )
             )
           }
           navigate(`/chat/${session_id}`, { replace: true })
-          // Refresh sessions list
           getChatSessions().then(setSessions).catch(console.error)
         },
-        onStatus: (msg) => {
-          setStatusMessage(msg)
+        onStatus: (message) => {
+          setStatusMessage(message)
         },
         onChunk: (text) => {
           setStatusMessage('')
           setStreamingContent((prev) => prev + text)
         },
         onCitations: (citations) => {
+          citationsRef.current = citations
           setStreamingCitations(citations)
         },
         onDone: (data) => {
-          // Add assistant message
           const assistantMsg: Message = {
             id: (Date.now() + 1).toString(),
             role: 'assistant',
             content: data.answer,
             image_url: null,
-            citations: streamingCitations.length > 0 ? streamingCitations : null,
+            citations: citationsRef.current.length > 0 ? citationsRef.current : null,
             created_at: new Date().toISOString(),
           }
           setMessages((prev) => appendMessagePreservingImages(prev, assistantMsg))
           setStreamingContent('')
           setStreamingCitations([])
+          citationsRef.current = []
           setStatusMessage('')
           setIsStreaming(false)
-          // Refresh sessions
           getChatSessions().then(setSessions).catch(console.error)
         },
         onError: (error) => {
           const errorMsg: Message = {
             id: (Date.now() + 1).toString(),
             role: 'assistant',
-            content: `⚠️ Error: ${error}`,
+            content: `Error: ${error}`,
             image_url: null,
             citations: null,
             created_at: new Date().toISOString(),
           }
           setMessages((prev) => appendMessagePreservingImages(prev, errorMsg))
           setStreamingContent('')
+          setStreamingCitations([])
+          citationsRef.current = []
           setStatusMessage('')
           setIsStreaming(false)
         },
       },
       imageForRequest,
     )
-  }, [input, attachedImage, isStreaming, currentSessionId, selectedDocIds, navigate, streamingCitations, attachedImagePreview])
+  }, [attachedImage, currentSessionId, input, isStreaming, navigate, removeAttachedImage, selectedDocIds])
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
+  const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault()
       handleSubmit()
     }
   }
 
-  const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
-    const imageItem = Array.from(e.clipboardData.items).find((item) =>
+  const handlePaste = (event: ClipboardEvent<HTMLTextAreaElement>) => {
+    const imageItem = Array.from(event.clipboardData.items).find((item) =>
       item.type === 'image/png' || item.type === 'image/jpeg'
     )
     const file = imageItem?.getAsFile()
-    if (file) {
-      attachImage(file)
-    }
+    if (file) attachImage(file)
   }
 
+  const selectedDocumentValue = selectedDocIds ? selectedDocIds.join(',') : ''
+  const documentScopeOptions = [
+    { value: '', label: 'All ready documents', description: `${documents.length} source${documents.length === 1 ? '' : 's'} available` },
+    ...documents.map((doc) => ({
+      value: doc.id,
+      label: doc.file_name,
+      description: `${doc.total_chunks} chunks`,
+    })),
+  ]
+
   return (
-    <div className="flex h-[calc(100vh-56px)] md:h-screen">
-      {/* ── Session Sidebar ── */}
-      <div className="hidden lg:flex w-72 flex-col glass-solid border-r border-white/5">
-        <div className="p-4 border-b border-white/5">
-          <button
-            onClick={handleNewChat}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl gradient-bg text-white text-sm font-medium hover:shadow-lg hover:shadow-violet-500/20 transition-all"
-          >
-            <Plus className="w-4 h-4" />
+    <div className="flex h-[calc(100dvh-3.5rem)] min-h-0 overflow-hidden md:h-screen">
+      <aside className="hidden w-72 shrink-0 flex-col border-r border-white/10 bg-surface-950/70 lg:flex">
+        <div className="border-b border-white/10 p-4">
+          <Button onClick={handleNewChat} className="w-full">
+            <Plus className="h-4 w-4" />
             New Chat
-          </button>
+          </Button>
         </div>
 
-        {/* Document filter */}
-        <div className="px-4 py-3 border-b border-white/5">
-          <label className="text-[11px] font-medium text-text-muted uppercase tracking-wider mb-2 block">
-            Search in
-          </label>
-          <select
-            value={selectedDocIds ? selectedDocIds.join(',') : ''}
-            onChange={(e) => {
-              const val = e.target.value
-              setSelectedDocIds(val ? val.split(',') : null)
-            }}
-            className="w-full bg-surface-700 border border-white/10 rounded-lg px-3 py-2 text-sm text-text-secondary outline-none focus:border-violet-500/50 transition-colors"
-          >
-            <option value="">All documents</option>
-            {documents.map((doc) => (
-              <option key={doc.id} value={doc.id}>{doc.file_name}</option>
-            ))}
-          </select>
+        <div className="border-b border-white/10 p-4">
+          <SelectDropdown
+            label="Search scope"
+            value={selectedDocumentValue}
+            options={documentScopeOptions}
+            placeholder="All ready documents"
+            onChange={(value) => setSelectedDocIds(value ? [value] : null)}
+          />
+          <p className="mt-2 text-xs text-text-muted">{documents.length} ready source{documents.length === 1 ? '' : 's'}</p>
         </div>
 
-        {/* Session list */}
-        <div className="flex-1 overflow-y-auto px-2 py-2 space-y-0.5">
-          {sessions.map((session) => {
-            const isActive = session.id === currentSessionId
-            return (
-              <div
-                key={session.id}
-                className={`group flex items-center gap-2 px-3 py-2.5 rounded-xl cursor-pointer transition-all ${
-                  isActive ? 'bg-white/5' : 'hover:bg-white/[0.03]'
-                }`}
-                onClick={() => navigate(`/chat/${session.id}`)}
-              >
-                <MessageSquare className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-violet-400' : 'text-text-muted'}`} />
-                <span className={`text-sm truncate flex-1 ${isActive ? 'text-white font-medium' : 'text-text-secondary'}`}>
-                  {session.title || 'Untitled'}
-                </span>
-                <button
-                  onClick={(e) => { e.stopPropagation(); handleDeleteSession(session.id) }}
-                  className="p-1 rounded-md text-text-muted hover:text-rose-400 hover:bg-rose-500/10 opacity-0 group-hover:opacity-100 transition-all"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* ── Chat Area ── */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-4 md:px-8 py-6 space-y-6">
-          {messages.length === 0 && !isStreaming && (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-center space-y-4 max-w-md">
-                <div className="w-16 h-16 rounded-2xl gradient-bg-subtle flex items-center justify-center mx-auto">
-                  <Zap className="w-8 h-8 text-violet-400" />
-                </div>
-                <h2 className="text-xl font-bold text-white">Ask anything about your documents</h2>
-                <p className="text-sm text-text-muted leading-relaxed">
-                  I'll search through your uploaded files using hybrid retrieval,
-                  evaluate the context, and generate a cited answer.
-                </p>
-                <div className="flex flex-wrap gap-2 justify-center pt-2">
-                  {['Summarize the key points', 'Compare concepts', 'Explain in detail'].map((suggestion) => (
+        <div className="flex-1 overflow-y-auto p-2">
+          <div className="px-2 py-2 text-xs font-medium uppercase text-text-muted">Sessions</div>
+          {sessions.length === 0 ? (
+            <div className="m-2 rounded-xl border border-white/10 bg-white/[0.03] p-4 text-sm text-text-muted">
+              No sessions yet.
+            </div>
+          ) : (
+            <div className="space-y-1">
+              {sessions.map((session) => {
+                const isActive = session.id === currentSessionId
+                return (
+                  <div
+                    key={session.id}
+                    className={cx(
+                      'group flex cursor-pointer items-start gap-2 rounded-lg px-3 py-2.5 transition-all',
+                      isActive
+                        ? 'border border-white/10 bg-surface-600/70 text-white'
+                        : 'text-text-secondary hover:bg-white/[0.04] hover:text-white',
+                    )}
+                    onClick={() => navigate(`/chat/${session.id}`)}
+                  >
+                    <MessageSquare className={cx('mt-0.5 h-4 w-4 shrink-0', isActive ? 'text-accent-cyan' : 'text-text-muted')} />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">{session.title || 'Untitled'}</p>
+                      <p className="mt-0.5 text-xs text-text-muted">{new Date(session.created_at).toLocaleDateString()}</p>
+                    </div>
                     <button
-                      key={suggestion}
-                      onClick={() => { setInput(suggestion); inputRef.current?.focus() }}
-                      className="px-3 py-1.5 rounded-lg text-xs font-medium glass glass-hover text-text-secondary hover:text-white transition-all"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        handleDeleteSession(session.id)
+                      }}
+                      className="rounded-md p-1 text-text-muted opacity-0 transition-all hover:bg-rose-400/10 hover:text-accent-rose group-hover:opacity-100"
+                      title="Delete session"
                     >
-                      {suggestion}
+                      <Trash2 className="h-3.5 w-3.5" />
                     </button>
-                  ))}
-                </div>
-              </div>
+                  </div>
+                )
+              })}
             </div>
           )}
+        </div>
+      </aside>
 
-          {messages.map((msg) => (
-            <ChatMessage
-              key={msg.id}
-              role={msg.role}
-              content={msg.content}
-              imageUrl={msg.image_url}
-              citations={msg.citations}
-            />
-          ))}
+      <section className="relative flex min-w-0 flex-1 flex-col overflow-hidden bg-surface-950/35">
+        <header className="z-10 flex h-16 shrink-0 items-center justify-between border-b border-white/10 bg-surface-950/78 px-4 backdrop-blur-xl md:px-6">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.035] px-3 py-1.5">
+              <span className="h-2 w-2 rounded-full bg-accent-cyan agent-pulse" />
+              <span className="text-sm font-medium text-accent-cyan">StudyMate Omni</span>
+            </div>
+            <Badge tone="neutral" className="hidden sm:inline-flex">
+              {selectedDocIds ? 'Focused source' : 'All sources'}
+            </Badge>
+          </div>
+          <Button variant="ghost" className="lg:hidden" onClick={handleNewChat}>
+            <Plus className="h-4 w-4" />
+            New
+          </Button>
+        </header>
 
-          {/* Streaming message */}
-          {isStreaming && streamingContent && (
-            <ChatMessage
-              role="assistant"
-              content={streamingContent}
-              imageUrl={null}
-              citations={streamingCitations.length > 0 ? streamingCitations : undefined}
-              isStreaming
-            />
-          )}
+        <div className="flex-1 overflow-y-auto px-4 py-6 md:px-8">
+          <div className="mx-auto max-w-3xl space-y-6 pb-32">
+            {messages.length === 0 && !isStreaming && (
+              <EmptyState
+                icon={Zap}
+                title="Ask anything about your documents"
+                description="StudyMate will retrieve relevant context, stream an answer, and attach citation badges when sources are found."
+                action={
+                  <div className="flex flex-wrap justify-center gap-2">
+                    {['Summarize the key points', 'Compare concepts', 'Explain this diagram'].map((suggestion) => (
+                      <button
+                        key={suggestion}
+                        onClick={() => {
+                          setInput(suggestion)
+                          inputRef.current?.focus()
+                        }}
+                        className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:border-accent-cyan/30 hover:text-white"
+                      >
+                        {suggestion}
+                      </button>
+                    ))}
+                  </div>
+                }
+              />
+            )}
 
-          <div ref={messagesEndRef} />
+            {messages.map((message) => (
+              <ChatMessage
+                key={message.id}
+                role={message.role}
+                content={message.content}
+                imageUrl={message.image_url}
+                citations={message.citations}
+              />
+            ))}
+
+            {isStreaming && streamingContent && (
+              <ChatMessage
+                role="assistant"
+                content={streamingContent}
+                imageUrl={null}
+                citations={streamingCitations.length > 0 ? streamingCitations : undefined}
+                isStreaming
+              />
+            )}
+
+            <div ref={messagesEndRef} />
+          </div>
         </div>
 
-        {/* Status bar */}
-        {statusMessage && (
-          <div className="px-4 md:px-8 pb-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full glass text-xs text-text-secondary animate-fade-in">
-              <Loader2 className="w-3 h-3 animate-spin text-violet-400" />
-              {statusMessage}
-            </div>
-          </div>
-        )}
-
-        {/* Input area */}
-        <div className="p-4 md:px-8 md:pb-6 border-t border-white/5">
-          <div className="max-w-4xl mx-auto space-y-3">
-            {attachedImagePreview && (
-              <div className="inline-flex items-start gap-2 glass rounded-xl p-2 border border-white/10">
-                <img
-                  src={attachedImagePreview}
-                  alt="Attached preview"
-                  className="w-20 h-20 rounded-lg object-cover border border-white/10"
-                />
-                <button
-                  onClick={removeAttachedImage}
-                  className="p-1.5 rounded-lg text-text-muted hover:text-white hover:bg-white/10 transition-colors"
-                  title="Remove image"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+        <div className="absolute bottom-0 left-0 right-0 z-20 bg-gradient-to-t from-surface-950 via-surface-950/96 to-transparent px-4 pb-4 pt-12 md:px-8 md:pb-6">
+          <div className="mx-auto max-w-3xl space-y-3">
+            {statusMessage && (
+              <div className="inline-flex items-center gap-2 rounded-full border border-accent-cyan/20 bg-accent-cyan/10 px-3 py-1.5 text-xs text-accent-cyan animate-fade-in">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                {statusMessage}
               </div>
             )}
 
-            <div className="flex items-end gap-3">
-            <div className="flex-1 glass rounded-2xl flex items-end px-4 py-3 focus-within:border-violet-500/30 transition-colors">
+            {attachedImagePreview && (
+              <Card className="inline-flex items-start gap-2 p-2">
+                <img
+                  src={attachedImagePreview}
+                  alt="Attached preview"
+                  className="h-20 w-20 rounded-lg border border-white/10 object-cover"
+                />
+                <button
+                  onClick={removeAttachedImage}
+                  className="rounded-lg p-1.5 text-text-muted transition-colors hover:bg-white/[0.08] hover:text-white"
+                  title="Remove image"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </Card>
+            )}
+
+            <div className="field-surface flex items-end gap-2 rounded-xl p-2 shadow-2xl shadow-black/30">
               <input
                 ref={imageInputRef}
                 type="file"
                 accept="image/png,image/jpeg"
                 className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0]
+                onChange={(event) => {
+                  const file = event.target.files?.[0]
                   if (file) attachImage(file)
                 }}
               />
@@ -419,47 +458,48 @@ export default function Chat() {
                 type="button"
                 onClick={() => imageInputRef.current?.click()}
                 disabled={isStreaming}
-                className="p-1.5 mr-2 rounded-lg text-text-muted hover:text-white hover:bg-white/10 transition-colors disabled:opacity-50"
+                className="shrink-0 rounded-lg p-2 text-text-muted transition-colors hover:bg-white/[0.08] hover:text-white disabled:opacity-50"
                 title="Attach image"
               >
-                <Paperclip className="w-4 h-4" />
+                <Paperclip className="h-5 w-5" />
               </button>
               <textarea
                 ref={inputRef}
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={(event) => setInput(event.target.value)}
                 onKeyDown={handleKeyDown}
                 onPaste={handlePaste}
-                placeholder="Ask a question about your documents..."
+                placeholder="Message StudyMate..."
                 rows={1}
-                className="flex-1 bg-transparent text-sm text-white placeholder:text-text-muted outline-none resize-none max-h-32 leading-relaxed"
-                style={{ minHeight: '24px' }}
-                onInput={(e) => {
-                  const el = e.currentTarget
-                  el.style.height = 'auto'
-                  el.style.height = Math.min(el.scrollHeight, 128) + 'px'
+                className="max-h-32 min-h-11 flex-1 resize-none bg-transparent px-1 py-2.5 text-sm leading-6 text-white outline-none placeholder:text-text-muted"
+                onInput={(event) => {
+                  const element = event.currentTarget
+                  element.style.height = 'auto'
+                  element.style.height = `${Math.min(element.scrollHeight, 128)}px`
                 }}
               />
+              <button
+                onClick={handleSubmit}
+                disabled={(!input.trim() && !attachedImage) || isStreaming}
+                className={cx(
+                  'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg transition-all',
+                  (input.trim() || attachedImage) && !isStreaming
+                    ? 'gradient-bg text-surface-950 hover:opacity-95'
+                    : 'bg-white/[0.06] text-text-muted',
+                )}
+                title="Send"
+              >
+                {isStreaming ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
+              </button>
             </div>
-            <button
-              onClick={handleSubmit}
-              disabled={(!input.trim() && !attachedImage) || isStreaming}
-              className={`p-3 rounded-xl transition-all flex-shrink-0 ${
-                (input.trim() || attachedImage) && !isStreaming
-                  ? 'gradient-bg text-white hover:shadow-lg hover:shadow-violet-500/20 hover:scale-105'
-                  : 'bg-white/5 text-text-muted cursor-not-allowed'
-              }`}
-            >
-              {isStreaming ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <Send className="w-5 h-5" />
-              )}
-            </button>
+            <div className="flex items-center justify-center gap-2 text-[11px] text-text-muted">
+              <FileSearch className="h-3.5 w-3.5" />
+              Verify critical answers against the cited source material.
+              {attachedImage && <ImageIcon className="h-3.5 w-3.5 text-accent-cyan" />}
             </div>
           </div>
         </div>
-      </div>
+      </section>
     </div>
   )
 }

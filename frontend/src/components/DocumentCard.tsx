@@ -1,5 +1,17 @@
-import { FileText, FileType, FileType2, Trash2, Clock, CheckCircle2, AlertCircle, Loader2, Image as ImageIcon } from 'lucide-react'
+import {
+  AlertCircle,
+  CheckCircle2,
+  Clock,
+  FileText,
+  FileType,
+  FileType2,
+  Image as ImageIcon,
+  Loader2,
+  Trash2,
+} from 'lucide-react'
 import type { Document } from '../lib/api'
+import { cx } from '../lib/cx'
+import { Card, StatusBadge } from './ui'
 
 interface Props {
   document: Document
@@ -13,16 +25,15 @@ const fileIcons: Record<string, typeof FileText> = {
   image: ImageIcon,
 }
 
-const statusConfig: Record<string, { icon: typeof CheckCircle2; color: string; label: string }> = {
-  ready: { icon: CheckCircle2, color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20', label: 'Ready' },
-  processing: { icon: Loader2, color: 'text-amber-400 bg-amber-500/10 border-amber-500/20', label: 'Processing' },
-  failed: { icon: AlertCircle, color: 'text-rose-400 bg-rose-500/10 border-rose-500/20', label: 'Failed' },
+const statusIcons: Record<string, typeof CheckCircle2> = {
+  ready: CheckCircle2,
+  processing: Loader2,
+  failed: AlertCircle,
 }
 
 export default function DocumentCard({ document: doc, onDelete }: Props) {
   const Icon = fileIcons[doc.file_type] || FileText
-  const status = statusConfig[doc.status] || statusConfig.processing
-  const StatusIcon = status.icon
+  const StatusIcon = statusIcons[doc.status] || Loader2
 
   const uploadDate = new Date(doc.upload_time).toLocaleDateString('en-US', {
     month: 'short',
@@ -31,56 +42,51 @@ export default function DocumentCard({ document: doc, onDelete }: Props) {
   })
 
   return (
-    <div className="glass glass-hover rounded-2xl p-5 transition-all duration-300 hover:shadow-lg hover:shadow-violet-500/5 hover:-translate-y-0.5 group animate-fade-in">
-      {/* Header */}
-      <div className="flex items-start gap-3 mb-4">
+    <Card interactive className="group p-5 animate-fade-in">
+      <div className="mb-4 flex items-start gap-3">
         {doc.image_url ? (
           <img
             src={doc.image_url}
             alt={doc.file_name}
-            className="w-11 h-11 rounded-xl object-cover border border-white/10 flex-shrink-0"
+            className="h-12 w-12 shrink-0 rounded-lg border border-white/10 object-cover"
           />
         ) : (
-          <div className="w-11 h-11 rounded-xl gradient-bg-subtle flex items-center justify-center flex-shrink-0">
-            <Icon className="w-5 h-5 text-violet-400" />
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-accent-violet/10 text-accent-violet">
+            <Icon className="h-5 w-5" />
           </div>
         )}
         <div className="min-w-0 flex-1">
-          <h3 className="text-sm font-semibold text-white truncate" title={doc.file_name}>
+          <h3 className="truncate text-sm font-semibold text-white" title={doc.file_name}>
             {doc.file_name}
           </h3>
-          <p className="text-xs text-text-muted uppercase tracking-wide mt-0.5">
-            {doc.file_type}
-          </p>
+          <p className="mt-1 text-xs font-medium text-text-muted">{doc.file_type}</p>
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="flex items-center gap-4 mb-4 text-xs text-text-muted">
+      <div className="mb-4 flex items-center gap-4 text-xs text-text-muted">
         <span className="flex items-center gap-1.5">
-          <Clock className="w-3.5 h-3.5" />
+          <Clock className="h-3.5 w-3.5" />
           {uploadDate}
         </span>
         <span>{doc.total_chunks} chunks</span>
       </div>
 
-      {/* Footer */}
       <div className="flex items-center justify-between">
-        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium border ${status.color}`}>
-          <StatusIcon className={`w-3 h-3 ${doc.status === 'processing' ? 'animate-spin' : ''}`} />
-          {status.label}
+        <span className="inline-flex items-center gap-1.5">
+          <StatusIcon className={cx('h-3.5 w-3.5', doc.status === 'processing' && 'animate-spin')} />
+          <StatusBadge status={doc.status} />
         </span>
 
         {onDelete && (
           <button
             onClick={() => onDelete(doc.id)}
-            className="p-2 rounded-lg text-text-muted hover:text-rose-400 hover:bg-rose-500/10 transition-colors opacity-0 group-hover:opacity-100"
+            className="rounded-lg p-2 text-text-muted opacity-0 transition-all hover:bg-rose-400/10 hover:text-accent-rose group-hover:opacity-100"
             title="Delete document"
           >
-            <Trash2 className="w-4 h-4" />
+            <Trash2 className="h-4 w-4" />
           </button>
         )}
       </div>
-    </div>
+    </Card>
   )
 }

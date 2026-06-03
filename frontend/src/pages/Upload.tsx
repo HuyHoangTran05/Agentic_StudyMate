@@ -1,14 +1,20 @@
-import { useState, useCallback } from 'react'
+import { useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
-import { Upload as UploadIcon, FileText, CheckCircle2, XCircle, Loader2, CloudUpload, Image as ImageIcon } from 'lucide-react'
-import { uploadDocument, uploadImageDocument } from '../lib/api'
-
-interface UploadResult {
-  file_name: string
-  status: 'success' | 'error'
-  message: string
-  image_url?: string
-}
+import {
+  AlertCircle,
+  CheckCircle2,
+  CloudUpload,
+  FileText,
+  Image as ImageIcon,
+  Loader2,
+  Plus,
+  Upload as UploadIcon,
+  RefreshCw,
+} from 'lucide-react'
+import { Badge, Button, Card, PageHeader, PageShell } from '../components/ui'
+import { cx } from '../lib/cx'
+import { useUploadStore } from '../stores/uploadStore'
+import type { UploadJob, UploadJobStatus } from '../stores/uploadStore'
 
 const ACCEPTED_TYPES: Record<string, string[]> = {
   'application/pdf': ['.pdf'],
@@ -18,180 +24,242 @@ const ACCEPTED_TYPES: Record<string, string[]> = {
   'image/jpeg': ['.jpg', '.jpeg'],
 }
 
-const isImageFile = (file: File) => file.type === 'image/png' || file.type === 'image/jpeg'
-
-const isDuplicateUploadError = (err: any) => err?.response?.status === 409
-
-const getUploadErrorMessage = (err: any) => {
-  if (isDuplicateUploadError(err)) return 'File already exists in the library!'
-
-  const detail = err?.response?.data?.detail
-  if (typeof detail === 'string') return detail
-  if (detail?.message) return detail.message
-  return err?.message || 'Upload failed'
+const statusConfig: Record<UploadJobStatus, { label: string; tone: 'cyan' | 'amber' | 'emerald' | 'rose' | 'neutral' }> = {
+  queued: { label: 'Queued', tone: 'neutral' },
+  uploading: { label: 'Uploading', tone: 'cyan' },
+  processing: { label: 'Processing', tone: 'amber' },
+  ready: { label: 'Ready', tone: 'emerald' },
+  error: { label: 'Error', tone: 'rose' },
 }
 
 export default function Upload() {
-  const [uploading, setUploading] = useState(false)
-  const [uploadingImage, setUploadingImage] = useState(false)
-  const [results, setResults] = useState<UploadResult[]>([])
+  const {
+    jobs,
+    isUploading,
+    hasActiveJobs,
+    startUpload,
+    refreshUploadStatuses,
+    clearCompleted,
+  } = useUploadStore()
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     if (acceptedFiles.length === 0) return
+    await startUpload(acceptedFiles)
+  }, [startUpload])
 
-    setUploading(true)
-    setUploadingImage(acceptedFiles.some(isImageFile))
-    const newResults: UploadResult[] = []
-
-    try {
-      for (const file of acceptedFiles) {
-        try {
-          if (isImageFile(file)) {
-            const res = await uploadImageDocument(file)
-            newResults.push({
-              file_name: res.file_name,
-              status: 'success',
-              message: `Image processed. Extracted text into ${res.total_chunks} chunk${res.total_chunks !== 1 ? 's' : ''}.`,
-              image_url: res.image_url,
-            })
-          } else {
-            const res = await uploadDocument(file)
-            newResults.push({ file_name: res.file_name, status: 'success', message: res.message })
-          }
-        } catch (err: any) {
-          const msg = getUploadErrorMessage(err)
-          if (isDuplicateUploadError(err)) alert(msg)
-          newResults.push({ file_name: file.name, status: 'error', message: msg })
-        }
-      }
-    } finally {
-      setResults((prev) => [...newResults, ...prev])
-      setUploading(false)
-      setUploadingImage(false)
-    }
-  }, [])
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+  const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
     onDrop,
     accept: ACCEPTED_TYPES,
-    disabled: uploading,
+    disabled: isUploading,
+    noClick: true,
   })
 
+  const uploadingImage = jobs.some((job) => job.status === 'uploading' && job.fileType === 'image')
+  const uploadLabel = uploadingImage ? 'Extracting text via AI...' : 'Uploading and indexing...'
+
   return (
-    <div className="p-6 md:p-8 max-w-3xl mx-auto space-y-8">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center shadow-lg shadow-violet-500/20">
-            <UploadIcon className="w-5 h-5 text-white" />
-          </div>
-          Upload Documents
-        </h1>
-        <p className="text-sm text-text-secondary mt-2 ml-[52px]">
-          Upload PDF, DOCX, TXT, PNG, or JPG files to start chatting with your study materials.
-        </p>
-      </div>
+    <PageShell wide className="space-y-8">
+      <PageHeader
+        icon={UploadIcon}
+        eyebrow="Source Intake"
+        title="Upload Documents"
+        description="Add study materials to your intelligence library. Documents and images are routed through the existing ingestion pipeline for semantic search and study tools."
+      />
 
-      {/* Drop zone */}
-      <div
-        {...getRootProps()}
-        className={`
-          relative rounded-2xl border-2 border-dashed p-12 text-center
-          transition-all duration-300 cursor-pointer group
-          ${isDragActive
-            ? 'border-violet-500 bg-violet-500/10 scale-[1.01]'
-            : 'border-white/10 hover:border-white/20 hover:bg-white/[0.02]'
-          }
-          ${uploading ? 'pointer-events-none opacity-60' : ''}
-        `}
-      >
-        <input {...getInputProps()} />
-
-        <div className="space-y-4">
-          <div className={`w-16 h-16 rounded-2xl mx-auto flex items-center justify-center transition-all ${
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
+        <Card
+          {...getRootProps()}
+          className={cx(
+            'relative flex min-h-[420px] cursor-pointer flex-col items-center justify-center overflow-hidden border-2 border-dashed p-8 text-center transition-all duration-300',
             isDragActive
-              ? 'gradient-bg shadow-lg shadow-violet-500/25 scale-110'
-              : 'glass group-hover:scale-105'
-          }`}>
-            {uploading ? (
-              <Loader2 className="w-7 h-7 text-violet-400 animate-spin" />
-            ) : (
-              <CloudUpload className={`w-7 h-7 ${isDragActive ? 'text-white' : 'text-violet-400'}`} />
-            )}
+              ? 'scale-[1.01] border-accent-cyan/80 bg-accent-cyan/[0.045]'
+              : 'border-accent-cyan/25 hover:border-accent-cyan/60 hover:bg-white/[0.03]',
+            isUploading && 'pointer-events-none opacity-70 uploading-state',
+          )}
+        >
+          <input {...getInputProps()} />
+          <div className="absolute inset-0 surface-grid opacity-35" />
+          <div className="relative z-10 flex max-w-xl flex-col items-center">
+            <div
+              className={cx(
+                'mb-6 flex h-20 w-20 items-center justify-center rounded-full border transition-transform duration-300',
+                isDragActive
+                  ? 'gradient-bg border-transparent text-surface-950 shadow-[0_0_38px_rgba(76,215,246,0.22)]'
+                  : 'border-white/10 bg-surface-650 text-accent-violet group-hover:scale-105',
+              )}
+            >
+              {isUploading ? <Loader2 className="h-9 w-9 animate-spin" /> : <CloudUpload className="h-9 w-9" />}
+            </div>
+
+            <h2 className="font-display text-2xl font-semibold text-white md:text-3xl">
+              {isUploading ? uploadLabel : isDragActive ? 'Release to upload' : 'Drag and drop files here'}
+            </h2>
+            <p className="mt-3 max-w-md text-sm leading-6 text-text-secondary">
+              {isUploading
+                ? 'Upload progress is saved globally, so you can navigate away and return without losing the queue.'
+                : 'Click browse or drop files from your computer. Images are analyzed and stored with extracted text.'}
+            </p>
+
+            <Button
+              type="button"
+              className="mt-8 rounded-full px-6"
+              onClick={(event) => {
+                event.stopPropagation()
+                open()
+              }}
+              disabled={isUploading}
+            >
+              <Plus className="h-4 w-4" />
+              Select Files
+            </Button>
+
+            <div className="mt-8 flex flex-wrap justify-center gap-2">
+              {['PDF', 'DOCX', 'TXT', 'PNG / JPG'].map((type) => (
+                <Badge key={type} tone="neutral">
+                  {type}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        </Card>
+
+        <aside className="space-y-4">
+          <div className="flex items-center justify-between border-b border-white/10 pb-3">
+            <h2 className="font-display text-lg font-semibold text-white">Processing Queue</h2>
+            <Badge tone={hasActiveJobs ? 'cyan' : 'neutral'}>{hasActiveJobs ? 'Active' : `${jobs.length} recent`}</Badge>
           </div>
 
-          {uploading ? (
-            <div>
-              <p className="text-base font-medium text-white">
-                {uploadingImage ? 'Extracting text via AI...' : 'Uploading...'}
-              </p>
-              <p className="text-sm text-text-muted mt-1">
-                {uploadingImage ? 'Please wait while the image is analyzed and embedded' : 'Please wait while your files are processed'}
-              </p>
-            </div>
-          ) : isDragActive ? (
-            <div>
-              <p className="text-base font-medium text-white">Drop files here</p>
-              <p className="text-sm text-violet-400 mt-1">Release to upload</p>
-            </div>
+          {hasActiveJobs && (
+            <Card className="overflow-hidden border-accent-cyan/30 p-4 uploading-state">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-accent-cyan/25 bg-accent-cyan/10">
+                  <Loader2 className="h-5 w-5 animate-spin text-accent-cyan" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-white">{isUploading ? uploadLabel : 'Processing in the library...'}</p>
+                  <div className="mt-2 flex items-center gap-2 text-xs text-accent-cyan">
+                    <span className="h-1.5 w-1.5 rounded-full bg-accent-cyan agent-pulse" />
+                    Extracting, chunking, and embedding
+                  </div>
+                  <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+                    <div className="h-full w-2/3 rounded-full gradient-bg" />
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              className="flex-1"
+              onClick={() => refreshUploadStatuses().catch(console.error)}
+              disabled={jobs.length === 0}
+            >
+              <RefreshCw className="h-4 w-4" />
+              Refresh
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              className="flex-1"
+              onClick={clearCompleted}
+              disabled={jobs.every((job) => job.status === 'queued' || job.status === 'uploading' || job.status === 'processing')}
+            >
+              Clear done
+            </Button>
+          </div>
+
+          {jobs.length === 0 && !hasActiveJobs ? (
+            <Card className="p-5">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/[0.04] text-text-muted">
+                  <FileText className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-white">No uploads yet</p>
+                  <p className="mt-1 text-xs leading-5 text-text-muted">
+                    Upload progress and recent results will remain here while you move around the app.
+                  </p>
+                </div>
+              </div>
+            </Card>
           ) : (
-            <div>
-              <p className="text-base font-medium text-white">
-                Drag & drop files here, or <span className="text-violet-400">browse</span>
-              </p>
-              <p className="text-sm text-text-muted mt-1">Supports PDF, DOCX, TXT, PNG, and JPG</p>
+            <div className="space-y-3">
+              {jobs.map((job) => <UploadJobCard key={job.id} job={job} />)}
             </div>
           )}
-        </div>
-
-        {/* Decorative corner accents */}
-        <div className="absolute top-3 left-3 w-4 h-4 border-t-2 border-l-2 border-violet-500/30 rounded-tl-lg" />
-        <div className="absolute top-3 right-3 w-4 h-4 border-t-2 border-r-2 border-violet-500/30 rounded-tr-lg" />
-        <div className="absolute bottom-3 left-3 w-4 h-4 border-b-2 border-l-2 border-violet-500/30 rounded-bl-lg" />
-        <div className="absolute bottom-3 right-3 w-4 h-4 border-b-2 border-r-2 border-violet-500/30 rounded-br-lg" />
+        </aside>
       </div>
+    </PageShell>
+  )
+}
 
-      {/* Results */}
-      {results.length > 0 && (
-        <div className="space-y-3 stagger-children">
-          <h2 className="text-sm font-semibold text-text-secondary uppercase tracking-wider">Upload Results</h2>
-          {results.map((r, i) => (
-            <div
-              key={`${r.file_name}-${i}`}
-              className={`flex items-center gap-3 p-4 rounded-xl border animate-fade-in ${
-                r.status === 'success'
-                  ? 'glass border-emerald-500/20'
-                  : 'glass border-rose-500/20'
-              }`}
-            >
-              <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                r.status === 'success' ? 'bg-emerald-500/15' : 'bg-rose-500/15'
-              }`}>
-                {r.status === 'success' ? (
-                  <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                ) : (
-                  <XCircle className="w-5 h-5 text-rose-400" />
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white flex items-center gap-2">
-                  {r.image_url ? (
-                    <ImageIcon className="w-3.5 h-3.5 text-violet-400" />
-                  ) : (
-                    <FileText className="w-3.5 h-3.5 text-text-muted" />
-                  )}
-                  {r.file_name}
-                </p>
-                <p className={`text-xs mt-0.5 ${
-                  r.status === 'success' ? 'text-emerald-400/80' : 'text-rose-400/80'
-                }`}>
-                  {r.message}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
+function UploadJobCard({ job }: { job: UploadJob }) {
+  const status = statusConfig[job.status]
+  const isBusy = job.status === 'queued' || job.status === 'uploading' || job.status === 'processing'
+
+  return (
+    <Card
+      className={cx(
+        'relative overflow-hidden p-4',
+        job.status === 'ready' && 'border-emerald-300/20',
+        job.status === 'error' && 'border-rose-300/20',
+        isBusy && 'border-accent-cyan/20',
       )}
-    </div>
+    >
+      <div
+        className={cx(
+          'absolute bottom-0 left-0 top-0 w-1',
+          job.status === 'ready' && 'bg-accent-emerald/60',
+          job.status === 'error' && 'bg-accent-rose/70',
+          isBusy && 'bg-accent-cyan/60',
+        )}
+      />
+      <div className="flex items-start gap-3">
+        <div
+          className={cx(
+            'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg',
+            job.status === 'ready' && 'bg-emerald-400/10 text-accent-emerald',
+            job.status === 'error' && 'bg-rose-300/10 text-accent-rose',
+            isBusy && 'bg-accent-cyan/10 text-accent-cyan',
+          )}
+        >
+          {job.status === 'ready' ? (
+            <CheckCircle2 className="h-5 w-5" />
+          ) : job.status === 'error' ? (
+            <AlertCircle className="h-5 w-5" />
+          ) : (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="flex items-center gap-2 truncate text-sm font-medium text-white">
+            {job.imageUrl || job.fileType === 'image' ? (
+              <ImageIcon className="h-3.5 w-3.5 text-accent-cyan" />
+            ) : (
+              <FileText className="h-3.5 w-3.5 text-text-muted" />
+            )}
+            <span className="truncate">{job.fileName}</span>
+          </p>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <Badge tone={status.tone}>{status.label}</Badge>
+            {job.documentId && <span className="text-[11px] text-text-muted">ID {job.documentId.slice(0, 8)}</span>}
+            {typeof job.totalChunks === 'number' && <span className="text-[11px] text-text-muted">{job.totalChunks} chunks</span>}
+          </div>
+          <p
+            className={cx(
+              'mt-2 text-xs leading-5',
+              job.status === 'ready' && 'text-accent-emerald',
+              job.status === 'error' && 'text-accent-rose',
+              isBusy && 'text-accent-cyan',
+            )}
+          >
+            {job.message}
+          </p>
+        </div>
+      </div>
+    </Card>
   )
 }
