@@ -1,13 +1,34 @@
-import { useState, useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import { useDropzone } from 'react-dropzone'
-import { Upload as UploadIcon, FileText, CheckCircle2, XCircle, Loader2, CloudUpload, Image as ImageIcon } from 'lucide-react'
+import {
+  CheckCircle2,
+  CloudUpload,
+  FileText,
+  Image as ImageIcon,
+  Loader2,
+  Plus,
+  Upload as UploadIcon,
+  XCircle,
+} from 'lucide-react'
 import { uploadDocument, uploadImageDocument } from '../lib/api'
+import { Badge, Button, Card, PageHeader, PageShell } from '../components/ui'
+import { cx } from '../lib/cx'
 
 interface UploadResult {
   file_name: string
   status: 'success' | 'error'
   message: string
   image_url?: string
+}
+
+interface UploadError {
+  response?: {
+    status?: number
+    data?: {
+      detail?: string | { message?: string }
+    }
+  }
+  message?: string
 }
 
 const ACCEPTED_TYPES: Record<string, string[]> = {
@@ -20,15 +41,18 @@ const ACCEPTED_TYPES: Record<string, string[]> = {
 
 const isImageFile = (file: File) => file.type === 'image/png' || file.type === 'image/jpeg'
 
-const isDuplicateUploadError = (err: any) => err?.response?.status === 409
+const asUploadError = (err: unknown) => err as UploadError
 
-const getUploadErrorMessage = (err: any) => {
+const isDuplicateUploadError = (err: unknown) => asUploadError(err).response?.status === 409
+
+const getUploadErrorMessage = (err: unknown) => {
   if (isDuplicateUploadError(err)) return 'File already exists in the library!'
 
-  const detail = err?.response?.data?.detail
+  const uploadError = asUploadError(err)
+  const detail = uploadError.response?.data?.detail
   if (typeof detail === 'string') return detail
   if (detail?.message) return detail.message
-  return err?.message || 'Upload failed'
+  return uploadError.message || 'Upload failed'
 }
 
 export default function Upload() {
@@ -58,7 +82,7 @@ export default function Upload() {
             const res = await uploadDocument(file)
             newResults.push({ file_name: res.file_name, status: 'success', message: res.message })
           }
-        } catch (err: any) {
+        } catch (err) {
           const msg = getUploadErrorMessage(err)
           if (isDuplicateUploadError(err)) alert(msg)
           newResults.push({ file_name: file.name, status: 'error', message: msg })
@@ -71,127 +95,167 @@ export default function Upload() {
     }
   }, [])
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+  const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
     onDrop,
     accept: ACCEPTED_TYPES,
     disabled: uploading,
+    noClick: true,
   })
 
+  const uploadLabel = uploadingImage ? 'Extracting text via AI...' : 'Uploading and indexing...'
+
   return (
-    <div className="p-6 md:p-8 max-w-3xl mx-auto space-y-8">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center shadow-lg shadow-violet-500/20">
-            <UploadIcon className="w-5 h-5 text-white" />
-          </div>
-          Upload Documents
-        </h1>
-        <p className="text-sm text-text-secondary mt-2 ml-[52px]">
-          Upload PDF, DOCX, TXT, PNG, or JPG files to start chatting with your study materials.
-        </p>
-      </div>
+    <PageShell wide className="space-y-8">
+      <PageHeader
+        icon={UploadIcon}
+        eyebrow="Source Intake"
+        title="Upload Documents"
+        description="Add study materials to your intelligence library. Documents and images are routed through the existing ingestion pipeline for semantic search and study tools."
+      />
 
-      {/* Drop zone */}
-      <div
-        {...getRootProps()}
-        className={`
-          relative rounded-2xl border-2 border-dashed p-12 text-center
-          transition-all duration-300 cursor-pointer group
-          ${isDragActive
-            ? 'border-violet-500 bg-violet-500/10 scale-[1.01]'
-            : 'border-white/10 hover:border-white/20 hover:bg-white/[0.02]'
-          }
-          ${uploading ? 'pointer-events-none opacity-60' : ''}
-        `}
-      >
-        <input {...getInputProps()} />
-
-        <div className="space-y-4">
-          <div className={`w-16 h-16 rounded-2xl mx-auto flex items-center justify-center transition-all ${
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
+        <Card
+          {...getRootProps()}
+          className={cx(
+            'relative flex min-h-[420px] cursor-pointer flex-col items-center justify-center overflow-hidden border-2 border-dashed p-8 text-center transition-all duration-300',
             isDragActive
-              ? 'gradient-bg shadow-lg shadow-violet-500/25 scale-110'
-              : 'glass group-hover:scale-105'
-          }`}>
-            {uploading ? (
-              <Loader2 className="w-7 h-7 text-violet-400 animate-spin" />
-            ) : (
-              <CloudUpload className={`w-7 h-7 ${isDragActive ? 'text-white' : 'text-violet-400'}`} />
-            )}
+              ? 'scale-[1.01] border-accent-cyan/80 bg-accent-cyan/[0.045]'
+              : 'border-accent-cyan/25 hover:border-accent-cyan/60 hover:bg-white/[0.03]',
+            uploading && 'pointer-events-none opacity-70 uploading-state',
+          )}
+        >
+          <input {...getInputProps()} />
+          <div className="absolute inset-0 surface-grid opacity-35" />
+          <div className="relative z-10 flex max-w-xl flex-col items-center">
+            <div
+              className={cx(
+                'mb-6 flex h-20 w-20 items-center justify-center rounded-full border transition-transform duration-300',
+                isDragActive
+                  ? 'gradient-bg border-transparent text-surface-950 shadow-[0_0_38px_rgba(76,215,246,0.22)]'
+                  : 'border-white/10 bg-surface-650 text-accent-violet group-hover:scale-105',
+              )}
+            >
+              {uploading ? <Loader2 className="h-9 w-9 animate-spin" /> : <CloudUpload className="h-9 w-9" />}
+            </div>
+
+            <h2 className="font-display text-2xl font-semibold text-white md:text-3xl">
+              {uploading ? uploadLabel : isDragActive ? 'Release to upload' : 'Drag and drop files here'}
+            </h2>
+            <p className="mt-3 max-w-md text-sm leading-6 text-text-secondary">
+              {uploading
+                ? 'Please keep this page open while StudyMate processes your source material.'
+                : 'Click browse or drop files from your computer. Images are analyzed and stored with extracted text.'}
+            </p>
+
+            <Button
+              type="button"
+              className="mt-8 rounded-full px-6"
+              onClick={(event) => {
+                event.stopPropagation()
+                open()
+              }}
+              disabled={uploading}
+            >
+              <Plus className="h-4 w-4" />
+              Select Files
+            </Button>
+
+            <div className="mt-8 flex flex-wrap justify-center gap-2">
+              {['PDF', 'DOCX', 'TXT', 'PNG / JPG'].map((type) => (
+                <Badge key={type} tone="neutral">
+                  {type}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        </Card>
+
+        <aside className="space-y-4">
+          <div className="flex items-center justify-between border-b border-white/10 pb-3">
+            <h2 className="font-display text-lg font-semibold text-white">Processing Queue</h2>
+            <Badge tone={uploading ? 'cyan' : 'neutral'}>{uploading ? 'Active' : `${results.length} results`}</Badge>
           </div>
 
-          {uploading ? (
-            <div>
-              <p className="text-base font-medium text-white">
-                {uploadingImage ? 'Extracting text via AI...' : 'Uploading...'}
-              </p>
-              <p className="text-sm text-text-muted mt-1">
-                {uploadingImage ? 'Please wait while the image is analyzed and embedded' : 'Please wait while your files are processed'}
-              </p>
-            </div>
-          ) : isDragActive ? (
-            <div>
-              <p className="text-base font-medium text-white">Drop files here</p>
-              <p className="text-sm text-violet-400 mt-1">Release to upload</p>
-            </div>
+          {uploading && (
+            <Card className="overflow-hidden border-accent-cyan/30 p-4 uploading-state">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-accent-cyan/25 bg-accent-cyan/10">
+                  <Loader2 className="h-5 w-5 animate-spin text-accent-cyan" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-white">{uploadLabel}</p>
+                  <div className="mt-2 flex items-center gap-2 text-xs text-accent-cyan">
+                    <span className="h-1.5 w-1.5 rounded-full bg-accent-cyan agent-pulse" />
+                    Extracting, chunking, and embedding
+                  </div>
+                  <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+                    <div className="h-full w-2/3 rounded-full gradient-bg" />
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {results.length === 0 && !uploading ? (
+            <Card className="p-5">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/[0.04] text-text-muted">
+                  <FileText className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-white">No uploads yet</p>
+                  <p className="mt-1 text-xs leading-5 text-text-muted">
+                    Completed files and duplicate warnings will appear here.
+                  </p>
+                </div>
+              </div>
+            </Card>
           ) : (
-            <div>
-              <p className="text-base font-medium text-white">
-                Drag & drop files here, or <span className="text-violet-400">browse</span>
-              </p>
-              <p className="text-sm text-text-muted mt-1">Supports PDF, DOCX, TXT, PNG, and JPG</p>
+            <div className="space-y-3">
+              {results.map((result, index) => (
+                <Card
+                  key={`${result.file_name}-${index}`}
+                  className={cx(
+                    'relative overflow-hidden p-4',
+                    result.status === 'success' ? 'border-emerald-300/20' : 'border-rose-300/20',
+                  )}
+                >
+                  <div
+                    className={cx(
+                      'absolute bottom-0 left-0 top-0 w-1',
+                      result.status === 'success' ? 'bg-accent-emerald/60' : 'bg-accent-rose/70',
+                    )}
+                  />
+                  <div className="flex items-start gap-3">
+                    <div
+                      className={cx(
+                        'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg',
+                        result.status === 'success' ? 'bg-emerald-400/10 text-accent-emerald' : 'bg-rose-300/10 text-accent-rose',
+                      )}
+                    >
+                      {result.status === 'success' ? <CheckCircle2 className="h-5 w-5" /> : <XCircle className="h-5 w-5" />}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="flex items-center gap-2 truncate text-sm font-medium text-white">
+                        {result.image_url ? <ImageIcon className="h-3.5 w-3.5 text-accent-cyan" /> : <FileText className="h-3.5 w-3.5 text-text-muted" />}
+                        <span className="truncate">{result.file_name}</span>
+                      </p>
+                      <p
+                        className={cx(
+                          'mt-1 text-xs leading-5',
+                          result.status === 'success' ? 'text-accent-emerald' : 'text-accent-rose',
+                        )}
+                      >
+                        {result.message}
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              ))}
             </div>
           )}
-        </div>
-
-        {/* Decorative corner accents */}
-        <div className="absolute top-3 left-3 w-4 h-4 border-t-2 border-l-2 border-violet-500/30 rounded-tl-lg" />
-        <div className="absolute top-3 right-3 w-4 h-4 border-t-2 border-r-2 border-violet-500/30 rounded-tr-lg" />
-        <div className="absolute bottom-3 left-3 w-4 h-4 border-b-2 border-l-2 border-violet-500/30 rounded-bl-lg" />
-        <div className="absolute bottom-3 right-3 w-4 h-4 border-b-2 border-r-2 border-violet-500/30 rounded-br-lg" />
+        </aside>
       </div>
-
-      {/* Results */}
-      {results.length > 0 && (
-        <div className="space-y-3 stagger-children">
-          <h2 className="text-sm font-semibold text-text-secondary uppercase tracking-wider">Upload Results</h2>
-          {results.map((r, i) => (
-            <div
-              key={`${r.file_name}-${i}`}
-              className={`flex items-center gap-3 p-4 rounded-xl border animate-fade-in ${
-                r.status === 'success'
-                  ? 'glass border-emerald-500/20'
-                  : 'glass border-rose-500/20'
-              }`}
-            >
-              <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                r.status === 'success' ? 'bg-emerald-500/15' : 'bg-rose-500/15'
-              }`}>
-                {r.status === 'success' ? (
-                  <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                ) : (
-                  <XCircle className="w-5 h-5 text-rose-400" />
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white flex items-center gap-2">
-                  {r.image_url ? (
-                    <ImageIcon className="w-3.5 h-3.5 text-violet-400" />
-                  ) : (
-                    <FileText className="w-3.5 h-3.5 text-text-muted" />
-                  )}
-                  {r.file_name}
-                </p>
-                <p className={`text-xs mt-0.5 ${
-                  r.status === 'success' ? 'text-emerald-400/80' : 'text-rose-400/80'
-                }`}>
-                  {r.message}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+    </PageShell>
   )
 }

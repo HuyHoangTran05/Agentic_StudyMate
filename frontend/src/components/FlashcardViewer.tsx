@@ -58,7 +58,7 @@ export default function FlashcardViewer({ flashcards }: Props) {
           {/* Front */}
           <div className="flashcard-face glass border border-white/10">
             <div className="text-center space-y-3">
-              <span className="inline-block px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-widest bg-violet-500/15 text-violet-400 border border-violet-500/20">
+              <span className="inline-block px-3 py-1 rounded-full text-[10px] font-semibold uppercase bg-violet-500/15 text-violet-400 border border-violet-500/20">
                 Question
               </span>
               <p className="text-lg font-medium text-white leading-relaxed">{card.front}</p>
@@ -69,7 +69,7 @@ export default function FlashcardViewer({ flashcards }: Props) {
           {/* Back */}
           <div className="flashcard-face flashcard-back glass border border-cyan-500/20">
             <div className="text-center space-y-3">
-              <span className="inline-block px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-widest bg-cyan-500/15 text-cyan-400 border border-cyan-500/20">
+              <span className="inline-block px-3 py-1 rounded-full text-[10px] font-semibold uppercase bg-cyan-500/15 text-cyan-400 border border-cyan-500/20">
                 Answer
               </span>
               <p className="text-base text-text-secondary leading-relaxed">{card.back}</p>

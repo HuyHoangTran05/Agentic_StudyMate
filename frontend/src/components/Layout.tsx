@@ -1,15 +1,18 @@
 import { type ReactNode, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import {
-  LayoutDashboard,
-  Upload,
-  MessageSquare,
-  Library,
+  BrainCircuit,
   FlaskConical,
   GraduationCap,
+  LayoutDashboard,
+  Library,
   Menu,
+  MessageSquare,
+  Upload,
   X,
 } from 'lucide-react'
+import { cx } from '../lib/cx'
+import { Badge } from './ui'
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
@@ -24,100 +27,99 @@ export default function Layout({ children }: { children: ReactNode }) {
   const location = useLocation()
 
   return (
-    <div className="flex min-h-screen">
-      {/* ── Mobile overlay ── */}
+    <div className="min-h-screen text-text-primary">
       {mobileOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm md:hidden"
+        <button
+          aria-label="Close navigation overlay"
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
           onClick={() => setMobileOpen(false)}
         />
       )}
 
-      {/* ── Sidebar ── */}
       <aside
-        className={`
-          fixed top-0 left-0 z-50 h-full w-64 glass-solid flex flex-col
-          transition-transform duration-300 ease-out
-          ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
-          md:translate-x-0 md:static md:z-auto
-        `}
+        className={cx(
+          'fixed left-0 top-0 z-50 flex h-dvh w-64 flex-col border-r border-white/10 bg-surface-850/95 p-4 shadow-2xl shadow-black/40 backdrop-blur-xl transition-transform duration-300 md:w-60 md:translate-x-0',
+          mobileOpen ? 'translate-x-0' : '-translate-x-full',
+        )}
       >
-        {/* Logo */}
-        <div className="flex items-center gap-3 px-6 py-6 border-b border-white/5">
-          <div className="w-9 h-9 rounded-xl gradient-bg flex items-center justify-center shadow-lg shadow-violet-500/20">
-            <GraduationCap className="w-5 h-5 text-white" />
+        <div className="mb-6 flex items-center gap-3 px-2">
+          <div className="agent-pulse flex h-9 w-9 items-center justify-center rounded-lg gradient-bg text-surface-950 shadow-[0_0_26px_rgba(76,215,246,0.18)]">
+            <BrainCircuit className="h-5 w-5" />
           </div>
-          <div>
-            <h1 className="text-sm font-bold tracking-tight text-white">StudyMate</h1>
-            <p className="text-[10px] font-medium text-text-muted uppercase tracking-widest">Agentic AI</p>
+          <div className="min-w-0">
+            <p className="font-display text-xl font-bold gradient-text">StudyMate</p>
+            <p className="text-[11px] font-medium uppercase text-text-muted">Precision Intelligence</p>
           </div>
           <button
-            className="ml-auto md:hidden p-1 rounded-lg hover:bg-white/5"
+            aria-label="Close navigation"
+            className="ml-auto rounded-lg p-1.5 text-text-muted hover:bg-white/5 hover:text-white md:hidden"
             onClick={() => setMobileOpen(false)}
           >
-            <X className="w-5 h-5 text-text-muted" />
+            <X className="h-5 w-5" />
           </button>
         </div>
 
-        {/* Nav links */}
-        <nav className="flex-1 px-3 py-4 space-y-1">
+        <nav className="flex-1 space-y-1">
           {navItems.map(({ to, icon: Icon, label }) => {
             const isActive = to === '/' ? location.pathname === '/' : location.pathname.startsWith(to)
+
             return (
               <NavLink
                 key={to}
                 to={to}
                 onClick={() => setMobileOpen(false)}
-                className={`
-                  flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
-                  transition-all duration-200 group
-                  ${isActive
-                    ? 'bg-gradient-to-r from-violet-500/15 to-cyan-500/10 text-white shadow-sm'
-                    : 'text-text-secondary hover:text-white hover:bg-white/5'
-                  }
-                `}
-              >
-                <Icon className={`w-[18px] h-[18px] transition-colors ${isActive ? 'text-violet-400' : 'text-text-muted group-hover:text-text-secondary'}`} />
-                {label}
-                {isActive && (
-                  <div className="ml-auto w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse-glow" />
+                className={cx(
+                  'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 active:scale-[0.98]',
+                  isActive
+                    ? 'bg-accent-cyan/14 text-accent-cyan ring-1 ring-accent-cyan/18'
+                    : 'text-text-secondary hover:bg-white/[0.05] hover:text-white',
                 )}
+              >
+                <Icon
+                  className={cx(
+                    'h-[18px] w-[18px] transition-transform group-hover:scale-105',
+                    isActive ? 'text-accent-cyan' : 'text-text-muted',
+                  )}
+                />
+                <span className="truncate">{label}</span>
+                {isActive && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-accent-cyan" />}
               </NavLink>
             )
           })}
         </nav>
 
-        {/* Footer */}
-        <div className="px-4 py-4 border-t border-white/5">
-          <div className="glass rounded-xl p-3 text-center">
-            <p className="text-[11px] text-text-muted">Powered by</p>
-            <p className="text-xs font-semibold gradient-text">Hybrid RAG + Agents</p>
+        <div className="mt-4 border-t border-white/10 pt-4">
+          <div className="rounded-xl border border-white/10 bg-white/[0.035] p-3">
+            <div className="mb-2 flex items-center gap-2">
+              <GraduationCap className="h-4 w-4 text-accent-violet" />
+              <span className="text-xs font-semibold text-white">Agentic Study OS</span>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              <Badge tone="violet">RAG</Badge>
+              <Badge tone="cyan">Vision</Badge>
+            </div>
           </div>
         </div>
       </aside>
 
-      {/* ── Main Content ── */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Mobile header */}
-        <header className="md:hidden flex items-center gap-3 px-4 py-3 glass-solid border-b border-white/5">
+      <div className="min-h-screen md:pl-60">
+        <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-white/10 bg-surface-950/78 px-4 backdrop-blur-xl md:hidden">
           <button
-            className="p-2 rounded-lg hover:bg-white/5"
+            aria-label="Open navigation"
+            className="rounded-lg p-2 text-text-secondary hover:bg-white/[0.06] hover:text-white"
             onClick={() => setMobileOpen(true)}
           >
-            <Menu className="w-5 h-5 text-text-secondary" />
+            <Menu className="h-5 w-5" />
           </button>
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg gradient-bg flex items-center justify-center">
-              <GraduationCap className="w-4 h-4 text-white" />
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg gradient-bg text-surface-950">
+              <BrainCircuit className="h-4 w-4" />
             </div>
-            <span className="text-sm font-bold text-white">StudyMate</span>
+            <span className="font-display text-base font-semibold text-white">StudyMate</span>
           </div>
         </header>
 
-        {/* Page content */}
-        <main className="flex-1 overflow-y-auto">
-          {children}
-        </main>
+        <main className="min-h-[calc(100vh-3.5rem)] md:min-h-screen">{children}</main>
       </div>
     </div>
   )

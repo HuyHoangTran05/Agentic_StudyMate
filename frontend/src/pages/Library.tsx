@@ -1,9 +1,17 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useDropzone } from 'react-dropzone'
-import { Library as LibraryIcon, Search, Loader2, CloudUpload, Image as ImageIcon } from 'lucide-react'
+import {
+  CloudUpload,
+  Image as ImageIcon,
+  Library as LibraryIcon,
+  Loader2,
+  Search,
+} from 'lucide-react'
 import DocumentCard from '../components/DocumentCard'
-import { getDocuments, deleteDocument, uploadDocument, uploadImageDocument } from '../lib/api'
+import { deleteDocument, getDocuments, uploadDocument, uploadImageDocument } from '../lib/api'
 import type { Document } from '../lib/api'
+import { Badge, Button, Card, EmptyState, LoadingState, PageHeader, PageShell } from '../components/ui'
+import { cx } from '../lib/cx'
 
 const ACCEPTED_TYPES: Record<string, string[]> = {
   'application/pdf': ['.pdf'],
@@ -13,17 +21,30 @@ const ACCEPTED_TYPES: Record<string, string[]> = {
   'image/jpeg': ['.jpg', '.jpeg'],
 }
 
+interface UploadError {
+  response?: {
+    status?: number
+    data?: {
+      detail?: string | { message?: string }
+    }
+  }
+  message?: string
+}
+
 const isImageFile = (file: File) => file.type === 'image/png' || file.type === 'image/jpeg'
 
-const isDuplicateUploadError = (err: any) => err?.response?.status === 409
+const asUploadError = (err: unknown) => err as UploadError
 
-const getUploadErrorMessage = (err: any) => {
+const isDuplicateUploadError = (err: unknown) => asUploadError(err).response?.status === 409
+
+const getUploadErrorMessage = (err: unknown) => {
   if (isDuplicateUploadError(err)) return 'File already exists in the library!'
 
-  const detail = err?.response?.data?.detail
+  const uploadError = asUploadError(err)
+  const detail = uploadError.response?.data?.detail
   if (typeof detail === 'string') return detail
   if (detail?.message) return detail.message
-  return err?.message || 'Upload failed'
+  return uploadError.message || 'Upload failed'
 }
 
 export default function Library() {
@@ -34,11 +55,26 @@ export default function Library() {
   const [search, setSearch] = useState('')
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
 
+  const refreshDocuments = useCallback(async () => {
+    const res = await getDocuments()
+    setDocuments(res.documents)
+  }, [])
+
   useEffect(() => {
-    getDocuments()
-      .then((res) => setDocuments(res.documents))
+    let cancelled = false
+
+    void getDocuments()
+      .then((res) => {
+        if (!cancelled) setDocuments(res.documents)
+      })
       .catch(console.error)
-      .finally(() => setLoading(false))
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
@@ -49,45 +85,50 @@ export default function Library() {
 
     try {
       let shouldRefresh = false
+      let hadError = false
 
       for (const file of acceptedFiles) {
-        if (isImageFile(file)) {
-          const res = await uploadImageDocument(file)
-          const newDoc: Document = {
-            id: res.document_id,
-            file_name: res.file_name,
-            file_type: 'image',
-            image_url: res.image_url,
-            upload_time: new Date().toISOString(),
-            total_chunks: res.total_chunks,
-            status: res.status,
+        try {
+          if (isImageFile(file)) {
+            const res = await uploadImageDocument(file)
+            const newDoc: Document = {
+              id: res.document_id,
+              file_name: res.file_name,
+              file_type: 'image',
+              image_url: res.image_url,
+              upload_time: new Date().toISOString(),
+              total_chunks: res.total_chunks,
+              status: res.status,
+            }
+            setDocuments((prev) => [newDoc, ...prev.filter((doc) => doc.id !== newDoc.id)])
+          } else {
+            await uploadDocument(file)
+            shouldRefresh = true
           }
-          setDocuments((prev) => [newDoc, ...prev.filter((doc) => doc.id !== newDoc.id)])
-        } else {
-          await uploadDocument(file)
-          shouldRefresh = true
+        } catch (err) {
+          hadError = true
+          const msg = getUploadErrorMessage(err)
+          if (isDuplicateUploadError(err)) alert(msg)
+          setUploadStatus(msg)
         }
       }
 
       if (shouldRefresh) {
-        const res = await getDocuments()
-        setDocuments(res.documents)
+        await refreshDocuments()
       }
-      setUploadStatus('Upload complete')
-      setTimeout(() => setUploadStatus(null), 2000)
-    } catch (err: any) {
-      const msg = getUploadErrorMessage(err)
-      if (isDuplicateUploadError(err)) alert(msg)
-      setUploadStatus(msg)
+
+      if (!hadError) setUploadStatus('Upload complete')
+      window.setTimeout(() => setUploadStatus(null), 2200)
     } finally {
       setUploading(false)
     }
-  }, [])
+  }, [refreshDocuments])
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+  const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
     onDrop,
     accept: ACCEPTED_TYPES,
     disabled: uploading,
+    noClick: true,
   })
 
   const handleDelete = async (id: string) => {
@@ -97,123 +138,112 @@ export default function Library() {
     }
     try {
       await deleteDocument(id)
-      setDocuments((prev) => prev.filter((d) => d.id !== id))
+      setDocuments((prev) => prev.filter((doc) => doc.id !== id))
     } catch (err) {
       console.error(err)
     }
     setDeleteConfirm(null)
   }
 
-  const filtered = documents.filter((d) =>
-    d.file_name.toLowerCase().includes(search.toLowerCase())
+  const filtered = documents.filter((doc) =>
+    doc.file_name.toLowerCase().includes(search.toLowerCase())
   )
 
   return (
-    <div className="p-6 md:p-8 max-w-6xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center gap-4 justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center shadow-lg shadow-violet-500/20">
-              <LibraryIcon className="w-5 h-5 text-white" />
-            </div>
-            Document Library
-          </h1>
-          <p className="text-sm text-text-secondary mt-2 ml-[52px]">
-            {documents.length} document{documents.length !== 1 ? 's' : ''} uploaded
-          </p>
-        </div>
+    <PageShell wide className="space-y-6">
+      <PageHeader
+        icon={LibraryIcon}
+        eyebrow="Knowledge Base"
+        title="Document Library"
+        description={`${documents.length} document${documents.length === 1 ? '' : 's'} uploaded and available for chat, citations, and study generation.`}
+        action={
+          <div className="field-surface flex w-full items-center gap-2 rounded-full px-4 py-2.5 md:w-80">
+            <Search className="h-4 w-4 shrink-0 text-text-muted" />
+            <input
+              type="text"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search documents..."
+              className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-text-muted"
+            />
+          </div>
+        }
+      />
 
-        {/* Search */}
-        <div className="glass rounded-xl flex items-center gap-2 px-4 py-2.5 w-full md:w-72">
-          <Search className="w-4 h-4 text-text-muted flex-shrink-0" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search documents..."
-            className="bg-transparent text-sm text-white placeholder:text-text-muted outline-none flex-1"
-          />
-        </div>
-      </div>
-
-      {/* Upload zone */}
-      <div
+      <Card
         {...getRootProps()}
-        className={`rounded-2xl border border-dashed p-5 transition-all cursor-pointer ${
-          isDragActive
-            ? 'border-violet-500 bg-violet-500/10'
-            : 'border-white/10 hover:border-white/20 hover:bg-white/[0.02]'
-        } ${uploading ? 'pointer-events-none opacity-70' : ''}`}
+        className={cx(
+          'cursor-pointer border border-dashed p-5 transition-all',
+          isDragActive ? 'border-accent-cyan/70 bg-accent-cyan/[0.04]' : 'border-white/12 hover:border-accent-violet/30 hover:bg-white/[0.03]',
+          uploading && 'pointer-events-none opacity-70',
+        )}
       >
         <input {...getInputProps()} />
-        <div className="flex items-center gap-4">
-          <div className="w-11 h-11 rounded-xl glass flex items-center justify-center flex-shrink-0">
-            {uploading ? (
-              <Loader2 className="w-5 h-5 text-violet-400 animate-spin" />
-            ) : (
-              <CloudUpload className="w-5 h-5 text-violet-400" />
-            )}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-white/[0.04] text-accent-violet">
+            {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <CloudUpload className="h-5 w-5" />}
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <p className="text-sm font-medium text-white">
-              {uploading ? uploadStatus : 'Drop documents or images here, or browse'}
+              {uploading ? uploadStatus : isDragActive ? 'Drop files to upload' : 'Drop documents or images here'}
             </p>
-            <p className="text-xs text-text-muted mt-1">
+            <p className="mt-1 text-xs leading-5 text-text-muted">
               Supports PDF, DOCX, TXT, PNG, and JPG. Images are extracted with AI and stored with a thumbnail.
             </p>
           </div>
-          <ImageIcon className="w-4 h-4 text-text-muted ml-auto hidden sm:block" />
+          <Button
+            type="button"
+            variant="ghost"
+            className="shrink-0"
+            onClick={(event) => {
+              event.stopPropagation()
+              open()
+            }}
+            disabled={uploading}
+          >
+            Browse
+          </Button>
+          <ImageIcon className="hidden h-4 w-4 text-text-muted sm:block" />
         </div>
-      </div>
+      </Card>
 
-      {/* Delete confirmation toast */}
-      {deleteConfirm && (
-        <div className="glass rounded-xl p-4 flex items-center justify-between border border-rose-500/20 animate-fade-in">
-          <p className="text-sm text-text-secondary">
-            Are you sure you want to delete this document? This action cannot be undone.
-          </p>
-          <div className="flex gap-2 ml-4 flex-shrink-0">
-            <button
-              onClick={() => setDeleteConfirm(null)}
-              className="px-3 py-1.5 rounded-lg text-xs font-medium glass text-text-secondary hover:text-white transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={() => handleDelete(deleteConfirm)}
-              className="px-3 py-1.5 rounded-lg text-xs font-medium bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 transition-colors"
-            >
-              Delete
-            </button>
-          </div>
-        </div>
+      {uploadStatus && !uploading && (
+        <Badge tone={uploadStatus === 'File already exists in the library!' ? 'rose' : 'cyan'}>
+          {uploadStatus}
+        </Badge>
       )}
 
-      {/* Content */}
-      {loading ? (
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="w-8 h-8 text-violet-400 animate-spin" />
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="glass rounded-2xl p-12 text-center space-y-4">
-          <div className="w-16 h-16 rounded-2xl glass flex items-center justify-center mx-auto">
-            <LibraryIcon className="w-8 h-8 text-text-muted" />
-          </div>
-          <h3 className="text-lg font-semibold text-white">
-            {search ? 'No matches found' : 'No documents yet'}
-          </h3>
-          <p className="text-sm text-text-muted">
-            {search ? 'Try a different search term' : 'Upload your first document to get started'}
+      {deleteConfirm && (
+        <Card className="flex flex-col gap-4 border-rose-300/20 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-text-secondary">
+            Delete this document? This action cannot be undone.
           </p>
-        </div>
+          <div className="flex gap-2">
+            <Button variant="ghost" onClick={() => setDeleteConfirm(null)}>
+              Cancel
+            </Button>
+            <Button variant="danger" onClick={() => handleDelete(deleteConfirm)}>
+              Delete
+            </Button>
+          </div>
+        </Card>
+      )}
+
+      {loading ? (
+        <LoadingState label="Loading library..." />
+      ) : filtered.length === 0 ? (
+        <EmptyState
+          icon={LibraryIcon}
+          title={search ? 'No matches found' : 'No documents yet'}
+          description={search ? 'Try another search term.' : 'Upload your first source to start building your study library.'}
+        />
       ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 stagger-children">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {filtered.map((doc) => (
             <DocumentCard key={doc.id} document={doc} onDelete={handleDelete} />
           ))}
         </div>
       )}
-    </div>
+    </PageShell>
   )
 }

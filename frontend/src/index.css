@@ -1,51 +1,91 @@
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
-
-/* ─── Design Tokens ──────────────────────────────────────────────────────── */
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Geist", "Inter", ui-sans-serif, system-ui, sans-serif;
 
-  /* Surfaces */
-  --color-surface-900: #0a0a0f;
-  --color-surface-800: #111118;
-  --color-surface-700: #1a1a24;
-  --color-surface-600: #232330;
-  --color-surface-500: #2d2d3d;
+  --color-surface-950: #070707;
+  --color-surface-900: #0a0a0a;
+  --color-surface-850: #101010;
+  --color-surface-800: #131313;
+  --color-surface-750: #171717;
+  --color-surface-700: #1c1b1b;
+  --color-surface-650: #201f1f;
+  --color-surface-600: #262626;
+  --color-surface-500: #353534;
+  --color-surface-400: #494454;
 
-  /* Accent gradients */
-  --color-accent-violet: #7c3aed;
-  --color-accent-cyan: #06b6d4;
-  --color-accent-emerald: #10b981;
-  --color-accent-rose: #f43f5e;
-  --color-accent-amber: #f59e0b;
+  --color-accent-violet: #d0bcff;
+  --color-accent-violet-strong: #a078ff;
+  --color-accent-cyan: #4cd7f6;
+  --color-accent-cyan-strong: #03b5d3;
+  --color-accent-emerald: #60e6b5;
+  --color-accent-rose: #ffb4ab;
+  --color-accent-amber: #ffd38a;
 
-  /* Text */
-  --color-text-primary: #f1f5f9;
-  --color-text-secondary: #94a3b8;
-  --color-text-muted: #64748b;
+  --color-text-primary: #f4f0ef;
+  --color-text-secondary: #cbc3d7;
+  --color-text-muted: #958ea0;
 }
-
-/* ─── Base ────────────────────────────────────────────────────────────────── */
 
 * {
   box-sizing: border-box;
 }
 
+html {
+  background: var(--color-surface-950);
+}
+
 body {
+  min-width: 320px;
   margin: 0;
-  padding: 0;
-  font-family: var(--font-sans);
-  background: var(--color-surface-900);
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+    var(--color-surface-950);
+  background-size: 28px 28px, 28px 28px, auto;
   color: var(--color-text-primary);
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: geometricPrecision;
+}
+
+body::before {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  content: "";
+  background-image: radial-gradient(rgba(76, 215, 246, 0.16) 1px, transparent 1px);
+  background-size: 24px 24px;
+  mask-image: linear-gradient(to bottom, black 0%, transparent 78%);
 }
 
 #root {
   min-height: 100vh;
 }
 
-/* ─── Scrollbar ───────────────────────────────────────────────────────────── */
+::selection {
+  background: rgba(208, 188, 255, 0.32);
+  color: var(--color-text-primary);
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
 
 ::-webkit-scrollbar {
   width: 6px;
@@ -62,54 +102,45 @@ body {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-text-muted);
+  background: var(--color-surface-400);
 }
 
-/* ─── Glass Panels ────────────────────────────────────────────────────────── */
+.font-display {
+  font-family: var(--font-display);
+}
 
 .glass {
-  background: rgba(17, 17, 24, 0.6);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.glass-hover:hover {
-  background: rgba(23, 23, 32, 0.7);
-  border-color: rgba(255, 255, 255, 0.1);
+  background: linear-gradient(180deg, rgba(23, 23, 23, 0.82), rgba(14, 14, 14, 0.72));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 24px 80px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
 
 .glass-solid {
-  background: rgba(17, 17, 24, 0.85);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
+  background: rgba(18, 18, 18, 0.94);
   border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 24px 80px rgba(0, 0, 0, 0.34);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
 
-/* ─── Gradient Accents ────────────────────────────────────────────────────── */
+.glass-hover {
+  transition: border-color 180ms ease, background 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+}
+
+.glass-hover:hover {
+  background: linear-gradient(180deg, rgba(32, 31, 31, 0.88), rgba(18, 18, 18, 0.8));
+  border-color: rgba(208, 188, 255, 0.22);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 24px 80px rgba(208, 188, 255, 0.08);
+}
 
 .gradient-text {
-  background: linear-gradient(135deg, var(--color-accent-violet), var(--color-accent-cyan));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  background: linear-gradient(90deg, var(--color-accent-violet), var(--color-accent-cyan));
   background-clip: text;
-}
-
-.gradient-border {
-  position: relative;
-}
-
-.gradient-border::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1px;
-  background: linear-gradient(135deg, var(--color-accent-violet), var(--color-accent-cyan));
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
 }
 
 .gradient-bg {
@@ -117,63 +148,108 @@ body {
 }
 
 .gradient-bg-subtle {
-  background: linear-gradient(
-    135deg,
-    rgba(124, 58, 237, 0.15),
-    rgba(6, 182, 212, 0.15)
-  );
+  background: linear-gradient(135deg, rgba(208, 188, 255, 0.14), rgba(76, 215, 246, 0.1));
 }
 
-/* ─── Animations ──────────────────────────────────────────────────────────── */
+.field-surface {
+  background: rgba(5, 5, 5, 0.84);
+  border: 1px solid rgba(149, 142, 160, 0.28);
+  transition: border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
+}
+
+.field-surface:focus-within,
+.field-surface:focus {
+  border-color: rgba(208, 188, 255, 0.62);
+  box-shadow: 0 0 0 3px rgba(208, 188, 255, 0.12);
+  outline: none;
+}
+
+.surface-grid {
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.026) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.026) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
 
 @keyframes fade-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes slide-in-left {
-  from { opacity: 0; transform: translateX(-16px); }
-  to   { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
-@keyframes pulse-glow {
-  0%, 100% { opacity: 0.5; }
-  50%      { opacity: 1; }
-}
-
-@keyframes spin-slow {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
+@keyframes breath {
+  0%,
+  100% {
+    opacity: 0.58;
+    transform: scale(0.92);
+    box-shadow: 0 0 0 0 rgba(76, 215, 246, 0.4);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 0 8px rgba(76, 215, 246, 0);
+  }
 }
 
 @keyframes typing {
-  0%, 60%, 100% { opacity: 0.3; }
-  30%            { opacity: 1; }
+  0%,
+  60%,
+  100% {
+    opacity: 0.28;
+  }
+  30% {
+    opacity: 1;
+  }
+}
+
+@keyframes pulse-border {
+  0%,
+  100% {
+    border-color: rgba(76, 215, 246, 0.28);
+  }
+  50% {
+    border-color: rgba(76, 215, 246, 0.72);
+  }
 }
 
 .animate-fade-in {
-  animation: fade-in 0.4s ease-out both;
+  animation: fade-in 0.36s ease-out both;
 }
 
 .animate-slide-in {
-  animation: slide-in-left 0.3s ease-out both;
+  animation: slide-in-left 0.26s ease-out both;
 }
 
-.animate-pulse-glow {
-  animation: pulse-glow 2s ease-in-out infinite;
+.agent-pulse {
+  animation: breath 2.6s ease-in-out infinite;
 }
 
-/* Stagger children */
+.uploading-state {
+  animation: pulse-border 1.8s ease-in-out infinite;
+}
+
 .stagger-children > *:nth-child(1) { animation-delay: 0ms; }
-.stagger-children > *:nth-child(2) { animation-delay: 60ms; }
-.stagger-children > *:nth-child(3) { animation-delay: 120ms; }
-.stagger-children > *:nth-child(4) { animation-delay: 180ms; }
-.stagger-children > *:nth-child(5) { animation-delay: 240ms; }
-.stagger-children > *:nth-child(6) { animation-delay: 300ms; }
-.stagger-children > *:nth-child(7) { animation-delay: 360ms; }
-.stagger-children > *:nth-child(8) { animation-delay: 420ms; }
-
-/* ─── Flashcard Flip ──────────────────────────────────────────────────────── */
+.stagger-children > *:nth-child(2) { animation-delay: 55ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 110ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 165ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 220ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 275ms; }
 
 .flashcard-container {
   perspective: 1200px;
@@ -194,223 +270,175 @@ body {
 .flashcard-face {
   position: absolute;
   inset: 0;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 2rem;
-  border-radius: 1rem;
+  border-radius: 1.5rem;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 .flashcard-back {
   transform: rotateY(180deg);
 }
 
-/* ─── Markdown Content ────────────────────────────────────────────────────── */
+.markdown-content {
+  color: var(--color-text-secondary);
+}
 
 .markdown-content h1,
 .markdown-content h2,
-.markdown-content h3 {
+.markdown-content h3,
+.markdown-content h4 {
+  margin-top: 1.15em;
+  margin-bottom: 0.45em;
   color: var(--color-text-primary);
-  margin-top: 1.25em;
-  margin-bottom: 0.5em;
-  font-weight: 600;
+  font-family: var(--font-display);
+  font-weight: 650;
+  letter-spacing: 0;
 }
 
-.markdown-content h1 { font-size: 1.5rem; }
-.markdown-content h2 { font-size: 1.25rem; }
-.markdown-content h3 { font-size: 1.125rem; }
+.markdown-content h1 { font-size: 1.45rem; }
+.markdown-content h2 { font-size: 1.22rem; }
+.markdown-content h3 { font-size: 1.08rem; }
+.markdown-content h4 { font-size: 1rem; }
 
 .markdown-content p {
   margin: 0.5em 0;
-  line-height: 1.7;
   color: var(--color-text-secondary);
+  line-height: 1.72;
 }
 
 .markdown-content ul,
 .markdown-content ol {
-  padding-left: 1.5em;
-  margin: 0.5em 0;
+  margin: 0.6em 0;
+  padding-left: 1.35em;
 }
 
 .markdown-content li {
-  margin: 0.25em 0;
+  margin: 0.28em 0;
   color: var(--color-text-secondary);
-  line-height: 1.6;
+  line-height: 1.65;
+}
+
+.markdown-content a {
+  color: var(--color-accent-cyan);
+  text-decoration: underline;
+  text-decoration-color: rgba(76, 215, 246, 0.42);
 }
 
 .markdown-content code {
-  background: var(--color-surface-600);
-  padding: 0.15em 0.4em;
-  border-radius: 0.25rem;
-  font-size: 0.875em;
+  padding: 0.14em 0.42em;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.45rem;
+  background: rgba(255, 255, 255, 0.06);
   color: var(--color-accent-cyan);
+  font-family: var(--font-display);
+  font-size: 0.875em;
 }
 
 .markdown-content pre {
-  background: var(--color-surface-800);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 0.5rem;
+  margin: 1em 0;
   padding: 1em;
   overflow-x: auto;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.85rem;
+  background: rgba(5, 5, 5, 0.78);
 }
 
 .markdown-content pre code {
-  background: none;
   padding: 0;
+  border: 0;
+  background: transparent;
   color: var(--color-text-primary);
 }
 
 .markdown-content strong {
   color: var(--color-text-primary);
-  font-weight: 600;
-}
-
-.markdown-content em {
-  color: var(--color-text-secondary);
-  font-style: italic;
-}
-
-.markdown-content del {
-  color: var(--color-text-muted);
-  text-decoration: line-through;
+  font-weight: 650;
 }
 
 .markdown-content blockquote {
-  border-left: 3px solid var(--color-accent-violet);
-  padding: 0.5em 1em;
-  margin: 0.75em 0;
-  background: rgba(124, 58, 237, 0.06);
-  border-radius: 0 0.5rem 0.5rem 0;
-  color: var(--color-text-secondary);
-}
-
-.markdown-content blockquote p {
-  margin: 0.25em 0;
+  margin: 0.8em 0;
+  padding: 0.55em 0.9em;
+  border-left: 3px solid var(--color-accent-cyan);
+  border-radius: 0 0.75rem 0.75rem 0;
+  background: rgba(76, 215, 246, 0.06);
 }
 
 .markdown-content hr {
-  border: none;
-  border-top: 1px solid var(--color-surface-500);
   margin: 1.25em 0;
+  border: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-/* ─── Markdown Tables (GFM) ──────────────────────────────────────────────── */
-
-.markdown-content .table-wrapper,
-.markdown-content table {
-  width: 100%;
-  margin: 1em 0;
-}
-
-/* Scrollable container for wide tables */
 .markdown-content table {
   display: block;
+  width: 100%;
+  margin: 1em 0;
   overflow-x: auto;
-  border-collapse: separate;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-spacing: 0;
-  border: 1px solid var(--color-surface-500);
-  border-radius: 0.5rem;
+  border-collapse: separate;
+  border-radius: 0.8rem;
   font-size: 0.8125rem;
 }
 
-.markdown-content thead {
-  display: table;
-  width: 100%;
-  table-layout: fixed;
-}
-
+.markdown-content thead,
 .markdown-content tbody {
   display: table;
   width: 100%;
   table-layout: fixed;
 }
 
-.markdown-content th {
-  background: linear-gradient(
-    180deg,
-    var(--color-surface-600),
-    rgba(45, 45, 61, 0.9)
-  );
-  font-weight: 600;
-  color: var(--color-text-primary);
+.markdown-content th,
+.markdown-content td {
+  padding: 0.6rem 0.8rem;
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   text-align: left;
-  padding: 0.625rem 0.875rem;
-  border-bottom: 1px solid var(--color-surface-500);
-  border-right: 1px solid rgba(255, 255, 255, 0.04);
-  white-space: nowrap;
 }
 
-.markdown-content th:last-child {
-  border-right: none;
+.markdown-content th {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--color-text-primary);
+  font-weight: 650;
 }
 
 .markdown-content td {
-  padding: 0.5rem 0.875rem;
   color: var(--color-text-secondary);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-  border-right: 1px solid rgba(255, 255, 255, 0.04);
-  line-height: 1.5;
 }
 
+.markdown-content th:last-child,
 .markdown-content td:last-child {
-  border-right: none;
+  border-right: 0;
 }
 
-.markdown-content tbody tr:last-child td {
-  border-bottom: none;
+.markdown-content tr:last-child td {
+  border-bottom: 0;
 }
-
-/* Alternating row stripes */
-.markdown-content tbody tr:nth-child(even) {
-  background: rgba(255, 255, 255, 0.02);
-}
-
-/* Row hover highlight */
-.markdown-content tbody tr:hover {
-  background: rgba(124, 58, 237, 0.06);
-}
-
-/* ─── Task List Checkboxes (GFM) ─────────────────────────────────────────── */
 
 .markdown-content input[type="checkbox"] {
-  appearance: none;
-  -webkit-appearance: none;
   width: 1rem;
   height: 1rem;
-  border: 1.5px solid var(--color-surface-500);
-  border-radius: 0.25rem;
-  margin-right: 0.5em;
+  margin-right: 0.45em;
+  accent-color: var(--color-accent-violet-strong);
   vertical-align: middle;
-  position: relative;
-  cursor: default;
 }
-
-.markdown-content input[type="checkbox"]:checked {
-  background: var(--color-accent-violet);
-  border-color: var(--color-accent-violet);
-}
-
-.markdown-content input[type="checkbox"]:checked::after {
-  content: "✓";
-  position: absolute;
-  top: -1px;
-  left: 2px;
-  font-size: 0.7rem;
-  color: white;
-  font-weight: 700;
-}
-
-/* ─── Typing indicator ────────────────────────────────────────────────────── */
 
 .typing-dot {
   width: 6px;
   height: 6px;
-  border-radius: 50%;
-  background: var(--color-accent-violet);
+  border-radius: 999px;
+  background: var(--color-accent-cyan);
   animation: typing 1.4s infinite both;
 }
 
-.typing-dot:nth-child(2) { animation-delay: 0.2s; }
-.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+.typing-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}

@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import {
   createContext,
   useCallback,
@@ -66,11 +67,32 @@ export function StudyToolsProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
-    refreshDocuments().catch((err) => {
-      console.error(err)
-      setError('Unable to load ready documents.')
-    })
-  }, [refreshDocuments])
+    let cancelled = false
+
+    void getDocuments()
+      .then((res) => {
+        if (cancelled) return
+
+        const ready = res.documents.filter((doc) => doc.status === 'ready')
+        setDocuments(ready)
+        setSelectedDoc((current) => {
+          if (current && ready.some((doc) => doc.id === current)) {
+            return current
+          }
+          return ready[0]?.id ?? ''
+        })
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          console.error(err)
+          setError('Unable to load ready documents.')
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const generateCurrentTool = useCallback(async () => {
     if (!selectedDoc || isGenerating) return
