@@ -16,6 +16,51 @@ Agentic StudyMate is an agentic multimodal RAG study assistant for local develop
 - Monitor API, database, Qdrant, Neo4j, LLM, embedding, and reranker status.
 - Inspect Knowledge Graph triplets and rebuild a document graph without re-uploading.
 
+## Demo Screenshots
+
+### Dashboard
+
+Agentic Multimodal RAG workspace.
+
+![Dashboard: Agentic Multimodal RAG workspace](docs/images/dashboard.png)
+
+### Upload
+
+Document/image ingestion.
+
+![Upload: document and image ingestion](docs/images/upload.png)
+
+### Chat
+
+Multimodal RAG answer with citations and metadata.
+
+![Chat: multimodal RAG answer with citations and metadata](docs/images/chat.png)
+
+### Graph Explorer
+
+Neo4j Knowledge Graph triplets.
+
+![Graph Explorer: Neo4j Knowledge Graph triplets](docs/images/graph-explorer.png)
+
+### System Status
+
+Local service monitoring.
+
+![System Status: local service monitoring](docs/images/system-status.png)
+
+## Demo Flow
+
+1. Start Qdrant and Neo4j.
+2. Start the FastAPI backend.
+3. Start the Vite frontend.
+4. Upload a PDF.
+5. Ask a document question.
+6. Ask an image question.
+7. Check citations and response metadata.
+8. Open Graph Explorer.
+9. Rebuild Knowledge Graph if needed.
+10. Check System Status.
+
 ## Architecture
 
 Frontend:
