@@ -340,9 +340,11 @@ The retrieval-only mode:
 
 - initializes the in-memory BM25 index from SQLite
 - calls the existing hybrid retriever
-- reports `hit@k`, `page_hit@k`, keyword overlap, and average chunks returned
+- reports `hit@1`, `hit@3`, `hit@5`, `hit@k`, MRR, `page_hit@k`, keyword overlap, source distribution, and average chunks returned
 - writes JSON reports to `backend/evaluation/reports/`
-- can print top-k file names, pages, chunk IDs, scores, retrieval sources, and previews with `--show-results`
+- can print top-k file names, pages, chunk IDs, scores, retrieval sources, first relevant rank, top-1 source, source distribution, and previews with `--show-results`
+
+`hit@k` alone can be too lenient because the expected file only needs to appear somewhere in the retrieved set. `hit@1`, `hit@3`, and `hit@5` show whether the relevant document is ranked early enough to be useful. MRR, or mean reciprocal rank, rewards systems that place the first relevant result near the top. Source distribution shows whether retrieved chunks came from BM25, vector search, graph retrieval, or an unknown source; if vector results are absent, check Qdrant indexing and hybrid fusion settings.
 
 Optional answer evaluation may use configured LLM quota:
 
