@@ -1,36 +1,20 @@
 # Agentic StudyMate
 
-## Overview
+Agentic StudyMate is an agentic multimodal RAG study assistant for local development and demos. It lets you upload documents and images, chat with cited answers, generate study tools, inspect service health, explore Neo4j Knowledge Graph triplets, and rebuild graph relationships from existing chunks when GraphRAG data is missing or stale.
 
-Agentic StudyMate is an Agentic Multimodal RAG study assistant. It lets users upload study materials, chat with their local knowledge base, ask image-based questions, and generate study tools from processed documents.
+## What It Does
 
-The system combines text RAG, vision RAG, hybrid retrieval, GraphRAG, reranking, SSE streaming, and citation verification. It is built for local development with FastAPI, React/Vite, SQLite, Qdrant, Neo4j, local CPU embeddings, and Groq-hosted LLM inference.
-
-## Key Features
-
-- PDF, DOCX, and TXT upload through `POST /api/upload`.
-- PNG and JPEG image document upload through `POST /api/documents/image`.
-- SHA-256 file hash duplicate detection for text document uploads.
-- `409 Conflict` responses for duplicate text documents.
-- Safe frontend duplicate-file handling in `Upload.tsx` and `Library.tsx`, displaying `File already exists in the library!` instead of crashing.
-- Text extraction for PDF, DOCX, and TXT files.
-- Vision extraction for uploaded image documents.
-- Structure-aware document chunking with page and section metadata.
-- SQLite metadata storage for documents, chunks, chat sessions, messages, image URLs, and file hashes.
-- Qdrant vector storage with 384-dimensional cosine vectors.
-- BM25 keyword retrieval with an in-memory index rebuilt on startup.
-- Hybrid retrieval with Qdrant vector search, BM25 search, and RRF fusion.
-- CPU cross-encoder reranking with `cross-encoder/ms-marco-MiniLM-L-6-v2`.
-- Neo4j Knowledge Graph / GraphRAG ingestion and retrieval when configured.
-- Entity-relation triplet extraction from document chunks.
-- Graph relationships linked back to SQLite chunk IDs for citation mapping.
-- SSE streaming chat with status, chunk, citations, done, session, and error events.
-- Chat sessions with persistent message history.
-- Deterministic citation verification for text RAG answers.
-- Multimodal image question answering.
-- Two-pass image retrieval flow for image chat.
-- Unified Groq model strategy using `meta-llama/llama-4-scout-17b-16e-instruct` for both `TEXT_MODEL` and `VISION_MODEL`.
-- Study tools for quizzes, flashcards, and summaries.
+- Upload PDF, DOCX, TXT, PNG, JPG, JPEG, and WEBP sources.
+- Detect duplicate text-document uploads with SHA-256 hashes and return `409 Conflict`.
+- Extract text and image semantics, chunk content, and store metadata in SQLite.
+- Store embeddings in Qdrant for vector retrieval.
+- Maintain an in-memory BM25 index for keyword retrieval.
+- Extract entity-relation triplets into Neo4j for GraphRAG.
+- Chat with streaming answers, markdown rendering, citations, and source metadata.
+- Ask image questions that use vision understanding plus retrieved document and graph context.
+- Generate quizzes, flashcards, and summaries from ready documents.
+- Monitor API, database, Qdrant, Neo4j, LLM, embedding, and reranker status.
+- Inspect Knowledge Graph triplets and rebuild a document graph without re-uploading.
 
 ## Architecture
 
@@ -40,264 +24,197 @@ Frontend:
 - Vite
 - TypeScript
 - Tailwind CSS v4
-- Runs on port `5173`
+- Lucide icons
+- Runs at `http://localhost:5173`
 - Proxies `/api` and `/static` to the FastAPI backend
 
 Backend:
 
-- Python
-- FastAPI
-- Async/await routes and background tasks
+- FastAPI async routes
 - SQLAlchemy async sessions
-- SQLite with `aiosqlite`
-- Static file serving for `static/uploads`
+- Background tasks for document processing and graph rebuilds
+- SQLite metadata database
+- Static uploaded-file serving from `backend/static`
 
-Metadata DB:
+Retrieval and AI:
 
-- SQLite stores users, documents, chunks, chat sessions, messages, image URLs, and file hashes.
+- Qdrant vector database, default collection `studymate_chunks`
+- Neo4j graph database for entity-relation triplets
+- Local CPU embeddings with `sentence-transformers/all-MiniLM-L6-v2`
+- Cross-encoder reranking with `cross-encoder/ms-marco-MiniLM-L-6-v2`
+- BM25 keyword retrieval through `rank-bm25`
+- LLM provider priority: Groq, Gemini, OpenAI, Anthropic
+- Vision model for image extraction and image questions
 
-Vector DB:
+## Main Flows
 
-- Qdrant on port `6333`
-- Collection: `studymate_chunks`
-- 384-dimensional cosine vectors
+### Document Ingestion
 
-Graph DB:
+User uploads a document:
 
-- Neo4j on port `7687`
-- Stores Knowledge Graph relationships for GraphRAG.
+1. Check file extension and content.
+2. Compute SHA-256 hash for duplicate detection.
+3. Store document metadata in SQLite with `processing` status.
+4. Extract text from PDF, DOCX, or TXT.
+5. Chunk extracted text with page and section metadata.
+6. Store chunks in SQLite.
+7. Extract Knowledge Graph triplets from chunks.
+8. Store triplets in Neo4j linked by existing SQLite `chunk_id`.
+9. Generate local embeddings.
+10. Store vectors in Qdrant.
+11. Add chunks to the BM25 index.
+12. Mark the document `ready`, or `failed` if processing fails.
 
-Embedding model:
+### Image Document Upload
 
-- `sentence-transformers/all-MiniLM-L6-v2`
-- 384 dimensions
-- Runs locally on CPU
+User uploads an image as a source:
 
-LLM:
+1. Persist the image file.
+2. Use the vision model to extract text and semantic visual detail.
+3. Chunk extracted image text.
+4. Store chunks in SQLite.
+5. Store vectors in Qdrant and add chunks to BM25.
+6. Mark the image document ready for search and citation.
 
-- Groq API
-- `meta-llama/llama-4-scout-17b-16e-instruct`
-- Used for both text and vision via `TEXT_MODEL` and `VISION_MODEL`
+### Text Chat
 
-Retrieval:
+User asks a question:
 
-- Qdrant vector search
-- BM25 keyword search
-- Neo4j graph search
-- RRF fusion for vector/BM25 merge
-- CPU cross-encoder reranking
+1. Analyze and rewrite the question when useful.
+2. Retrieve relevant chunks through hybrid vector and BM25 search.
+3. Retrieve graph context from Neo4j when configured.
+4. Rerank results when available.
+5. Stream an answer over SSE.
+6. Return citations and response metadata.
 
-## System Flow
+### Image Chat
 
-### Document Ingestion Flow
+User sends an image and a question:
 
-```text
-User uploads document
--> validate file type
--> read bytes
--> compute SHA-256 file hash
--> reject duplicate with 409 Conflict
--> save file
--> create document record in SQLite
--> extract text
--> chunk text
--> store chunks in SQLite
--> extract graph triplets
--> store triplets in Neo4j when configured
--> generate embeddings with all-MiniLM-L6-v2
--> store vectors in Qdrant
--> add chunks to BM25
--> mark document as ready
+1. Vision model generates a compact image search query.
+2. Retrieve document context from Qdrant/BM25.
+3. Retrieve graph context from Neo4j.
+4. Synthesize the final answer from image understanding plus retrieved context.
+5. Return citations, search query, source counts, and metadata.
+
+### Graph Rebuild
+
+User selects a document in Graph Explorer and clicks `Rebuild Knowledge Graph`:
+
+1. Backend loads the existing SQLite document and chunks.
+2. Old Neo4j relationships are deleted only where `relationship.chunk_id` belongs to that document.
+3. Existing SQLite chunks are converted back into graph-extraction inputs.
+4. Triplets are extracted again with the configured LLM.
+5. New Neo4j relationships are written with the original `chunk_id`.
+6. Graph Explorer can refresh to show the rebuilt relationships.
+
+## App Pages
+
+- Dashboard: overview, stats, capability cards, and quick actions.
+- Upload: document/image dropzone, duplicate upload handling, and recent upload queue.
+- Chat: streaming multimodal RAG chat with markdown, citations, source panels, and metadata.
+- Library: uploaded source list with status and delete actions.
+- Study Tools: quiz, flashcard, and summary generation from ready documents.
+- Graph Explorer: searchable Neo4j triplet table/cards, document filter, and graph rebuild action.
+- System Status: local API, SQLite, Qdrant, Neo4j, LLM, embedding, reranker, and data counts.
+
+## API Endpoints
+
+Health:
+
+- `GET /api/health`
+
+Upload:
+
+- `POST /api/upload`
+
+Documents:
+
+- `GET /api/documents`
+- `POST /api/documents/image`
+- `GET /api/documents/{document_id}`
+- `DELETE /api/documents/{document_id}`
+
+Chat:
+
+- `POST /api/chat`
+- `GET /api/chat/sessions`
+- `GET /api/chat/sessions/{session_id}`
+- `DELETE /api/chat/sessions/{session_id}`
+
+Study tools:
+
+- `POST /api/study-tools/quiz`
+- `POST /api/study-tools/flashcards`
+- `POST /api/study-tools/summary`
+
+System:
+
+- `GET /api/system/status`
+
+Graph:
+
+- `GET /api/graph/triplets`
+- `POST /api/graph/documents/{document_id}/rebuild`
+
+## Local Setup
+
+### 1. Start Qdrant
+
+Using Docker directly:
+
+```powershell
+docker run -p 6333:6333 -v qdrant_storage:/qdrant/storage qdrant/qdrant
 ```
 
-### Chat Flow
+Or with Compose from the project root:
 
-```text
-User sends text question
--> query analysis
--> query rewriting
--> query planning if needed
--> Qdrant vector retrieval
--> BM25 keyword retrieval
--> Neo4j graph retrieval
--> RRF fusion for vector/BM25 results
--> cross-encoder reranking
--> context evaluation
--> retry retrieval when context is insufficient
--> answer generation
--> citation verification
--> SSE response
+```powershell
+docker compose up -d qdrant
 ```
 
-### Multimodal Image Chat Flow
+### 2. Start Neo4j
 
-```text
-User sends image + question
--> vision model extracts 3-5 retrieval keywords
--> search Qdrant/BM25 using extracted keywords
--> search Neo4j graph triplets using extracted keywords
--> combine retrieved vector/BM25/graph context
--> send original image + original question + retrieved context to vision model
--> generate final answer
--> return answer with citations
+Using Docker directly:
+
+```powershell
+docker run --name neo4j -p 7474:7474 -p 7687:7687 -e NEO4J_AUTH=neo4j/your_password neo4j:latest
 ```
 
-Text-only chat skips the image keyword extraction pass and uses the normal agentic text RAG pipeline.
+Or with Compose from the project root:
 
-## Knowledge Graph / GraphRAG
-
-The ingestion pipeline extracts entity-relation triplets from chunks with this shape:
-
-```json
-{
-  "source": "Apache Spark",
-  "relation": "MANAGES",
-  "target": "Worker Node"
-}
+```powershell
+docker compose up -d neo4j
 ```
 
-Neo4j stores these as:
+Neo4j Browser opens at `http://localhost:7474`.
 
-```cypher
-(:Entity)-[:RELATION {chunk_id: "..."}]->(:Entity)
+The backend driver uses `bolt://localhost:7687` or `bolt://127.0.0.1:7687`. Do not open the `bolt://` URI in a browser.
+
+Change the example Neo4j password before using the Compose file for anything beyond a local demo.
+
+### 3. Configure Backend Environment
+
+Copy the example file and fill in your local values:
+
+```powershell
+copy backend\.env.example backend\.env
 ```
 
-Each relationship keeps the source SQLite `chunk_id`. During graph retrieval, Neo4j returns matching relationships and their chunk IDs, then the backend maps those chunk IDs back to original chunks and document filenames for citations.
+Do not commit real `.env` files or API keys.
 
-Neo4j is configured through `.env`:
+At minimum, configure:
 
-- `NEO4J_URI`
-- `NEO4J_USER`
-- `NEO4J_PASSWORD`
+- `DATABASE_URL`
+- one LLM API key such as `GROQ_API_KEY`
+- `TEXT_MODEL`
+- `VISION_MODEL`
+- Qdrant connection values
+- Neo4j URI/user/password
+- embedding and reranker model names
+- `CORS_ORIGINS`
 
-If Neo4j is not configured, graph ingestion is logged/skipped without blocking the rest of document ingestion.
-
-## Tech Stack
-
-Backend packages include:
-
-- `fastapi`
-- `uvicorn`
-- `python-multipart`
-- `sqlalchemy[asyncio]`
-- `aiosqlite`
-- `pymupdf`
-- `pymupdf4llm`
-- `python-docx`
-- `pillow`
-- `sentence-transformers`
-- CPU `torch`
-- `qdrant-client`
-- `neo4j`
-- `rank-bm25`
-- `groq`
-- `google-genai`
-- `openai`
-- `anthropic`
-- `pydantic-settings`
-- `python-dotenv`
-
-Frontend packages include:
-
-- `react`
-- `react-dom`
-- `react-router-dom`
-- `vite`
-- `typescript`
-- `tailwindcss`
-- `@tailwindcss/vite`
-- `axios`
-- `lucide-react`
-- `react-dropzone`
-- `react-markdown`
-- `remark-gfm`
-
-The current code still includes Gemini, OpenAI, and Anthropic client support, but the project architecture standardizes new text and vision work on Groq Scout.
-
-## Project Structure
-
-```text
-Agentic_StudyMate/
-|-- .cursorrules
-|-- PROJECT_INSTRUCTIONS.md
-|-- README.md
-|-- structure.txt
-|-- backend/
-|   |-- requirements.txt
-|   |-- qdrant_storage/
-|   `-- app/
-|       |-- main.py
-|       |-- config.py
-|       |-- api/
-|       |   `-- routes/
-|       |       |-- upload.py
-|       |       |-- documents.py
-|       |       |-- chat.py
-|       |       `-- study_tools.py
-|       |-- db/
-|       |   |-- session.py
-|       |   `-- init_db.py
-|       |-- models/
-|       |   |-- db_models.py
-|       |   `-- schemas.py
-|       `-- core/
-|           |-- reranker.py
-|           |-- agent/
-|           |   |-- llm_client.py
-|           |   |-- controller.py
-|           |   |-- query_analyzer.py
-|           |   |-- query_rewriter.py
-|           |   |-- query_planner.py
-|           |   |-- context_evaluator.py
-|           |   |-- answer_generator.py
-|           |   |-- citation_verifier.py
-|           |   `-- map_reduce.py
-|           |-- ingest/
-|           |   |-- extractor.py
-|           |   |-- chunker.py
-|           |   |-- embedder.py
-|           |   `-- graph_extractor.py
-|           |-- retrieval/
-|           |   |-- vector_store.py
-|           |   |-- bm25_store.py
-|           |   `-- hybrid.py
-|           `-- db/
-|               `-- neo4j_client.py
-`-- frontend/
-    |-- package.json
-    |-- vite.config.ts
-    |-- index.html
-    |-- public/
-    |   |-- favicon.svg
-    |   `-- icons.svg
-    `-- src/
-        |-- App.tsx
-        |-- main.tsx
-        |-- index.css
-        |-- lib/
-        |   `-- api.ts
-        |-- stores/
-        |   `-- studyToolsStore.tsx
-        |-- pages/
-        |   |-- Dashboard.tsx
-        |   |-- Upload.tsx
-        |   |-- Chat.tsx
-        |   |-- Library.tsx
-        |   `-- StudyTools.tsx
-        |-- components/
-        |   |-- Layout.tsx
-        |   |-- ChatMessage.tsx
-        |   |-- DocumentCard.tsx
-        |   |-- QuizWidget.tsx
-        |   `-- FlashcardViewer.tsx
-        `-- assets/
-            |-- hero.png
-            `-- vite.svg
-```
-
-## Setup Instructions
-
-### Backend
+### 4. Install and Run Backend
 
 ```powershell
 cd backend
@@ -310,21 +227,9 @@ uvicorn app.main:app --reload
 
 The backend runs at `http://localhost:8000`.
 
-### Qdrant
+### 5. Install and Run Frontend
 
-```powershell
-docker run -p 6333:6333 -v qdrant_storage:/qdrant/storage qdrant/qdrant
-```
-
-### Neo4j
-
-```powershell
-docker run --name neo4j -p 7474:7474 -p 7687:7687 -e NEO4J_AUTH=neo4j/your_password neo4j:latest
-```
-
-Set `NEO4J_PASSWORD=your_password` in `backend/.env`.
-
-### Frontend
+Open a second terminal:
 
 ```powershell
 cd frontend
@@ -334,137 +239,107 @@ npm run dev
 
 The frontend runs at `http://localhost:5173`.
 
-## Environment Variables
+## Environment Example
 
-Create `backend/.env` with safe local values. Use placeholders only for secrets.
+`backend/.env.example` contains placeholders only. It intentionally does not include real secrets.
 
-```env
-DATABASE_URL=sqlite+aiosqlite:///./studymate.db
+Common local defaults:
 
-GROQ_API_KEY=your_groq_api_key_here
-TEXT_MODEL=meta-llama/llama-4-scout-17b-16e-instruct
-VISION_MODEL=meta-llama/llama-4-scout-17b-16e-instruct
+- `DATABASE_URL=sqlite+aiosqlite:///./studymate.db`
+- `QDRANT_HOST=localhost`
+- `QDRANT_PORT=6333`
+- `QDRANT_COLLECTION=studymate_chunks`
+- `NEO4J_URI=bolt://localhost:7687`
+- `NEO4J_USER=neo4j`
+- `NEO4J_PASSWORD=your_password`
 
-QDRANT_HOST=localhost
-QDRANT_PORT=6333
-QDRANT_COLLECTION=studymate_chunks
+## Troubleshooting
 
-NEO4J_URI=bolt://localhost:7687
-NEO4J_USER=neo4j
-NEO4J_PASSWORD=your_neo4j_password_here
+Neo4j Browser:
 
-EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
-EMBEDDING_DIMENSION=384
-RERANKER_MODEL=cross-encoder/ms-marco-MiniLM-L-6-v2
+- Open `http://localhost:7474`.
+- Do not open `bolt://localhost:7687` in a browser. That URI is for the backend driver.
 
-CORS_ORIGINS=["http://localhost:5173","http://localhost:3000"]
-UPLOAD_DIR=uploads
+Graph Explorer shows `0` triplets:
 
-GEMINI_API_KEY=
-OPENAI_API_KEY=
-ANTHROPIC_API_KEY=
-```
+- The document may have been uploaded before GraphRAG was enabled.
+- Neo4j may not have been configured or running during ingestion.
+- The document may not contain extractable text relationships.
+- Triplet extraction may have failed or returned no relationships.
+- Select the document in Graph Explorer and click `Rebuild Knowledge Graph`.
 
-`GEMINI_API_KEY`, `OPENAI_API_KEY`, and `ANTHROPIC_API_KEY` are still present in the current settings/client code, but the intended unified model path is Groq Scout.
+Graph rebuild fails:
 
-## API Endpoints
+- Start Neo4j first.
+- Confirm `NEO4J_URI`, `NEO4J_USER`, and `NEO4J_PASSWORD`.
+- Confirm at least one LLM provider key is configured.
+- Check backend logs for per-chunk extraction errors.
 
-### Health
+Qdrant is down:
 
-- `GET /api/health`
+- Vector retrieval may fail or return no context.
+- Start Qdrant and check System Status.
 
-### Uploads And Documents
+Duplicate upload:
 
-- `POST /api/upload`
-- `GET /api/documents`
-- `POST /api/documents/image`
-- `GET /api/documents/{document_id}`
-- `DELETE /api/documents/{document_id}`
+- Text document duplicates return `409 Conflict`.
+- The frontend shows `File already exists in the library!`.
 
-### Chat
+Upload stays processing:
 
-- `POST /api/chat`
-- `GET /api/chat/sessions`
-- `GET /api/chat/sessions/{session_id}`
-- `DELETE /api/chat/sessions/{session_id}`
+- Check backend logs.
+- Confirm the document parser, Qdrant, LLM provider, and local model downloads are working.
+- Large first-time model downloads can make the first ingestion slow.
 
-### Study Tools
+## Reset Local Data
 
-- `POST /api/study-tools/quiz`
-- `POST /api/study-tools/flashcards`
-- `POST /api/study-tools/summary`
+There is no destructive reset script by default. To reset local demo data manually:
 
-## Reset / Cleanup Instructions
-
-To fully reset local development data:
-
-1. Stop the backend, frontend, Qdrant, and Neo4j processes.
-2. Delete the SQLite database file, usually `backend/studymate.db`.
-3. Delete uploaded document files from `backend/uploads` if present.
-4. Delete uploaded static image files from `backend/static/uploads` if present.
-5. Remove Qdrant local storage:
+1. Stop backend and frontend.
+2. Stop local services:
 
 ```powershell
-docker volume rm qdrant_storage
+docker compose down
 ```
 
-If you used the checked-out `backend/qdrant_storage` folder instead of a Docker volume, delete that folder only when you intentionally want to clear all local vectors.
-
-6. Reset Neo4j data if a full graph reset is required:
+3. Delete the SQLite database if you want to clear metadata:
 
 ```powershell
-docker rm -f neo4j
-docker volume prune
+Remove-Item backend\studymate.db
 ```
 
-Only prune Docker volumes when you are sure no other project data is stored there.
+4. Delete uploaded/static files if you want to clear local files:
 
-## Current Development Status
+```powershell
+Remove-Item -Recurse backend\uploads
+Remove-Item -Recurse backend\static\uploads
+```
 
-Implemented:
+5. Remove Qdrant and Neo4j volumes if you want to clear vector and graph data:
 
-- FastAPI backend with async SQLAlchemy and SQLite.
-- React/Vite frontend.
-- PDF, DOCX, TXT text document upload.
-- Text-document SHA-256 duplicate detection and `409 Conflict`.
-- Frontend duplicate upload handling.
-- Image document upload and image chat attachment support.
-- Text extraction, chunking, SQLite chunk storage, local embeddings, Qdrant upsert, BM25 indexing.
-- Hybrid vector/BM25 retrieval with RRF.
-- CPU cross-encoder reranking for text RAG.
-- Neo4j triplet ingestion/search when configured.
-- Agentic text chat pipeline.
-- SSE streaming chat.
-- Chat sessions and message history.
-- Citation verification for text RAG.
-- Two-pass multimodal image chat.
-- Quiz, flashcard, and summary generation.
+```powershell
+docker compose down -v
+```
 
-Partially implemented:
+Use these commands carefully. They remove local demo data.
 
-- Neo4j is optional at runtime; graph ingestion logs/skips when credentials are missing.
-- Qdrant failures are tolerated during ingestion/search, with BM25 available as a fallback.
-- Image document uploads are processed and indexed, but the SHA-256 duplicate shield is implemented on the text-document upload route.
-- Legacy LLM fallback clients still exist in code, although Groq Scout is the project-standard text/vision model path.
+## Demo Checklist
 
-Planned / TODO:
+1. Start Qdrant.
+2. Start Neo4j.
+3. Start the backend.
+4. Start the frontend.
+5. Open `http://localhost:5173`.
+6. Upload a PDF, DOCX, or TXT document.
+7. Wait for the document to become `ready`.
+8. Chat with the document and verify citations.
+9. Ask an image question and inspect the response metadata.
+10. Open System Status and confirm SQLite, Qdrant, Neo4j, and LLM status.
+11. Open Graph Explorer and inspect triplets.
+12. If a selected document has `0` triplets, click `Rebuild Knowledge Graph`.
 
-- Authentication and multi-user accounts.
-- Production deployment packaging.
-- A formal migration path from SQLite if needed.
-- Dedicated automated test coverage for duplicate upload, multimodal chat, and GraphRAG flows.
+## Notes for Contributors
 
-## Notes For Contributors
-
-- Do not commit `.env`.
-- Do not commit API keys or credentials.
-- Keep embedding and reranking models CPU-friendly.
-- Keep Qdrant and Neo4j configurable through environment variables.
-- Keep duplicate upload handling safe; duplicates should return `409 Conflict` and must not crash the frontend.
-- Keep `TEXT_MODEL` and `VISION_MODEL` aligned with `meta-llama/llama-4-scout-17b-16e-instruct` unless the project architecture is explicitly changed.
-- Keep citation metadata intact in SQLite, Qdrant payloads, and graph-backed retrieval.
-- Keep README content synchronized with source code when changing endpoints or architecture.
-
-## License
-
-TBD
+- Do not commit `.env` files or API keys.
+- Keep SQLite, Qdrant, Neo4j, local CPU embeddings, and CPU reranking unless intentionally migrating.
+- Keep document upload, duplicate handling, SSE chat streaming, citations, study tools, System Status, Graph Explorer, and graph rebuild behavior intact.
