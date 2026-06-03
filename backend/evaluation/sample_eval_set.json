@@ -1,0 +1,26 @@
+[
+  {
+    "id": "sample_001",
+    "question": "Write a question that should retrieve content from one uploaded document.",
+    "expected_keywords": ["replace", "with", "document", "keywords"],
+    "expected_file": "Run --list-documents or --create-template to use an exact uploaded file name.",
+    "expected_pages": [],
+    "notes": "This starter file is intentionally generic. For real scoring, run: python evaluation/evaluate_retrieval.py --create-template evaluation/my_eval_set.json"
+  },
+  {
+    "id": "sample_002",
+    "question": "Write a question that should retrieve a specific page or section.",
+    "expected_keywords": [],
+    "expected_file": "Run --list-documents or --create-template to use an exact uploaded file name.",
+    "expected_pages": [],
+    "notes": "Set expected_pages only when you know the source page numbers from your uploaded document."
+  },
+  {
+    "id": "sample_003",
+    "question": "Write a question that checks whether a key concept is retrieved.",
+    "expected_keywords": ["replace", "with", "concept", "terms"],
+    "expected_file": "Run --list-documents or --create-template to use an exact uploaded file name.",
+    "expected_pages": [],
+    "notes": "Use --show-results to inspect retrieved chunks and tune this eval item."
+  }
+]

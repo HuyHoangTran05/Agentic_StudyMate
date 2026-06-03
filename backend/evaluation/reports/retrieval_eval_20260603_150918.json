@@ -1,0 +1,1378 @@
+{
+  "created_at": "2026-06-03T08:09:18.081694+00:00",
+  "eval_file": "D:\\Agentic_StudyMate\\backend\\evaluation\\my_eval_set.json",
+  "top_k": 10,
+  "with_answer": false,
+  "summary": {
+    "items": 6,
+    "hit_at_1": 0.8333333333333334,
+    "hit_at_3": 1.0,
+    "hit_at_5": 1.0,
+    "hit_at_k": 1.0,
+    "mrr": 0.8888888888888888,
+    "page_hit_at_k": null,
+    "keyword_overlap_avg": 0.8333333333333334,
+    "average_chunks_returned": 10.0,
+    "source_distribution": {
+      "bm25": 60,
+      "vector": 0,
+      "graph": 0,
+      "unknown": 0
+    }
+  },
+  "results": [
+    {
+      "item": {
+        "id": "big_data_ecosystem_components_001",
+        "question": "What are the main components of a Big Data ecosystem?",
+        "expected_keywords": [
+          "ecosystem",
+          "data",
+          "storage",
+          "processing",
+          "analytics"
+        ],
+        "expected_file": "2.Big Data Ecosystem.pdf",
+        "expected_pages": [],
+        "notes": "Should retrieve the section explaining the main components or layers of the Big Data ecosystem."
+      },
+      "warnings": [
+        "Vector retrieval did not appear in the top-k results. Check Qdrant indexing or hybrid fusion settings."
+      ],
+      "retrieval": {
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "hit_at_k": true,
+        "first_relevant_rank": 1,
+        "mrr_contribution": 1.0,
+        "top1_file": "2.Big Data Ecosystem.pdf",
+        "top1_page": 39,
+        "top1_is_expected_file": true,
+        "page_hit_at_k": null,
+        "keyword_overlap": {
+          "score": 1.0,
+          "matched": [
+            "ecosystem",
+            "data",
+            "storage",
+            "processing",
+            "analytics"
+          ],
+          "missing": []
+        },
+        "retrieved_count": 10,
+        "top_files": [
+          "2.Big Data Ecosystem.pdf",
+          "3.Big Data Storage.pdf",
+          "3.Big Data Storage.pdf",
+          "3.Big Data Storage.pdf",
+          "2.Big Data Ecosystem.pdf",
+          "3.Big Data Storage.pdf",
+          "3.Big Data Storage.pdf",
+          "1.Foundation of Big Data.pdf",
+          "3.Big Data Storage.pdf",
+          "2.Big Data Ecosystem.pdf"
+        ],
+        "top_pages": [
+          39,
+          12,
+          56,
+          87,
+          54,
+          45,
+          63,
+          19,
+          84,
+          24
+        ],
+        "source_distribution": {
+          "bm25": 10,
+          "vector": 0,
+          "graph": 0,
+          "unknown": 0
+        }
+      },
+      "top_chunks": [
+        {
+          "chunk_id": "7c033e74-6894-4803-b56c-65e301cd250f",
+          "document_id": "5c9e2e73-c8b7-4662-aa0c-a09465835cc3",
+          "file_name": "2.Big Data Ecosystem.pdf",
+          "page_number": 39,
+          "section_title": "**ocess Data Science Application Pr**",
+          "chunk_index": 38,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.01639344262295082,
+          "vector_score": null,
+          "bm25_score": 12.27584549064392,
+          "snippet": "## **ocess Data Science Application Pr** ▪ What question are you answering? - What is the right scope of the project? ▪ What data will you use? - What techniques are you going to try? ▪ How will you evaluate your results? - What maintenance will be required? Before we even get to machine learning, a"
+        },
+        {
+          "chunk_id": "b2720354-051b-46f6-a753-3d26222019eb",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 12,
+          "section_title": "~~The datacenter~~ ~~_is_ the com~~ puter! “Big ideas”",
+          "chunk_index": 11,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.016129032258064516,
+          "vector_score": null,
+          "bm25_score": 11.985024539478545,
+          "snippet": "## ~~The datacenter~~ ~~_is_ the com~~ puter! “Big ideas” * Scale “out”, not “up” Limits of SMP and large shared-memory machines Assume that components will break Engineer software around hardware failures * Move processing to the data Cluster have limited bandwidth, code is a lot smaller Process da"
+        },
+        {
+          "chunk_id": "a1d63bfd-4e47-4b15-8502-49d6e45c81cb",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 56,
+          "section_title": "~~GFS: Assumptions~~",
+          "chunk_index": 55,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015873015873015872,
+          "vector_score": null,
+          "bm25_score": 11.100920909289751,
+          "snippet": "## ~~GFS: Assumptions~~ Commodity hardware over “exotic” hardware Scale “out”, not “up” High component failure rates Inexpensive commodity components fail all the time “Modest” number of huge files Multi-gigabyte files are common, if not encouraged Files are write-once, mostly appended to Logs are a"
+        },
+        {
+          "chunk_id": "8a3bdd63-99ca-4db8-bcc1-3ea3f5d96102",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 87,
+          "section_title": "**HDFS Inside: Write**",
+          "chunk_index": 87,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015625,
+          "vector_score": null,
+          "bm25_score": 10.714179050664546,
+          "snippet": "## **HDFS Inside: Write** - Q: Where should HDFS put the three replicas of a block? What tradeoffs we need to consider? - Tradeoffs: - Reliability - Write Bandwidth - Read Bandwidth ## Q: What are some possible strategies? **==> picture [720 x 76] intentionally omitted <==** **----- Start of picture"
+        },
+        {
+          "chunk_id": "0d21dedf-36c3-4d19-a476-0d8a6d1602cc",
+          "document_id": "5c9e2e73-c8b7-4662-aa0c-a09465835cc3",
+          "file_name": "2.Big Data Ecosystem.pdf",
+          "page_number": 54,
+          "section_title": "**Conclusion**",
+          "chunk_index": 53,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015384615384615385,
+          "vector_score": null,
+          "bm25_score": 9.452092275250743,
+          "snippet": "## **Conclusion** - Big Data arises when **volume, velocity, and variety** exceed the capability of traditional systems. - Modern Big Data platforms rely on **distributed architectures** for scalable storage and processing. - The Big Data ecosystem includes **data pipelines,** . - **architectures, l"
+        },
+        {
+          "chunk_id": "101f953f-9e6c-415c-a870-2358b3ffb771",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 45,
+          "section_title": "**A NewS L Exam le – VoltDB Q p**",
+          "chunk_index": 44,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015151515151515152,
+          "vector_score": null,
+          "bm25_score": 9.350028195569017,
+          "snippet": "## **A NewS L Exam le – VoltDB Q p** ▪ Main-memory storage ▪ Single threaded, run Xacts to completion – No locking – No latching ▪ Built-in HA and durability – No log (in the traditional sense) Traditional ## VoltDB **==> picture [276 x 279] intentionally omitted <==** **----- Start of picture text "
+        },
+        {
+          "chunk_id": "fea6ce51-1e4a-4324-b5db-13c43f506dd3",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 63,
+          "section_title": "**HDFS Motivation**",
+          "chunk_index": 62,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014925373134328358,
+          "vector_score": null,
+          "bm25_score": 9.274510800869024,
+          "snippet": "## **HDFS Motivation** ▪ **Problem 1:** Data is too big to store on one machine. - **HDFS:** Store the data on multiple machines! ▪ **Problem 2:** Very high end machines are too expensive - **HDFS:** Run on commodity hardware! - **Problem 3:** Commodity hardware will fail! - **HDFS:** Software is in"
+        },
+        {
+          "chunk_id": "aeb8be03-9afe-4b86-967c-48456050ded0",
+          "document_id": "65d5befb-69f4-4268-9e60-5f2466442096",
+          "file_name": "1.Foundation of Big Data.pdf",
+          "page_number": 19,
+          "section_title": "**Bi Data g**",
+          "chunk_index": 18,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014705882352941176,
+          "vector_score": null,
+          "bm25_score": 8.620921221136586,
+          "snippet": "## **Bi Data g** ## ▪ **Big** in Big Data refers to: - Big **size** is the primary definition. - Big **complexity** rather than big volume. it can be small and not all large datasets are big data - size matters... but so does **accessibility, interoperability** and **reusability** - define Big Data "
+        },
+        {
+          "chunk_id": "39d069ef-926a-4799-8df3-db427a306705",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 84,
+          "section_title": "**HDFS Inside: Network To pology**",
+          "chunk_index": 84,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014492753623188406,
+          "vector_score": null,
+          "bm25_score": 8.518388531998312,
+          "snippet": "## **HDFS Inside: Network To pology** **==> picture [720 x 442] intentionally omitted <==** **----- Start of picture text -----**<br> ▪<br>What are the distance of the following pairs:<br>– Dist (d1/r1/n1, d1/r1/n1)= 0<br>– Dist(d1/r1/n1, d1/r1/n2)= 2<br>– Dist(d1/r1/n1, d1/r2/n3)= 4<br>–<br>Dist(d1"
+        },
+        {
+          "chunk_id": "4c12271d-c65c-4bda-aea2-1b79cc76b33c",
+          "document_id": "5c9e2e73-c8b7-4662-aa0c-a09465835cc3",
+          "file_name": "2.Big Data Ecosystem.pdf",
+          "page_number": 24,
+          "section_title": "**Data Anal tics y**",
+          "chunk_index": 23,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014285714285714285,
+          "vector_score": null,
+          "bm25_score": 8.49934492900645,
+          "snippet": "## **Data Anal tics y** 1. Descriptive analytics: What happened? 2. Diagnostic analytics: Why did it happen? 3. Predictive analytics: What will happen? 4. Prescriptive analytics: What should we do? 5. Pattern discovery / data mining 6. Visualization & insight generation **==> picture [720 x 76] inte"
+        }
+      ]
+    },
+    {
+      "item": {
+        "id": "big_data_ecosystem_tools_002",
+        "question": "What tools or technologies are commonly used in the Big Data ecosystem?",
+        "expected_keywords": [
+          "Hadoop",
+          "Spark",
+          "NoSQL",
+          "Kafka",
+          "Hive"
+        ],
+        "expected_file": "2.Big Data Ecosystem.pdf",
+        "expected_pages": [],
+        "notes": "Should retrieve content about common Big Data ecosystem tools and platforms."
+      },
+      "warnings": [
+        "Vector retrieval did not appear in the top-k results. Check Qdrant indexing or hybrid fusion settings."
+      ],
+      "retrieval": {
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "hit_at_k": true,
+        "first_relevant_rank": 1,
+        "mrr_contribution": 1.0,
+        "top1_file": "2.Big Data Ecosystem.pdf",
+        "top1_page": 54,
+        "top1_is_expected_file": true,
+        "page_hit_at_k": null,
+        "keyword_overlap": {
+          "score": 0.6,
+          "matched": [
+            "Hadoop",
+            "Spark",
+            "Kafka"
+          ],
+          "missing": [
+            "NoSQL",
+            "Hive"
+          ]
+        },
+        "retrieved_count": 10,
+        "top_files": [
+          "2.Big Data Ecosystem.pdf",
+          "3.Big Data Storage.pdf",
+          "2.Big Data Ecosystem.pdf",
+          "2.Big Data Ecosystem.pdf",
+          "1.Foundation of Big Data.pdf",
+          "3.Big Data Storage.pdf",
+          "3.Big Data Storage.pdf",
+          "3.Big Data Storage.pdf",
+          "1.Foundation of Big Data.pdf",
+          "1.Foundation of Big Data.pdf"
+        ],
+        "top_pages": [
+          54,
+          55,
+          19,
+          39,
+          52,
+          40,
+          30,
+          87,
+          32,
+          4
+        ],
+        "source_distribution": {
+          "bm25": 10,
+          "vector": 0,
+          "graph": 0,
+          "unknown": 0
+        }
+      },
+      "top_chunks": [
+        {
+          "chunk_id": "0d21dedf-36c3-4d19-a476-0d8a6d1602cc",
+          "document_id": "5c9e2e73-c8b7-4662-aa0c-a09465835cc3",
+          "file_name": "2.Big Data Ecosystem.pdf",
+          "page_number": 54,
+          "section_title": "**Conclusion**",
+          "chunk_index": 53,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.01639344262295082,
+          "vector_score": null,
+          "bm25_score": 11.900488325157166,
+          "snippet": "## **Conclusion** - Big Data arises when **volume, velocity, and variety** exceed the capability of traditional systems. - Modern Big Data platforms rely on **distributed architectures** for scalable storage and processing. - The Big Data ecosystem includes **data pipelines,** . - **architectures, l"
+        },
+        {
+          "chunk_id": "bdd6f048-14af-4e92-9638-4ed85830ea7f",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 55,
+          "section_title": "**4. Distributed File S stem y**",
+          "chunk_index": 54,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.016129032258064516,
+          "vector_score": null,
+          "bm25_score": 11.476136980762847,
+          "snippet": "## **4. Distributed File S stem y** Don’t move data to workers… move workers to the data! Key idea: co-locate storage and compute Start up worker on nodes that hold the data **==> picture [57 x 114] intentionally omitted <==** **==> picture [57 x 114] intentionally omitted <==** **==> picture [57 x "
+        },
+        {
+          "chunk_id": "044afc01-42ca-43e3-973f-1095488e938b",
+          "document_id": "5c9e2e73-c8b7-4662-aa0c-a09465835cc3",
+          "file_name": "2.Big Data Ecosystem.pdf",
+          "page_number": 19,
+          "section_title": "**Bi Data latform: six ke g p y imperatives**",
+          "chunk_index": 18,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015873015873015872,
+          "vector_score": null,
+          "bm25_score": 11.142491532691952,
+          "snippet": "## **Bi Data latform: six ke g p y imperatives** - Scalable storage solutions for images, videos, and logs. ## **1. Discover, Explore, and Navigate Big Data Sources** ## **4. Analyze Data in Motion** - Federated discovery, search, and navigation. - Stream computing technologies such as Apache Kafka "
+        },
+        {
+          "chunk_id": "7c033e74-6894-4803-b56c-65e301cd250f",
+          "document_id": "5c9e2e73-c8b7-4662-aa0c-a09465835cc3",
+          "file_name": "2.Big Data Ecosystem.pdf",
+          "page_number": 39,
+          "section_title": "**ocess Data Science Application Pr**",
+          "chunk_index": 38,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015625,
+          "vector_score": null,
+          "bm25_score": 10.582537062629148,
+          "snippet": "## **ocess Data Science Application Pr** ▪ What question are you answering? - What is the right scope of the project? ▪ What data will you use? - What techniques are you going to try? ▪ How will you evaluate your results? - What maintenance will be required? Before we even get to machine learning, a"
+        },
+        {
+          "chunk_id": "a5a649e2-ffb8-4775-9598-8905f9a32960",
+          "document_id": "65d5befb-69f4-4268-9e60-5f2466442096",
+          "file_name": "1.Foundation of Big Data.pdf",
+          "page_number": 52,
+          "section_title": "**6. Bi Data Jobs g**",
+          "chunk_index": 52,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015384615384615385,
+          "vector_score": null,
+          "bm25_score": 9.78750785798382,
+          "snippet": "## **6. Bi Data Jobs g** ▪ Data scientists: collect, analyze, manage, structure and interpret large volumes of data from a range of sources. Data scientists then use reporting tools to pinpoint patterns, trends and interrelationships between the various data sets. - Big data engineer & architects: c"
+        },
+        {
+          "chunk_id": "0f4264ba-8e62-4ee3-9089-463f80a3ac7d",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 40,
+          "section_title": "**Document Stores**",
+          "chunk_index": 39,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015151515151515152,
+          "vector_score": null,
+          "bm25_score": 8.946338215820562,
+          "snippet": "## **Document Stores** ▪ Documents are stored in some standard format or encoding (e.g., XML, JSON, PDF or Office Documents) – These are typically referred to as Binary Large Objects (BLOBs) ## ▪ Documents can be indexed – This allows document stores to outperform traditional file systems ▪ E.g., Mo"
+        },
+        {
+          "chunk_id": "f346491a-189a-4f9a-8e69-7f2437e822c7",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 30,
+          "section_title": "**The CAP Theorem**",
+          "chunk_index": 29,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014925373134328358,
+          "vector_score": null,
+          "bm25_score": 8.797101832791785,
+          "snippet": "## **The CAP Theorem** ## ▪ The limitations of distributed databases can be described in the so called CAP theorem - **C** onsistency: every node always sees the same data at any given instance (i.e., strict consistency) - **A** vailability: the system continues to operate, even if nodes in a cluste"
+        },
+        {
+          "chunk_id": "8a3bdd63-99ca-4db8-bcc1-3ea3f5d96102",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 87,
+          "section_title": "**HDFS Inside: Write**",
+          "chunk_index": 87,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014705882352941176,
+          "vector_score": null,
+          "bm25_score": 8.743202481984337,
+          "snippet": "## **HDFS Inside: Write** - Q: Where should HDFS put the three replicas of a block? What tradeoffs we need to consider? - Tradeoffs: - Reliability - Write Bandwidth - Read Bandwidth ## Q: What are some possible strategies? **==> picture [720 x 76] intentionally omitted <==** **----- Start of picture"
+        },
+        {
+          "chunk_id": "56e2a3ec-74e6-42b2-8956-a65c3c8144ed",
+          "document_id": "65d5befb-69f4-4268-9e60-5f2466442096",
+          "file_name": "1.Foundation of Big Data.pdf",
+          "page_number": 32,
+          "section_title": "**Other V’s**",
+          "chunk_index": 31,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014492753623188406,
+          "vector_score": null,
+          "bm25_score": 8.71109702238899,
+          "snippet": "## **Other V’s** - Visibility/Visualization: after big data being processed, we need a way to present the data in a manner that is readable and accessible. - Viscosity: describe the latency or lag time in the data relative to the event being described. We found that this is just as easily understood"
+        },
+        {
+          "chunk_id": "2d564523-f614-4aae-80a5-9712b021d6f6",
+          "document_id": "65d5befb-69f4-4268-9e60-5f2466442096",
+          "file_name": "1.Foundation of Big Data.pdf",
+          "page_number": 4,
+          "section_title": "**What is Data?**",
+          "chunk_index": 3,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014285714285714285,
+          "vector_score": null,
+          "bm25_score": 8.710268137910031,
+          "snippet": "## **What is Data?** ## ▪ Raw, unprocessed facts or signals ▪ Without context or interpretation ▪ Examples: – 35°C – 120 bpm - 1,000,000 transactions – \"click\", \"view\", \"purchase\" ## ▪ Characteristics: – Structured / unstructured – No inherent meaning – High volume ## **Raw data collected from senso"
+        }
+      ]
+    },
+    {
+      "item": {
+        "id": "hdfs_namenode_001",
+        "question": "What is the role of the NameNode in HDFS?",
+        "expected_keywords": [
+          "NameNode",
+          "metadata",
+          "DataNode",
+          "block",
+          "HDFS"
+        ],
+        "expected_file": "3.Big Data Storage.pdf",
+        "expected_pages": [],
+        "notes": "Should retrieve the HDFS architecture section and explain that the NameNode manages metadata and block locations."
+      },
+      "warnings": [
+        "Vector retrieval did not appear in the top-k results. Check Qdrant indexing or hybrid fusion settings."
+      ],
+      "retrieval": {
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "hit_at_k": true,
+        "first_relevant_rank": 1,
+        "mrr_contribution": 1.0,
+        "top1_file": "3.Big Data Storage.pdf",
+        "top1_page": 3,
+        "top1_is_expected_file": true,
+        "page_hit_at_k": null,
+        "keyword_overlap": {
+          "score": 0.8,
+          "matched": [
+            "NameNode",
+            "DataNode",
+            "block",
+            "HDFS"
+          ],
+          "missing": [
+            "metadata"
+          ]
+        },
+        "retrieved_count": 10,
+        "top_files": [
+          "3.Big Data Storage.pdf",
+          "3.Big Data Storage.pdf",
+          "3.Big Data Storage.pdf",
+          "3.Big Data Storage.pdf",
+          "2.Big Data Ecosystem.pdf",
+          "3.Big Data Storage.pdf",
+          "3.Big Data Storage.pdf",
+          "3.Big Data Storage.pdf",
+          "3.Big Data Storage.pdf",
+          "1.Foundation of Big Data.pdf"
+        ],
+        "top_pages": [
+          3,
+          63,
+          91,
+          78,
+          39,
+          87,
+          81,
+          58,
+          92,
+          32
+        ],
+        "source_distribution": {
+          "bm25": 10,
+          "vector": 0,
+          "graph": 0,
+          "unknown": 0
+        }
+      },
+      "top_chunks": [
+        {
+          "chunk_id": "ffdab57d-c04b-4428-ab4b-d0baab504bf2",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 3,
+          "section_title": "**Learnin Outcomes g**",
+          "chunk_index": 2,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.01639344262295082,
+          "vector_score": null,
+          "bm25_score": 9.863662933853798,
+          "snippet": "## **Learnin Outcomes g** ## ▪ Differentiate Between Traditional and Modern Big Data Storage Solutions - Compare block storage, file storage, and object storage. - Explain the benefits of scalability and redundancy in distributed file systems. - Understand the Architecture of Distributed File System"
+        },
+        {
+          "chunk_id": "fea6ce51-1e4a-4324-b5db-13c43f506dd3",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 63,
+          "section_title": "**HDFS Motivation**",
+          "chunk_index": 62,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.016129032258064516,
+          "vector_score": null,
+          "bm25_score": 9.539367302066172,
+          "snippet": "## **HDFS Motivation** ▪ **Problem 1:** Data is too big to store on one machine. - **HDFS:** Store the data on multiple machines! ▪ **Problem 2:** Very high end machines are too expensive - **HDFS:** Run on commodity hardware! - **Problem 3:** Commodity hardware will fail! - **HDFS:** Software is in"
+        },
+        {
+          "chunk_id": "f02b2c75-211c-4270-a17d-55262a01ee1e",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 91,
+          "section_title": "**Common Commands**",
+          "chunk_index": 91,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015873015873015872,
+          "vector_score": null,
+          "bm25_score": 9.27856959288472,
+          "snippet": "## **Common Commands** ## hdfs [OPTIONS] SUBCOMMAND [SUBCOMMAND OPTIONS] ## ▪ Admin Commands: - cacheadmin configure the HDFS cache - crypto configure HDFS encryption zones - debug run a Debug Admin to execute HDFS debug commands - dfsadmin run a DFS admin client - dfsrouteradmin manage Router-based"
+        },
+        {
+          "chunk_id": "70f13c83-8726-45f5-9f53-cafd4df3a2e6",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 78,
+          "section_title": "**HDFS Inside: Blocks**",
+          "chunk_index": 78,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015625,
+          "vector_score": null,
+          "bm25_score": 8.861687818614215,
+          "snippet": "## **HDFS Inside: Blocks** ## • HDFS Block size is by default **128 MB** , why it is much larger than regular file system block? - Reasons: - Minimize overhead: disk seek time is almost constant - Example: seek time: 10 ms, file transfer rate: 100MB/s, overhead (seek time/a block transfer time) is 1"
+        },
+        {
+          "chunk_id": "7c033e74-6894-4803-b56c-65e301cd250f",
+          "document_id": "5c9e2e73-c8b7-4662-aa0c-a09465835cc3",
+          "file_name": "2.Big Data Ecosystem.pdf",
+          "page_number": 39,
+          "section_title": "**ocess Data Science Application Pr**",
+          "chunk_index": 38,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015384615384615385,
+          "vector_score": null,
+          "bm25_score": 8.368431918077038,
+          "snippet": "## **ocess Data Science Application Pr** ▪ What question are you answering? - What is the right scope of the project? ▪ What data will you use? - What techniques are you going to try? ▪ How will you evaluate your results? - What maintenance will be required? Before we even get to machine learning, a"
+        },
+        {
+          "chunk_id": "8a3bdd63-99ca-4db8-bcc1-3ea3f5d96102",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 87,
+          "section_title": "**HDFS Inside: Write**",
+          "chunk_index": 87,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015151515151515152,
+          "vector_score": null,
+          "bm25_score": 8.299676039986792,
+          "snippet": "## **HDFS Inside: Write** - Q: Where should HDFS put the three replicas of a block? What tradeoffs we need to consider? - Tradeoffs: - Reliability - Write Bandwidth - Read Bandwidth ## Q: What are some possible strategies? **==> picture [720 x 76] intentionally omitted <==** **----- Start of picture"
+        },
+        {
+          "chunk_id": "91c89a88-6685-4b0f-85c8-aea41e2a72cc",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 81,
+          "section_title": "**HDFS Inside: Network To pology**",
+          "chunk_index": 81,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014925373134328358,
+          "vector_score": null,
+          "bm25_score": 8.013394725881081,
+          "snippet": "## **HDFS Inside: Network To pology** ▪ The critical resource in HDFS is bandwidth - the rate at which we can transfer data between nodes - distance is defined based on that - Measuring bandwidths between any pair of nodes is too complex and does not scale - ▪ Basic Idea: **==> picture [60 x 175] in"
+        },
+        {
+          "chunk_id": "e73eb8ef-69ea-427e-841f-c2453b0091fe",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 58,
+          "section_title": "~~From GFS to HDFS~~",
+          "chunk_index": 57,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014705882352941176,
+          "vector_score": null,
+          "bm25_score": 7.529078513705459,
+          "snippet": "## ~~From GFS to HDFS~~ Terminology differences: GFS master = Hadoop namenode GFS chunkservers = Hadoop datanodes Implementation differences: Different consistency model for file appends Implementation language Performance For the most part, we’ll use Hadoop terminology…"
+        },
+        {
+          "chunk_id": "d67377aa-4177-412c-841e-b67c0247fa44",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 92,
+          "section_title": "**hdfs…**",
+          "chunk_index": 92,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014492753623188406,
+          "vector_score": null,
+          "bm25_score": 7.519993933895309,
+          "snippet": "## **hdfs…** ## ▪ Client Commands: - classpath prints the class path needed to get the hadoop jar and the required libraries - dfs run a filesystem command on the file system - envvars display computed Hadoop environment variables - fetchdt fetch a delegation token from the NameNode - getconf get co"
+        },
+        {
+          "chunk_id": "56e2a3ec-74e6-42b2-8956-a65c3c8144ed",
+          "document_id": "65d5befb-69f4-4268-9e60-5f2466442096",
+          "file_name": "1.Foundation of Big Data.pdf",
+          "page_number": 32,
+          "section_title": "**Other V’s**",
+          "chunk_index": 31,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014285714285714285,
+          "vector_score": null,
+          "bm25_score": 7.438204717070399,
+          "snippet": "## **Other V’s** - Visibility/Visualization: after big data being processed, we need a way to present the data in a manner that is readable and accessible. - Viscosity: describe the latency or lag time in the data relative to the event being described. We found that this is just as easily understood"
+        }
+      ]
+    },
+    {
+      "item": {
+        "id": "hdfs_datanode_002",
+        "question": "What is the role of DataNodes in HDFS?",
+        "expected_keywords": [
+          "DataNode",
+          "block",
+          "storage",
+          "replication",
+          "HDFS"
+        ],
+        "expected_file": "3.Big Data Storage.pdf",
+        "expected_pages": [],
+        "notes": "Should retrieve the section explaining that DataNodes store actual data blocks and report to the NameNode."
+      },
+      "warnings": [
+        "Vector retrieval did not appear in the top-k results. Check Qdrant indexing or hybrid fusion settings."
+      ],
+      "retrieval": {
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "hit_at_k": true,
+        "first_relevant_rank": 1,
+        "mrr_contribution": 1.0,
+        "top1_file": "3.Big Data Storage.pdf",
+        "top1_page": 3,
+        "top1_is_expected_file": true,
+        "page_hit_at_k": null,
+        "keyword_overlap": {
+          "score": 1.0,
+          "matched": [
+            "DataNode",
+            "block",
+            "storage",
+            "replication",
+            "HDFS"
+          ],
+          "missing": []
+        },
+        "retrieved_count": 10,
+        "top_files": [
+          "3.Big Data Storage.pdf",
+          "3.Big Data Storage.pdf",
+          "3.Big Data Storage.pdf",
+          "3.Big Data Storage.pdf",
+          "3.Big Data Storage.pdf",
+          "3.Big Data Storage.pdf",
+          "2.Big Data Ecosystem.pdf",
+          "3.Big Data Storage.pdf",
+          "3.Big Data Storage.pdf",
+          "1.Foundation of Big Data.pdf"
+        ],
+        "top_pages": [
+          3,
+          63,
+          78,
+          79,
+          87,
+          58,
+          39,
+          81,
+          27,
+          32
+        ],
+        "source_distribution": {
+          "bm25": 10,
+          "vector": 0,
+          "graph": 0,
+          "unknown": 0
+        }
+      },
+      "top_chunks": [
+        {
+          "chunk_id": "ffdab57d-c04b-4428-ab4b-d0baab504bf2",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 3,
+          "section_title": "**Learnin Outcomes g**",
+          "chunk_index": 2,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.01639344262295082,
+          "vector_score": null,
+          "bm25_score": 9.027725608591236,
+          "snippet": "## **Learnin Outcomes g** ## ▪ Differentiate Between Traditional and Modern Big Data Storage Solutions - Compare block storage, file storage, and object storage. - Explain the benefits of scalability and redundancy in distributed file systems. - Understand the Architecture of Distributed File System"
+        },
+        {
+          "chunk_id": "fea6ce51-1e4a-4324-b5db-13c43f506dd3",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 63,
+          "section_title": "**HDFS Motivation**",
+          "chunk_index": 62,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.016129032258064516,
+          "vector_score": null,
+          "bm25_score": 8.635569340300522,
+          "snippet": "## **HDFS Motivation** ▪ **Problem 1:** Data is too big to store on one machine. - **HDFS:** Store the data on multiple machines! ▪ **Problem 2:** Very high end machines are too expensive - **HDFS:** Run on commodity hardware! - **Problem 3:** Commodity hardware will fail! - **HDFS:** Software is in"
+        },
+        {
+          "chunk_id": "70f13c83-8726-45f5-9f53-cafd4df3a2e6",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 78,
+          "section_title": "**HDFS Inside: Blocks**",
+          "chunk_index": 78,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015873015873015872,
+          "vector_score": null,
+          "bm25_score": 8.412406927358694,
+          "snippet": "## **HDFS Inside: Blocks** ## • HDFS Block size is by default **128 MB** , why it is much larger than regular file system block? - Reasons: - Minimize overhead: disk seek time is almost constant - Example: seek time: 10 ms, file transfer rate: 100MB/s, overhead (seek time/a block transfer time) is 1"
+        },
+        {
+          "chunk_id": "a2bbe89f-bd5b-4252-8512-b788d3a4b871",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 79,
+          "section_title": "**HDFS Inside: Read**",
+          "chunk_index": 79,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015625,
+          "vector_score": null,
+          "bm25_score": 7.944236618780473,
+          "snippet": "## **HDFS Inside: Read** **==> picture [592 x 262] intentionally omitted <==** **----- Start of picture text -----**<br> 1<br>Name Node<br>Client<br>2<br>3<br>4<br>DN1 DN2 DN3 . . . DNn<br>**----- End of picture text -----**<br> 1. Client connects to NN to read data 2. NN tells client where to find "
+        },
+        {
+          "chunk_id": "8a3bdd63-99ca-4db8-bcc1-3ea3f5d96102",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 87,
+          "section_title": "**HDFS Inside: Write**",
+          "chunk_index": 87,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015384615384615385,
+          "vector_score": null,
+          "bm25_score": 7.756366622037859,
+          "snippet": "## **HDFS Inside: Write** - Q: Where should HDFS put the three replicas of a block? What tradeoffs we need to consider? - Tradeoffs: - Reliability - Write Bandwidth - Read Bandwidth ## Q: What are some possible strategies? **==> picture [720 x 76] intentionally omitted <==** **----- Start of picture"
+        },
+        {
+          "chunk_id": "e73eb8ef-69ea-427e-841f-c2453b0091fe",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 58,
+          "section_title": "~~From GFS to HDFS~~",
+          "chunk_index": 57,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015151515151515152,
+          "vector_score": null,
+          "bm25_score": 7.495826486321965,
+          "snippet": "## ~~From GFS to HDFS~~ Terminology differences: GFS master = Hadoop namenode GFS chunkservers = Hadoop datanodes Implementation differences: Different consistency model for file appends Implementation language Performance For the most part, we’ll use Hadoop terminology…"
+        },
+        {
+          "chunk_id": "7c033e74-6894-4803-b56c-65e301cd250f",
+          "document_id": "5c9e2e73-c8b7-4662-aa0c-a09465835cc3",
+          "file_name": "2.Big Data Ecosystem.pdf",
+          "page_number": 39,
+          "section_title": "**ocess Data Science Application Pr**",
+          "chunk_index": 38,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014925373134328358,
+          "vector_score": null,
+          "bm25_score": 7.4468082426714055,
+          "snippet": "## **ocess Data Science Application Pr** ▪ What question are you answering? - What is the right scope of the project? ▪ What data will you use? - What techniques are you going to try? ▪ How will you evaluate your results? - What maintenance will be required? Before we even get to machine learning, a"
+        },
+        {
+          "chunk_id": "91c89a88-6685-4b0f-85c8-aea41e2a72cc",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 81,
+          "section_title": "**HDFS Inside: Network To pology**",
+          "chunk_index": 81,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014705882352941176,
+          "vector_score": null,
+          "bm25_score": 7.158311739297991,
+          "snippet": "## **HDFS Inside: Network To pology** ▪ The critical resource in HDFS is bandwidth - the rate at which we can transfer data between nodes - distance is defined based on that - Measuring bandwidths between any pair of nodes is too complex and does not scale - ▪ Basic Idea: **==> picture [60 x 175] in"
+        },
+        {
+          "chunk_id": "8fcfe4bf-88ba-471c-9bd6-ac7a8697481c",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 27,
+          "section_title": "**Shardin g**",
+          "chunk_index": 26,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014492753623188406,
+          "vector_score": null,
+          "bm25_score": 6.778299788870413,
+          "snippet": "## **Shardin g** Starts with ‘A’-’D’ Server 1 Starts with ‘E’-’Q’ Server 2 Starts with ‘R’-’T’ Server 3 Starts with ‘U’-’Z’ Server 4 Starts with anything else Server 5 Sharding is a method of splitting and storin ~~g a~~ single logical dataset in ~~s.~~ multiple database What if we want to uniformly"
+        },
+        {
+          "chunk_id": "56e2a3ec-74e6-42b2-8956-a65c3c8144ed",
+          "document_id": "65d5befb-69f4-4268-9e60-5f2466442096",
+          "file_name": "1.Foundation of Big Data.pdf",
+          "page_number": 32,
+          "section_title": "**Other V’s**",
+          "chunk_index": 31,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014285714285714285,
+          "vector_score": null,
+          "bm25_score": 6.51728794859694,
+          "snippet": "## **Other V’s** - Visibility/Visualization: after big data being processed, we need a way to present the data in a manner that is readable and accessible. - Viscosity: describe the latency or lag time in the data relative to the event being described. We found that this is just as easily understood"
+        }
+      ]
+    },
+    {
+      "item": {
+        "id": "foundation_big_data_definition_001",
+        "question": "What is Big Data and why is it difficult to process with traditional systems?",
+        "expected_keywords": [
+          "Big Data",
+          "volume",
+          "velocity",
+          "variety",
+          "traditional"
+        ],
+        "expected_file": "1.Foundation of Big Data.pdf",
+        "expected_pages": [],
+        "notes": "Should retrieve the introductory definition of Big Data and explain why traditional data processing is insufficient."
+      },
+      "warnings": [
+        "Vector retrieval did not appear in the top-k results. Check Qdrant indexing or hybrid fusion settings."
+      ],
+      "retrieval": {
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "hit_at_k": true,
+        "first_relevant_rank": 1,
+        "mrr_contribution": 1.0,
+        "top1_file": "1.Foundation of Big Data.pdf",
+        "top1_page": 31,
+        "top1_is_expected_file": true,
+        "page_hit_at_k": null,
+        "keyword_overlap": {
+          "score": 1.0,
+          "matched": [
+            "Big Data",
+            "volume",
+            "velocity",
+            "variety",
+            "traditional"
+          ],
+          "missing": []
+        },
+        "retrieved_count": 10,
+        "top_files": [
+          "1.Foundation of Big Data.pdf",
+          "1.Foundation of Big Data.pdf",
+          "3.Big Data Storage.pdf",
+          "2.Big Data Ecosystem.pdf",
+          "1.Foundation of Big Data.pdf",
+          "1.Foundation of Big Data.pdf",
+          "3.Big Data Storage.pdf",
+          "1.Foundation of Big Data.pdf",
+          "2.Big Data Ecosystem.pdf",
+          "2.Big Data Ecosystem.pdf"
+        ],
+        "top_pages": [
+          31,
+          11,
+          78,
+          24,
+          32,
+          6,
+          27,
+          5,
+          39,
+          43
+        ],
+        "source_distribution": {
+          "bm25": 10,
+          "vector": 0,
+          "graph": 0,
+          "unknown": 0
+        }
+      },
+      "top_chunks": [
+        {
+          "chunk_id": "00ca0432-ae33-4d4b-ac52-8eff60cd36d1",
+          "document_id": "65d5befb-69f4-4268-9e60-5f2466442096",
+          "file_name": "1.Foundation of Big Data.pdf",
+          "page_number": 31,
+          "section_title": "**Extensions: 6Vs of Bi Data g**",
+          "chunk_index": 30,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.01639344262295082,
+          "vector_score": null,
+          "bm25_score": 18.529098135482517,
+          "snippet": "## **Extensions: 6Vs of Bi Data g** **==> picture [712 x 118] intentionally omitted <==** ▪ Volume: The amount of data being generated is growing rapidly and becoming increasingly large, making it difficult to store and process using traditional methods. ▪ Variety: Big data comes in many different f"
+        },
+        {
+          "chunk_id": "62c257fa-27e7-486e-9dcd-53079608f587",
+          "document_id": "65d5befb-69f4-4268-9e60-5f2466442096",
+          "file_name": "1.Foundation of Big Data.pdf",
+          "page_number": 11,
+          "section_title": "**2. Wh stud bi data? y y g**",
+          "chunk_index": 10,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.016129032258064516,
+          "vector_score": null,
+          "bm25_score": 14.558256663538925,
+          "snippet": "## **2. Wh stud bi data? y y g** ## **Data is growing exponentially** - Massive volume, high velocity, high variety - Traditional systems cannot scale ▪ **Studying Big Data technologies means learning how to transform massive raw data into scalable intelligence and strategic decisions.** ## **AI dep"
+        },
+        {
+          "chunk_id": "70f13c83-8726-45f5-9f53-cafd4df3a2e6",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 78,
+          "section_title": "**HDFS Inside: Blocks**",
+          "chunk_index": 78,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015873015873015872,
+          "vector_score": null,
+          "bm25_score": 13.622062469557287,
+          "snippet": "## **HDFS Inside: Blocks** ## • HDFS Block size is by default **128 MB** , why it is much larger than regular file system block? - Reasons: - Minimize overhead: disk seek time is almost constant - Example: seek time: 10 ms, file transfer rate: 100MB/s, overhead (seek time/a block transfer time) is 1"
+        },
+        {
+          "chunk_id": "4c12271d-c65c-4bda-aea2-1b79cc76b33c",
+          "document_id": "5c9e2e73-c8b7-4662-aa0c-a09465835cc3",
+          "file_name": "2.Big Data Ecosystem.pdf",
+          "page_number": 24,
+          "section_title": "**Data Anal tics y**",
+          "chunk_index": 23,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015625,
+          "vector_score": null,
+          "bm25_score": 12.51180246047776,
+          "snippet": "## **Data Anal tics y** 1. Descriptive analytics: What happened? 2. Diagnostic analytics: Why did it happen? 3. Predictive analytics: What will happen? 4. Prescriptive analytics: What should we do? 5. Pattern discovery / data mining 6. Visualization & insight generation **==> picture [720 x 76] inte"
+        },
+        {
+          "chunk_id": "56e2a3ec-74e6-42b2-8956-a65c3c8144ed",
+          "document_id": "65d5befb-69f4-4268-9e60-5f2466442096",
+          "file_name": "1.Foundation of Big Data.pdf",
+          "page_number": 32,
+          "section_title": "**Other V’s**",
+          "chunk_index": 31,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015384615384615385,
+          "vector_score": null,
+          "bm25_score": 12.227926683372862,
+          "snippet": "## **Other V’s** - Visibility/Visualization: after big data being processed, we need a way to present the data in a manner that is readable and accessible. - Viscosity: describe the latency or lag time in the data relative to the event being described. We found that this is just as easily understood"
+        },
+        {
+          "chunk_id": "1766fb4c-af2c-4946-86d1-64fd41aafb69",
+          "document_id": "65d5befb-69f4-4268-9e60-5f2466442096",
+          "file_name": "1.Foundation of Big Data.pdf",
+          "page_number": 6,
+          "section_title": "**What is Knowled e? g**",
+          "chunk_index": 5,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015151515151515152,
+          "vector_score": null,
+          "bm25_score": 12.007214565917188,
+          "snippet": "## **What is Knowled e? g** ## ▪ Information combined with: – Experience – Patterns - Models - Analytical reasoning ## **After analysis:** - Pattern repeats weekly - Correlated with school start time - Signal timing is suboptimal ## **We now understand:** ## ▪ Knowledge answers: → How? → Why? ✓ Caus"
+        },
+        {
+          "chunk_id": "8fcfe4bf-88ba-471c-9bd6-ac7a8697481c",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 27,
+          "section_title": "**Shardin g**",
+          "chunk_index": 26,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014925373134328358,
+          "vector_score": null,
+          "bm25_score": 11.972880734769701,
+          "snippet": "## **Shardin g** Starts with ‘A’-’D’ Server 1 Starts with ‘E’-’Q’ Server 2 Starts with ‘R’-’T’ Server 3 Starts with ‘U’-’Z’ Server 4 Starts with anything else Server 5 Sharding is a method of splitting and storin ~~g a~~ single logical dataset in ~~s.~~ multiple database What if we want to uniformly"
+        },
+        {
+          "chunk_id": "d325c237-aa47-4b16-8a33-1b816c1f97fb",
+          "document_id": "65d5befb-69f4-4268-9e60-5f2466442096",
+          "file_name": "1.Foundation of Big Data.pdf",
+          "page_number": 5,
+          "section_title": "**What is Information?**",
+          "chunk_index": 4,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014705882352941176,
+          "vector_score": null,
+          "bm25_score": 11.428757122507202,
+          "snippet": "## **What is Information?** ## ▪ Data that has been: – Processed - Structured - Contextualized **From raw logs → aggregated metrics:** - Aggregated ## ▪ Information answers: → Who? - → What? - → When? - → Where? ## ▪ Example: - Average speed dropped 40% - Vehicle density exceeded threshold - Peak co"
+        },
+        {
+          "chunk_id": "7c033e74-6894-4803-b56c-65e301cd250f",
+          "document_id": "5c9e2e73-c8b7-4662-aa0c-a09465835cc3",
+          "file_name": "2.Big Data Ecosystem.pdf",
+          "page_number": 39,
+          "section_title": "**ocess Data Science Application Pr**",
+          "chunk_index": 38,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014492753623188406,
+          "vector_score": null,
+          "bm25_score": 11.146329432978474,
+          "snippet": "## **ocess Data Science Application Pr** ▪ What question are you answering? - What is the right scope of the project? ▪ What data will you use? - What techniques are you going to try? ▪ How will you evaluate your results? - What maintenance will be required? Before we even get to machine learning, a"
+        },
+        {
+          "chunk_id": "c933dbad-a32f-4e42-8748-48057aeb8f9a",
+          "document_id": "5c9e2e73-c8b7-4662-aa0c-a09465835cc3",
+          "file_name": "2.Big Data Ecosystem.pdf",
+          "page_number": 43,
+          "section_title": "**When to consider Bi Data Solution g**",
+          "chunk_index": 42,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014285714285714285,
+          "vector_score": null,
+          "bm25_score": 10.933115665190424,
+          "snippet": "## **When to consider Bi Data Solution g** Performance issues: when existing relational databases struggle with query speed and performance. - ▪ - Data volume is growing rapidly: You’re limited by your current platform or environment because you can’t process the amount of data that you want to proc"
+        }
+      ]
+    },
+    {
+      "item": {
+        "id": "foundation_big_data_characteristics_002",
+        "question": "What are the main characteristics of Big Data?",
+        "expected_keywords": [
+          "volume",
+          "velocity",
+          "variety",
+          "veracity",
+          "value"
+        ],
+        "expected_file": "1.Foundation of Big Data.pdf",
+        "expected_pages": [],
+        "notes": "Should retrieve the section about the V characteristics of Big Data."
+      },
+      "warnings": [
+        "Vector retrieval did not appear in the top-k results. Check Qdrant indexing or hybrid fusion settings."
+      ],
+      "retrieval": {
+        "hit_at_1": false,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "hit_at_k": true,
+        "first_relevant_rank": 3,
+        "mrr_contribution": 0.3333333333333333,
+        "top1_file": "2.Big Data Ecosystem.pdf",
+        "top1_page": 39,
+        "top1_is_expected_file": false,
+        "page_hit_at_k": null,
+        "keyword_overlap": {
+          "score": 0.6,
+          "matched": [
+            "volume",
+            "velocity",
+            "variety"
+          ],
+          "missing": [
+            "veracity",
+            "value"
+          ]
+        },
+        "retrieved_count": 10,
+        "top_files": [
+          "2.Big Data Ecosystem.pdf",
+          "3.Big Data Storage.pdf",
+          "1.Foundation of Big Data.pdf",
+          "3.Big Data Storage.pdf",
+          "1.Foundation of Big Data.pdf",
+          "3.Big Data Storage.pdf",
+          "3.Big Data Storage.pdf",
+          "1.Foundation of Big Data.pdf",
+          "1.Foundation of Big Data.pdf",
+          "3.Big Data Storage.pdf"
+        ],
+        "top_pages": [
+          39,
+          87,
+          2,
+          37,
+          39,
+          45,
+          63,
+          27,
+          19,
+          84
+        ],
+        "source_distribution": {
+          "bm25": 10,
+          "vector": 0,
+          "graph": 0,
+          "unknown": 0
+        }
+      },
+      "top_chunks": [
+        {
+          "chunk_id": "7c033e74-6894-4803-b56c-65e301cd250f",
+          "document_id": "5c9e2e73-c8b7-4662-aa0c-a09465835cc3",
+          "file_name": "2.Big Data Ecosystem.pdf",
+          "page_number": 39,
+          "section_title": "**ocess Data Science Application Pr**",
+          "chunk_index": 38,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.01639344262295082,
+          "vector_score": null,
+          "bm25_score": 12.27584549064392,
+          "snippet": "## **ocess Data Science Application Pr** ▪ What question are you answering? - What is the right scope of the project? ▪ What data will you use? - What techniques are you going to try? ▪ How will you evaluate your results? - What maintenance will be required? Before we even get to machine learning, a"
+        },
+        {
+          "chunk_id": "8a3bdd63-99ca-4db8-bcc1-3ea3f5d96102",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 87,
+          "section_title": "**HDFS Inside: Write**",
+          "chunk_index": 87,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.016129032258064516,
+          "vector_score": null,
+          "bm25_score": 10.714179050664546,
+          "snippet": "## **HDFS Inside: Write** - Q: Where should HDFS put the three replicas of a block? What tradeoffs we need to consider? - Tradeoffs: - Reliability - Write Bandwidth - Read Bandwidth ## Q: What are some possible strategies? **==> picture [720 x 76] intentionally omitted <==** **----- Start of picture"
+        },
+        {
+          "chunk_id": "a96dbcb3-2bd1-48a5-a37c-ae6440ceb8be",
+          "document_id": "65d5befb-69f4-4268-9e60-5f2466442096",
+          "file_name": "1.Foundation of Big Data.pdf",
+          "page_number": 2,
+          "section_title": "**Outline**",
+          "chunk_index": 1,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015873015873015872,
+          "vector_score": null,
+          "bm25_score": 10.430675532381933,
+          "snippet": "## **Outline** 1. Concepts: From Data to Intelligence 2. When Does Data Become “Big”? 3. Big Data Characteristics: 3Vs → System Requirements 4. The Big Data System: Pipeline, Architecture, and Lifecycle 5. Big Data Jobs **==> picture [720 x 76] intentionally omitted <==** **----- Start of picture te"
+        },
+        {
+          "chunk_id": "74a21b08-67a3-4105-bc4b-ad58037ca8bf",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 37,
+          "section_title": "**NoSQL Databases**",
+          "chunk_index": 36,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015625,
+          "vector_score": null,
+          "bm25_score": 10.367218261683067,
+          "snippet": "## **NoSQL Databases** ## ▪ Previous “young radicals” approaches subsumed under “NoSQL” - = we want “no SQL” - Well... “not only SQL” - After all, a QL is quite handy - So, QLs coming into play again (and 2-phase commits = ACID!) - Ex: MongoDB: “tuple” = JSON structure - Main characteristics of NoSQ"
+        },
+        {
+          "chunk_id": "ce473ef1-ffdc-45b2-af81-9cc1e2668adb",
+          "document_id": "65d5befb-69f4-4268-9e60-5f2466442096",
+          "file_name": "1.Foundation of Big Data.pdf",
+          "page_number": 39,
+          "section_title": "**Lambda vs Ka a Architecture pp**",
+          "chunk_index": 39,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015384615384615385,
+          "vector_score": null,
+          "bm25_score": 9.849277778243465,
+          "snippet": "## **Lambda vs Ka a Architecture pp** - ▪ - **Idea:** combination of **batch Idea** : only **stream processing + stream processing** ▪ - **processing Characteristics:** - **Characteristics:** single pipeline: - **Characteristics:** 2 pipeline: - **Batch layer** → historical data - **Speed layer** → "
+        },
+        {
+          "chunk_id": "101f953f-9e6c-415c-a870-2358b3ffb771",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 45,
+          "section_title": "**A NewS L Exam le – VoltDB Q p**",
+          "chunk_index": 44,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015151515151515152,
+          "vector_score": null,
+          "bm25_score": 9.350028195569017,
+          "snippet": "## **A NewS L Exam le – VoltDB Q p** ▪ Main-memory storage ▪ Single threaded, run Xacts to completion – No locking – No latching ▪ Built-in HA and durability – No log (in the traditional sense) Traditional ## VoltDB **==> picture [276 x 279] intentionally omitted <==** **----- Start of picture text "
+        },
+        {
+          "chunk_id": "fea6ce51-1e4a-4324-b5db-13c43f506dd3",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 63,
+          "section_title": "**HDFS Motivation**",
+          "chunk_index": 62,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014925373134328358,
+          "vector_score": null,
+          "bm25_score": 9.274510800869024,
+          "snippet": "## **HDFS Motivation** ▪ **Problem 1:** Data is too big to store on one machine. - **HDFS:** Store the data on multiple machines! ▪ **Problem 2:** Very high end machines are too expensive - **HDFS:** Run on commodity hardware! - **Problem 3:** Commodity hardware will fail! - **HDFS:** Software is in"
+        },
+        {
+          "chunk_id": "62d80f4e-a8f6-4d23-b9e6-6f2b9948914b",
+          "document_id": "65d5befb-69f4-4268-9e60-5f2466442096",
+          "file_name": "1.Foundation of Big Data.pdf",
+          "page_number": 27,
+          "section_title": "**3. Bi Data Characteristics g**",
+          "chunk_index": 26,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014705882352941176,
+          "vector_score": null,
+          "bm25_score": 8.884273933479372,
+          "snippet": "## **3. Bi Data Characteristics g** ▪ Big Data is not specific application type, but rather a trend –or even a collection of trends- napping multiple application types ▪ Data growing in multiple ways – More data (volume of data ) – More Type of data (variety of data) – Faster Ingest of data (velocit"
+        },
+        {
+          "chunk_id": "aeb8be03-9afe-4b86-967c-48456050ded0",
+          "document_id": "65d5befb-69f4-4268-9e60-5f2466442096",
+          "file_name": "1.Foundation of Big Data.pdf",
+          "page_number": 19,
+          "section_title": "**Bi Data g**",
+          "chunk_index": 18,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014492753623188406,
+          "vector_score": null,
+          "bm25_score": 8.620921221136586,
+          "snippet": "## **Bi Data g** ## ▪ **Big** in Big Data refers to: - Big **size** is the primary definition. - Big **complexity** rather than big volume. it can be small and not all large datasets are big data - size matters... but so does **accessibility, interoperability** and **reusability** - define Big Data "
+        },
+        {
+          "chunk_id": "39d069ef-926a-4799-8df3-db427a306705",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 84,
+          "section_title": "**HDFS Inside: Network To pology**",
+          "chunk_index": 84,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014285714285714285,
+          "vector_score": null,
+          "bm25_score": 8.518388531998312,
+          "snippet": "## **HDFS Inside: Network To pology** **==> picture [720 x 442] intentionally omitted <==** **----- Start of picture text -----**<br> ▪<br>What are the distance of the following pairs:<br>– Dist (d1/r1/n1, d1/r1/n1)= 0<br>– Dist(d1/r1/n1, d1/r1/n2)= 2<br>– Dist(d1/r1/n1, d1/r2/n3)= 4<br>–<br>Dist(d1"
+        }
+      ]
+    }
+  ]
+}

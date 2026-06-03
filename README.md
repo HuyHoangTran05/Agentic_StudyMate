@@ -298,6 +298,65 @@ Common local defaults:
 - `NEO4J_USER=neo4j`
 - `NEO4J_PASSWORD=your_password`
 
+## RAG Evaluation
+
+Agentic StudyMate includes a lightweight local evaluation workflow for checking retrieval quality, citation quality, and optional answer grounding against uploaded study documents.
+
+Evaluation files live in:
+
+- `backend/evaluation/sample_eval_set.json`
+
+Each item contains a question plus optional expected keywords, file name, page numbers, and notes. The sample file is intentionally generic. For meaningful `hit@k` scores, create a local eval set from actual uploaded documents.
+
+List uploaded documents from SQLite:
+
+```powershell
+cd backend
+python evaluation/evaluate_retrieval.py --list-documents
+```
+
+Create a starter eval set using exact local file names:
+
+```powershell
+cd backend
+python evaluation/evaluate_retrieval.py --create-template evaluation/my_eval_set.json
+```
+
+Run retrieval-only evaluation:
+
+```powershell
+cd backend
+python evaluation/evaluate_retrieval.py --eval-file evaluation/my_eval_set.json --top-k 10
+```
+
+Show top retrieved chunks for each question:
+
+```powershell
+cd backend
+python evaluation/evaluate_retrieval.py --eval-file evaluation/my_eval_set.json --top-k 10 --show-results
+```
+
+The retrieval-only mode:
+
+- initializes the in-memory BM25 index from SQLite
+- calls the existing hybrid retriever
+- reports `hit@1`, `hit@3`, `hit@5`, `hit@k`, MRR, `page_hit@k`, keyword overlap, source distribution, and average chunks returned
+- writes JSON reports to `backend/evaluation/reports/`
+- can print top-k file names, pages, chunk IDs, scores, retrieval sources, first relevant rank, top-1 source, source distribution, and previews with `--show-results`
+
+`hit@k` alone can be too lenient because the expected file only needs to appear somewhere in the retrieved set. `hit@1`, `hit@3`, and `hit@5` show whether the relevant document is ranked early enough to be useful. MRR, or mean reciprocal rank, rewards systems that place the first relevant result near the top. Source distribution shows whether retrieved chunks came from BM25, vector search, graph retrieval, or an unknown source; if vector results are absent, check Qdrant indexing and hybrid fusion settings.
+
+Optional answer evaluation may use configured LLM quota:
+
+```powershell
+cd backend
+python evaluation/evaluate_retrieval.py --eval-file evaluation/my_eval_set.json --top-k 10 --with-answer
+```
+
+The optional answer mode also reports answer length, citation count, expected keywords in the answer, and whether the expected file appears in citations.
+
+This workflow does not require the frontend. Retrieval-only evaluation does not require API keys if your local embeddings/vector index and SQLite chunks are already available. If Qdrant or Neo4j is unavailable, the script prints clear warnings and continues where possible.
+
 ## Troubleshooting
 
 Neo4j Browser:
