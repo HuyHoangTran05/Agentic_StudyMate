@@ -129,6 +129,27 @@ class Neo4jClient:
 
         return submitted
 
+    async def delete_triplets_for_chunk_ids(self, chunk_ids: list[str]) -> int:
+        """Delete graph relationships attached to the provided SQLite chunk IDs."""
+        if not chunk_ids:
+            return 0
+
+        driver = self._get_driver()
+        cypher = """
+        MATCH ()-[relationship]->()
+        WHERE relationship.chunk_id IN $chunk_ids
+        WITH collect(relationship) AS relationships, count(relationship) AS deleted
+        FOREACH (relationship IN relationships | DELETE relationship)
+        RETURN deleted
+        """
+
+        async with driver.session() as session:
+            return await session.execute_write(
+                self._run_delete,
+                cypher,
+                {"chunk_ids": chunk_ids},
+            )
+
     async def list_triplets(self, limit: int = 100) -> list[dict]:
         """List recently stored graph relationships with chunk IDs."""
         driver = self._get_driver()
@@ -250,6 +271,12 @@ class Neo4jClient:
         result = await tx.run(query, parameters)
         records = await result.data()
         return [dict(record) for record in records]
+
+    @staticmethod
+    async def _run_delete(tx, query: str, parameters: dict) -> int:
+        result = await tx.run(query, parameters)
+        record = await result.single()
+        return int(record["deleted"]) if record else 0
 
     @staticmethod
     async def _run_count(tx, query: str) -> int:
