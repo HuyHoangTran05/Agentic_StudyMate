@@ -17,10 +17,15 @@ interface Props {
 }
 
 export interface ChatMessageMetadata {
+  mode?: string
   questionType?: string
   searchQuery?: string
   sourcesSearched?: number
   usedImage?: boolean
+  passageCount?: number
+  graphCount?: number
+  citationCount?: number
+  sources?: string[]
 }
 
 function getCitationKey(citation: Citation) {
@@ -100,10 +105,30 @@ export default function ChatMessage({
     : uniqueCitations.slice(0, DEFAULT_VISIBLE_CITATIONS)
   const citationGroups = groupCitationsByFile(visibleCitations)
   const hasDocumentSources = uniqueCitations.length > 0
-  const isVisionRag = metadata?.questionType === 'image_rag' || metadata?.usedImage || hasVisionSource
+  const metadataSources = new Set((metadata?.sources ?? []).map((source) => source.toLowerCase()))
+  const isVisionRag =
+    metadata?.mode === 'image_rag'
+    || metadata?.questionType === 'image_rag'
+    || metadata?.usedImage
+    || metadataSources.has('vision')
+    || hasVisionSource
+  const hasDocumentMetadata = metadataSources.has('documents')
+  const hasGraphMetadata = metadataSources.has('graph')
   const hasSearchQuery = Boolean(metadata?.searchQuery)
   const hasSourcesSearched = typeof metadata?.sourcesSearched === 'number'
-  const shouldShowSourceSummary = Boolean(isVisionRag || hasDocumentSources || hasSearchQuery || hasSourcesSearched)
+  const hasPassageCount = typeof metadata?.passageCount === 'number'
+  const hasGraphCount = typeof metadata?.graphCount === 'number'
+  const displayedCitationCount = metadata?.citationCount ?? uniqueCitations.length
+  const shouldShowSourceSummary = Boolean(
+    isVisionRag
+    || hasDocumentSources
+    || hasDocumentMetadata
+    || hasGraphMetadata
+    || hasSearchQuery
+    || hasSourcesSearched
+    || hasPassageCount
+    || hasGraphCount,
+  )
 
   return (
     <div className="flex justify-start animate-fade-in">
@@ -146,20 +171,37 @@ export default function ChatMessage({
                     Vision RAG
                   </span>
                 )}
-                {hasDocumentSources && (
+                {(hasDocumentSources || hasDocumentMetadata) && (
                   <>
                     <span className="inline-flex items-center gap-1.5 rounded-full border border-accent-cyan/20 bg-accent-cyan/10 px-2.5 py-1 text-[11px] font-medium text-accent-cyan">
                       <FileText className="h-3 w-3" />
                       Documents
                     </span>
-                    <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] font-medium text-text-secondary">
-                      {uniqueCitations.length} source{uniqueCitations.length === 1 ? '' : 's'}
-                    </span>
+                    {displayedCitationCount > 0 && (
+                      <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] font-medium text-text-secondary">
+                        {displayedCitationCount} source{displayedCitationCount === 1 ? '' : 's'}
+                      </span>
+                    )}
                   </>
+                )}
+                {hasGraphMetadata && (
+                  <span className="inline-flex items-center rounded-full border border-accent-violet/20 bg-accent-violet/10 px-2.5 py-1 text-[11px] font-medium text-accent-violet">
+                    Graph
+                  </span>
                 )}
                 {hasSourcesSearched && (
                   <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] font-medium text-text-secondary">
                     Sources searched: {metadata?.sourcesSearched}
+                  </span>
+                )}
+                {hasPassageCount && (
+                  <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] font-medium text-text-secondary">
+                    Passages: {metadata?.passageCount}
+                  </span>
+                )}
+                {hasGraphCount && (
+                  <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] font-medium text-text-secondary">
+                    Graph relationships: {metadata?.graphCount}
                   </span>
                 )}
               </div>

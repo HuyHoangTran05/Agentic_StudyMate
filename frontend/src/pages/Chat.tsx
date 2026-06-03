@@ -23,6 +23,7 @@ import {
   streamChat,
 } from '../lib/api'
 import type { ChatSession, Citation, Document, Message } from '../lib/api'
+import type { ChatDoneData } from '../lib/api'
 import { Badge, Button, Card, EmptyState } from '../components/ui'
 import SelectDropdown from '../components/ui/SelectDropdown'
 import { cx } from '../lib/cx'
@@ -74,6 +75,22 @@ function previousUserMessageHasImage(messages: ChatUiMessage[], messageIndex: nu
   }
 
   return false
+}
+
+function buildMessageMetadata(data: ChatDoneData, usedImage: boolean): ChatMessageMetadata {
+  return {
+    mode: data.metadata?.mode,
+    questionType: data.question_type || undefined,
+    searchQuery: data.metadata?.search_query || data.sub_questions?.[0] || undefined,
+    sourcesSearched: data.metadata?.passage_count != null || data.metadata?.graph_count != null
+      ? (data.metadata?.passage_count ?? 0) + (data.metadata?.graph_count ?? 0)
+      : data.sources_searched,
+    usedImage: data.metadata?.used_image ?? usedImage,
+    passageCount: data.metadata?.passage_count,
+    graphCount: data.metadata?.graph_count,
+    citationCount: data.metadata?.citation_count,
+    sources: data.metadata?.sources,
+  }
 }
 
 export default function Chat() {
@@ -238,13 +255,6 @@ export default function Chat() {
           setStreamingCitations(citations)
         },
         onDone: (data) => {
-          const metadata: ChatMessageMetadata = {
-            questionType: data.question_type || undefined,
-            searchQuery: data.sub_questions?.[0] || undefined,
-            sourcesSearched: data.sources_searched,
-            usedImage: Boolean(imageForRequest || userMsg.image_url),
-          }
-
           const assistantMsg: ChatUiMessage = {
             id: (Date.now() + 1).toString(),
             role: 'assistant',
@@ -252,7 +262,7 @@ export default function Chat() {
             image_url: null,
             citations: citationsRef.current.length > 0 ? citationsRef.current : null,
             created_at: new Date().toISOString(),
-            metadata,
+            metadata: buildMessageMetadata(data, Boolean(imageForRequest || userMsg.image_url)),
           }
           setMessages((prev) => appendMessagePreservingImages(prev, assistantMsg))
           setStreamingContent('')

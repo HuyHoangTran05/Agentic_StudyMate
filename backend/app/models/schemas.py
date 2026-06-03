@@ -58,6 +58,7 @@ class ChatResponse(BaseModel):
     sub_questions: list[str] | None = None
     question_type: str  # definition | comparison | summary | etc.
     sources_searched: int = 0
+    metadata: dict | None = None
 
 
 class ChatSessionResponse(BaseModel):

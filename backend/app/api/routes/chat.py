@@ -457,6 +457,7 @@ async def chat(
                     mime_type=image_mime_type,
                     question=question,
                     context=retrieved_context,
+                    has_retrieved_context=(passage_count + graph_count) > 0,
                 )
 
                 yield _sse_event("chunk", full_answer)
@@ -464,11 +465,26 @@ async def chat(
                     "citations",
                     json.dumps(parsed_citations, default=str),
                 )
+                metadata_sources = ["vision"]
+                if passage_count > 0 or parsed_citations:
+                    metadata_sources.append("documents")
+                if graph_count > 0:
+                    metadata_sources.append("graph")
+
                 done_data = json.dumps({
                     "question_type": "image_rag",
                     "sub_questions": [image_search_query],
                     "sources_searched": passage_count + graph_count,
                     "citations_removed": 0,
+                    "metadata": {
+                        "mode": "image_rag",
+                        "used_image": True,
+                        "search_query": image_search_query,
+                        "passage_count": passage_count,
+                        "graph_count": graph_count,
+                        "citation_count": len(parsed_citations),
+                        "sources": metadata_sources,
+                    },
                     "answer": full_answer,
                 })
                 yield _sse_event("done", done_data)

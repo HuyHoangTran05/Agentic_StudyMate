@@ -62,8 +62,46 @@ def _deduplicate_chunks(chunks: list[RerankResult]) -> list[RerankResult]:
         if chunk.chunk_id not in seen:
             seen[chunk.chunk_id] = chunk
         elif chunk.rerank_score > seen[chunk.chunk_id].rerank_score:
+            chunk.sources = sorted(set([*seen[chunk.chunk_id].sources, *chunk.sources]))
             seen[chunk.chunk_id] = chunk
+        else:
+            seen[chunk.chunk_id].sources = sorted(set([*seen[chunk.chunk_id].sources, *chunk.sources]))
     return list(seen.values())
+
+
+def _count_graph_chunks(chunks: list[RerankResult]) -> int:
+    """Count chunks that came from graph retrieval."""
+    return sum(1 for chunk in chunks if "neo4j" in chunk.sources)
+
+
+def _build_rag_metadata(
+    *,
+    mode: str,
+    used_image: bool,
+    search_query: str,
+    chunks: list[RerankResult],
+    citation_count: int,
+) -> dict:
+    """Build explicit frontend-safe RAG metadata without inventing retriever details."""
+    graph_count = _count_graph_chunks(chunks)
+    passage_count = max(len(chunks) - graph_count, 0)
+    sources = []
+    if used_image:
+        sources.append("vision")
+    if passage_count > 0 or citation_count > 0:
+        sources.append("documents")
+    if graph_count > 0:
+        sources.append("graph")
+
+    return {
+        "mode": mode,
+        "used_image": used_image,
+        "search_query": search_query,
+        "passage_count": passage_count,
+        "graph_count": graph_count,
+        "citation_count": citation_count,
+        "sources": sources,
+    }
 
 
 async def _graph_chunks_for_query(
@@ -227,6 +265,13 @@ async def run_agent(
         sub_questions=sub_questions if analysis.needs_planning else None,
         question_type=analysis.question_type,
         sources_searched=len(all_chunks),
+        metadata=_build_rag_metadata(
+            mode="text_rag",
+            used_image=False,
+            search_query=search_query,
+            chunks=all_chunks,
+            citation_count=len(verified.citations),
+        ),
     )
 
 
@@ -357,6 +402,13 @@ async def run_agent_stream(
         "sub_questions": sub_questions if analysis.needs_planning else None,
         "sources_searched": len(all_chunks),
         "citations_removed": verified.removed_count,
+        "metadata": _build_rag_metadata(
+            mode="text_rag",
+            used_image=False,
+            search_query=search_query,
+            chunks=all_chunks,
+            citation_count=len(verified.citations),
+        ),
         "answer": verified.answer,
     })
     yield sse_event("done", done_data)
