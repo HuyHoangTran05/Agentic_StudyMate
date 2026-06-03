@@ -6,6 +6,7 @@ import Chat from './pages/Chat'
 import Library from './pages/Library'
 import StudyTools from './pages/StudyTools'
 import SystemStatus from './pages/SystemStatus'
+import GraphExplorer from './pages/GraphExplorer'
 import { StudyToolsProvider } from './stores/studyToolsStore'
 import { UploadProvider } from './stores/uploadStore'
 
@@ -22,6 +23,7 @@ export default function App() {
             <Route path="/library" element={<Library />} />
             <Route path="/study-tools" element={<StudyTools />} />
             <Route path="/system" element={<SystemStatus />} />
+            <Route path="/graph" element={<GraphExplorer />} />
           </Routes>
         </Layout>
       </UploadProvider>

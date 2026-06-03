@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import {
   Activity,
   AlertCircle,
+  ArrowRight,
   BrainCircuit,
   CheckCircle2,
   Cpu,
@@ -114,6 +116,7 @@ export default function SystemStatusPage() {
         detail: status.neo4j.uri,
         meta: 'Graph relationships',
         error: status.neo4j.error,
+        action: { to: '/graph', label: 'Open graph' },
       },
       {
         title: 'LLM',
@@ -247,6 +250,7 @@ function ServiceCard({
   detail,
   meta,
   error,
+  action,
 }: {
   title: string
   icon: typeof Server
@@ -254,6 +258,7 @@ function ServiceCard({
   detail: string
   meta: string
   error?: string
+  action?: { to: string; label: string }
 }) {
   return (
     <Card interactive className="p-5">
@@ -274,6 +279,15 @@ function ServiceCard({
         <p className="mt-3 rounded-lg border border-rose-300/15 bg-rose-300/[0.055] px-3 py-2 text-xs leading-5 text-accent-rose">
           {error}
         </p>
+      )}
+      {action && (
+        <Link
+          to={action.to}
+          className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-accent-cyan transition-colors hover:text-white"
+        >
+          {action.label}
+          <ArrowRight className="h-3.5 w-3.5" />
+        </Link>
       )}
     </Card>
   )

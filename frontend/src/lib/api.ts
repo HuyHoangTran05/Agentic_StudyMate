@@ -144,6 +144,28 @@ export interface SystemStatus {
   };
 }
 
+export interface GraphTriplet {
+  source: string;
+  relation: string;
+  target: string;
+  chunk_id: string | null;
+  document_id: string | null;
+  file_name: string | null;
+  page_number: number | null;
+  section_title: string | null;
+  snippet: string | null;
+}
+
+export interface GraphTripletResponse {
+  triplets: GraphTriplet[];
+  total: number;
+  status?: SystemServiceStatus;
+  message?: string | null;
+  error?: string | null;
+  selected_document_id?: string | null;
+  selected_document_has_triplets?: boolean | null;
+}
+
 /* ─── Document APIs ───────────────────────────────────────────────────────── */
 
 export async function uploadDocument(file: File): Promise<{ document_id: string; file_name: string; status: string; message: string }> {
@@ -175,6 +197,15 @@ export async function deleteDocument(id: string): Promise<void> {
 
 export async function getSystemStatus(): Promise<SystemStatus> {
   const { data } = await api.get('/system/status');
+  return data;
+}
+
+export async function getGraphTriplets(params?: {
+  q?: string;
+  document_id?: string;
+  limit?: number;
+}): Promise<GraphTripletResponse> {
+  const { data } = await api.get('/graph/triplets', { params });
   return data;
 }
 

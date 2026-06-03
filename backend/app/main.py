@@ -111,12 +111,14 @@ from app.api.routes.documents import router as documents_router
 from app.api.routes.chat import router as chat_router
 from app.api.routes.study_tools import router as study_tools_router
 from app.api.routes.system import router as system_router
+from app.api.routes.graph import router as graph_router
 
 app.include_router(upload_router)
 app.include_router(documents_router)
 app.include_router(chat_router)
 app.include_router(study_tools_router)
 app.include_router(system_router)
+app.include_router(graph_router)
 
 
 # ─── Health Check ─────────────────────────────────────────────────────────────
