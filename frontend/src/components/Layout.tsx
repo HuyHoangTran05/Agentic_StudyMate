@@ -5,6 +5,7 @@ import {
   FlaskConical,
   GraduationCap,
   Activity,
+  GitBranch,
   LayoutDashboard,
   Library,
   Menu,
@@ -21,6 +22,7 @@ const navItems = [
   { to: '/chat', icon: MessageSquare, label: 'Chat' },
   { to: '/library', icon: Library, label: 'Library' },
   { to: '/study-tools', icon: FlaskConical, label: 'Study Tools' },
+  { to: '/graph', icon: GitBranch, label: 'Graph Explorer' },
   { to: '/system', icon: Activity, label: 'System Status' },
 ]
 

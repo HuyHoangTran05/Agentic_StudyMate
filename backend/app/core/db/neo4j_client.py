@@ -129,7 +129,77 @@ class Neo4jClient:
 
         return submitted
 
-    async def search_triplets(self, query: str, limit: int = 20) -> list[dict]:
+    async def list_triplets(self, limit: int = 100) -> list[dict]:
+        """List recently stored graph relationships with chunk IDs."""
+        driver = self._get_driver()
+        cypher = """
+        MATCH (source:Entity)-[relationship]->(target:Entity)
+        RETURN source.name AS source,
+               coalesce(relationship.relation, type(relationship)) AS relation,
+               target.name AS target,
+               relationship.chunk_id AS chunk_id
+        ORDER BY id(relationship) DESC
+        LIMIT $limit
+        """
+
+        async with driver.session() as session:
+            result = await session.execute_read(
+                self._run_search,
+                cypher,
+                {"limit": limit},
+            )
+        return result
+
+    async def list_triplets_by_chunk_ids(
+        self,
+        chunk_ids: list[str],
+        limit: int = 100,
+        query: str | None = None,
+    ) -> list[dict]:
+        """List graph relationships attached to specific SQLite chunk IDs."""
+        if not chunk_ids:
+            return []
+
+        terms = [
+            term.strip().lower()
+            for term in re.split(r"[,;\n]+|\s{2,}", query or "")
+            if term.strip()
+        ]
+
+        driver = self._get_driver()
+        cypher = """
+        MATCH (source:Entity)-[relationship]->(target:Entity)
+        WHERE relationship.chunk_id IN $chunk_ids
+          AND (
+            $has_terms = false OR
+            any(term IN $terms WHERE
+                toLower(source.name) CONTAINS term OR
+                toLower(target.name) CONTAINS term OR
+                toLower(coalesce(relationship.relation, type(relationship))) CONTAINS term
+            )
+          )
+        RETURN source.name AS source,
+               coalesce(relationship.relation, type(relationship)) AS relation,
+               target.name AS target,
+               relationship.chunk_id AS chunk_id
+        ORDER BY id(relationship) DESC
+        LIMIT $limit
+        """
+
+        async with driver.session() as session:
+            result = await session.execute_read(
+                self._run_search,
+                cypher,
+                {
+                    "chunk_ids": chunk_ids,
+                    "terms": terms,
+                    "has_terms": bool(terms),
+                    "limit": limit,
+                },
+            )
+        return result
+
+    async def search_triplets(self, query: str, limit: int = 100) -> list[dict]:
         """
         Search graph relationships by entity/relation text and return chunk IDs.
 
@@ -158,6 +228,7 @@ class Neo4jClient:
                coalesce(relationship.relation, type(relationship)) AS relation,
                target.name AS target,
                relationship.chunk_id AS chunk_id
+        ORDER BY id(relationship) DESC
         LIMIT $limit
         """
 

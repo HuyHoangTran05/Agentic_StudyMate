@@ -1,4 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import type { KeyboardEvent } from 'react'
 import { Check, ChevronDown } from 'lucide-react'
 import { cx } from '../../lib/cx'
@@ -33,7 +34,13 @@ export default function SelectDropdown({
   const [activeIndex, setActiveIndex] = useState(-1)
   const containerRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
   const listboxId = useId()
+  const [menuStyle, setMenuStyle] = useState({
+    left: 0,
+    top: 0,
+    width: 0,
+  })
 
   const selectedIndex = options.findIndex((option) => option.value === value)
   const selectedOption = selectedIndex >= 0 ? options[selectedIndex] : null
@@ -46,14 +53,35 @@ export default function SelectDropdown({
   useEffect(() => {
     if (!open) return
 
+    const updateMenuPosition = () => {
+      const rect = buttonRef.current?.getBoundingClientRect()
+      if (!rect) return
+      setMenuStyle({
+        left: rect.left,
+        top: rect.bottom + 8,
+        width: rect.width,
+      })
+    }
+
     const handlePointerDown = (event: PointerEvent) => {
-      if (!containerRef.current?.contains(event.target as Node)) {
+      const target = event.target as Node
+      if (
+        !containerRef.current?.contains(target) &&
+        !menuRef.current?.contains(target)
+      ) {
         setOpen(false)
       }
     }
 
+    updateMenuPosition()
     document.addEventListener('pointerdown', handlePointerDown)
-    return () => document.removeEventListener('pointerdown', handlePointerDown)
+    window.addEventListener('resize', updateMenuPosition)
+    window.addEventListener('scroll', updateMenuPosition, true)
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown)
+      window.removeEventListener('resize', updateMenuPosition)
+      window.removeEventListener('scroll', updateMenuPosition, true)
+    }
   }, [open])
 
   const openDropdown = () => {
@@ -147,12 +175,18 @@ export default function SelectDropdown({
         <ChevronDown className={cx('h-4 w-4 shrink-0 text-text-muted transition-transform', open && 'rotate-180 text-accent-cyan')} />
       </button>
 
-      {open && (
+      {open && createPortal(
         <div
+          ref={menuRef}
           id={listboxId}
           role="listbox"
           aria-activedescendant={activeIndex >= 0 ? `${listboxId}-${activeIndex}` : undefined}
-          className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-50 max-h-72 overflow-y-auto rounded-xl border border-white/10 bg-surface-950 p-1.5 shadow-2xl shadow-black/60"
+          style={{
+            left: menuStyle.left,
+            top: menuStyle.top,
+            width: menuStyle.width,
+          }}
+          className="fixed z-[100] max-h-72 overflow-y-auto rounded-xl border border-white/10 bg-surface-950 p-1.5 shadow-2xl shadow-black/60"
         >
           {options.length === 0 ? (
             <div className="px-3 py-2 text-sm text-text-muted">No options available</div>
@@ -192,7 +226,8 @@ export default function SelectDropdown({
               )
             })
           )}
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   )
