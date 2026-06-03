@@ -1,0 +1,68 @@
+[
+  {
+    "id": "big_data_ecosystem_components_001",
+    "question": "What are the main components of a Big Data ecosystem?",
+    "expected_keywords": [
+      "ecosystem",
+      "data",
+      "storage",
+      "processing",
+      "analytics"
+    ],
+    "expected_file": "2.Big Data Ecosystem.pdf",
+    "expected_pages": [],
+    "notes": "Should retrieve the section explaining the main components or layers of the Big Data ecosystem."
+  },
+  {
+    "id": "big_data_ecosystem_tools_002",
+    "question": "What tools or technologies are commonly used in the Big Data ecosystem?",
+    "expected_keywords": ["Hadoop", "Spark", "NoSQL", "Kafka", "Hive"],
+    "expected_file": "2.Big Data Ecosystem.pdf",
+    "expected_pages": [],
+    "notes": "Should retrieve content about common Big Data ecosystem tools and platforms."
+  },
+  {
+    "id": "hdfs_namenode_001",
+    "question": "What is the role of the NameNode in HDFS?",
+    "expected_keywords": ["NameNode", "metadata", "DataNode", "block", "HDFS"],
+    "expected_file": "3.Big Data Storage.pdf",
+    "expected_pages": [],
+    "notes": "Should retrieve the HDFS architecture section and explain that the NameNode manages metadata and block locations."
+  },
+  {
+    "id": "hdfs_datanode_002",
+    "question": "What is the role of DataNodes in HDFS?",
+    "expected_keywords": [
+      "DataNode",
+      "block",
+      "storage",
+      "replication",
+      "HDFS"
+    ],
+    "expected_file": "3.Big Data Storage.pdf",
+    "expected_pages": [],
+    "notes": "Should retrieve the section explaining that DataNodes store actual data blocks and report to the NameNode."
+  },
+  {
+    "id": "foundation_big_data_definition_001",
+    "question": "What is Big Data and why is it difficult to process with traditional systems?",
+    "expected_keywords": [
+      "Big Data",
+      "volume",
+      "velocity",
+      "variety",
+      "traditional"
+    ],
+    "expected_file": "1.Foundation of Big Data.pdf",
+    "expected_pages": [],
+    "notes": "Should retrieve the introductory definition of Big Data and explain why traditional data processing is insufficient."
+  },
+  {
+    "id": "foundation_big_data_characteristics_002",
+    "question": "What are the main characteristics of Big Data?",
+    "expected_keywords": ["volume", "velocity", "variety", "veracity", "value"],
+    "expected_file": "1.Foundation of Big Data.pdf",
+    "expected_pages": [],
+    "notes": "Should retrieve the section about the V characteristics of Big Data."
+  }
+]
