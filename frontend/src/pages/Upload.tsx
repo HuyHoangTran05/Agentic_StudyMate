@@ -1,6 +1,7 @@
-import { useCallback, useState } from 'react'
+import { useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
 import {
+  AlertCircle,
   CheckCircle2,
   CloudUpload,
   FileText,
@@ -8,28 +9,12 @@ import {
   Loader2,
   Plus,
   Upload as UploadIcon,
-  XCircle,
+  RefreshCw,
 } from 'lucide-react'
-import { uploadDocument, uploadImageDocument } from '../lib/api'
 import { Badge, Button, Card, PageHeader, PageShell } from '../components/ui'
 import { cx } from '../lib/cx'
-
-interface UploadResult {
-  file_name: string
-  status: 'success' | 'error'
-  message: string
-  image_url?: string
-}
-
-interface UploadError {
-  response?: {
-    status?: number
-    data?: {
-      detail?: string | { message?: string }
-    }
-  }
-  message?: string
-}
+import { useUploadStore } from '../stores/uploadStore'
+import type { UploadJob, UploadJobStatus } from '../stores/uploadStore'
 
 const ACCEPTED_TYPES: Record<string, string[]> = {
   'application/pdf': ['.pdf'],
@@ -39,69 +24,37 @@ const ACCEPTED_TYPES: Record<string, string[]> = {
   'image/jpeg': ['.jpg', '.jpeg'],
 }
 
-const isImageFile = (file: File) => file.type === 'image/png' || file.type === 'image/jpeg'
-
-const asUploadError = (err: unknown) => err as UploadError
-
-const isDuplicateUploadError = (err: unknown) => asUploadError(err).response?.status === 409
-
-const getUploadErrorMessage = (err: unknown) => {
-  if (isDuplicateUploadError(err)) return 'File already exists in the library!'
-
-  const uploadError = asUploadError(err)
-  const detail = uploadError.response?.data?.detail
-  if (typeof detail === 'string') return detail
-  if (detail?.message) return detail.message
-  return uploadError.message || 'Upload failed'
+const statusConfig: Record<UploadJobStatus, { label: string; tone: 'cyan' | 'amber' | 'emerald' | 'rose' | 'neutral' }> = {
+  queued: { label: 'Queued', tone: 'neutral' },
+  uploading: { label: 'Uploading', tone: 'cyan' },
+  processing: { label: 'Processing', tone: 'amber' },
+  ready: { label: 'Ready', tone: 'emerald' },
+  error: { label: 'Error', tone: 'rose' },
 }
 
 export default function Upload() {
-  const [uploading, setUploading] = useState(false)
-  const [uploadingImage, setUploadingImage] = useState(false)
-  const [results, setResults] = useState<UploadResult[]>([])
+  const {
+    jobs,
+    isUploading,
+    hasActiveJobs,
+    startUpload,
+    refreshUploadStatuses,
+    clearCompleted,
+  } = useUploadStore()
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     if (acceptedFiles.length === 0) return
-
-    setUploading(true)
-    setUploadingImage(acceptedFiles.some(isImageFile))
-    const newResults: UploadResult[] = []
-
-    try {
-      for (const file of acceptedFiles) {
-        try {
-          if (isImageFile(file)) {
-            const res = await uploadImageDocument(file)
-            newResults.push({
-              file_name: res.file_name,
-              status: 'success',
-              message: `Image processed. Extracted text into ${res.total_chunks} chunk${res.total_chunks !== 1 ? 's' : ''}.`,
-              image_url: res.image_url,
-            })
-          } else {
-            const res = await uploadDocument(file)
-            newResults.push({ file_name: res.file_name, status: 'success', message: res.message })
-          }
-        } catch (err) {
-          const msg = getUploadErrorMessage(err)
-          if (isDuplicateUploadError(err)) alert(msg)
-          newResults.push({ file_name: file.name, status: 'error', message: msg })
-        }
-      }
-    } finally {
-      setResults((prev) => [...newResults, ...prev])
-      setUploading(false)
-      setUploadingImage(false)
-    }
-  }, [])
+    await startUpload(acceptedFiles)
+  }, [startUpload])
 
   const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
     onDrop,
     accept: ACCEPTED_TYPES,
-    disabled: uploading,
+    disabled: isUploading,
     noClick: true,
   })
 
+  const uploadingImage = jobs.some((job) => job.status === 'uploading' && job.fileType === 'image')
   const uploadLabel = uploadingImage ? 'Extracting text via AI...' : 'Uploading and indexing...'
 
   return (
@@ -121,7 +74,7 @@ export default function Upload() {
             isDragActive
               ? 'scale-[1.01] border-accent-cyan/80 bg-accent-cyan/[0.045]'
               : 'border-accent-cyan/25 hover:border-accent-cyan/60 hover:bg-white/[0.03]',
-            uploading && 'pointer-events-none opacity-70 uploading-state',
+            isUploading && 'pointer-events-none opacity-70 uploading-state',
           )}
         >
           <input {...getInputProps()} />
@@ -135,15 +88,15 @@ export default function Upload() {
                   : 'border-white/10 bg-surface-650 text-accent-violet group-hover:scale-105',
               )}
             >
-              {uploading ? <Loader2 className="h-9 w-9 animate-spin" /> : <CloudUpload className="h-9 w-9" />}
+              {isUploading ? <Loader2 className="h-9 w-9 animate-spin" /> : <CloudUpload className="h-9 w-9" />}
             </div>
 
             <h2 className="font-display text-2xl font-semibold text-white md:text-3xl">
-              {uploading ? uploadLabel : isDragActive ? 'Release to upload' : 'Drag and drop files here'}
+              {isUploading ? uploadLabel : isDragActive ? 'Release to upload' : 'Drag and drop files here'}
             </h2>
             <p className="mt-3 max-w-md text-sm leading-6 text-text-secondary">
-              {uploading
-                ? 'Please keep this page open while StudyMate processes your source material.'
+              {isUploading
+                ? 'Upload progress is saved globally, so you can navigate away and return without losing the queue.'
                 : 'Click browse or drop files from your computer. Images are analyzed and stored with extracted text.'}
             </p>
 
@@ -154,7 +107,7 @@ export default function Upload() {
                 event.stopPropagation()
                 open()
               }}
-              disabled={uploading}
+              disabled={isUploading}
             >
               <Plus className="h-4 w-4" />
               Select Files
@@ -173,17 +126,17 @@ export default function Upload() {
         <aside className="space-y-4">
           <div className="flex items-center justify-between border-b border-white/10 pb-3">
             <h2 className="font-display text-lg font-semibold text-white">Processing Queue</h2>
-            <Badge tone={uploading ? 'cyan' : 'neutral'}>{uploading ? 'Active' : `${results.length} results`}</Badge>
+            <Badge tone={hasActiveJobs ? 'cyan' : 'neutral'}>{hasActiveJobs ? 'Active' : `${jobs.length} recent`}</Badge>
           </div>
 
-          {uploading && (
+          {hasActiveJobs && (
             <Card className="overflow-hidden border-accent-cyan/30 p-4 uploading-state">
               <div className="flex items-start gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-accent-cyan/25 bg-accent-cyan/10">
                   <Loader2 className="h-5 w-5 animate-spin text-accent-cyan" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-white">{uploadLabel}</p>
+                  <p className="text-sm font-medium text-white">{isUploading ? uploadLabel : 'Processing in the library...'}</p>
                   <div className="mt-2 flex items-center gap-2 text-xs text-accent-cyan">
                     <span className="h-1.5 w-1.5 rounded-full bg-accent-cyan agent-pulse" />
                     Extracting, chunking, and embedding
@@ -196,7 +149,29 @@ export default function Upload() {
             </Card>
           )}
 
-          {results.length === 0 && !uploading ? (
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              className="flex-1"
+              onClick={() => refreshUploadStatuses().catch(console.error)}
+              disabled={jobs.length === 0}
+            >
+              <RefreshCw className="h-4 w-4" />
+              Refresh
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              className="flex-1"
+              onClick={clearCompleted}
+              disabled={jobs.every((job) => job.status === 'queued' || job.status === 'uploading' || job.status === 'processing')}
+            >
+              Clear done
+            </Button>
+          </div>
+
+          {jobs.length === 0 && !hasActiveJobs ? (
             <Card className="p-5">
               <div className="flex items-start gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/[0.04] text-text-muted">
@@ -205,57 +180,86 @@ export default function Upload() {
                 <div>
                   <p className="text-sm font-medium text-white">No uploads yet</p>
                   <p className="mt-1 text-xs leading-5 text-text-muted">
-                    Completed files and duplicate warnings will appear here.
+                    Upload progress and recent results will remain here while you move around the app.
                   </p>
                 </div>
               </div>
             </Card>
           ) : (
             <div className="space-y-3">
-              {results.map((result, index) => (
-                <Card
-                  key={`${result.file_name}-${index}`}
-                  className={cx(
-                    'relative overflow-hidden p-4',
-                    result.status === 'success' ? 'border-emerald-300/20' : 'border-rose-300/20',
-                  )}
-                >
-                  <div
-                    className={cx(
-                      'absolute bottom-0 left-0 top-0 w-1',
-                      result.status === 'success' ? 'bg-accent-emerald/60' : 'bg-accent-rose/70',
-                    )}
-                  />
-                  <div className="flex items-start gap-3">
-                    <div
-                      className={cx(
-                        'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg',
-                        result.status === 'success' ? 'bg-emerald-400/10 text-accent-emerald' : 'bg-rose-300/10 text-accent-rose',
-                      )}
-                    >
-                      {result.status === 'success' ? <CheckCircle2 className="h-5 w-5" /> : <XCircle className="h-5 w-5" />}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="flex items-center gap-2 truncate text-sm font-medium text-white">
-                        {result.image_url ? <ImageIcon className="h-3.5 w-3.5 text-accent-cyan" /> : <FileText className="h-3.5 w-3.5 text-text-muted" />}
-                        <span className="truncate">{result.file_name}</span>
-                      </p>
-                      <p
-                        className={cx(
-                          'mt-1 text-xs leading-5',
-                          result.status === 'success' ? 'text-accent-emerald' : 'text-accent-rose',
-                        )}
-                      >
-                        {result.message}
-                      </p>
-                    </div>
-                  </div>
-                </Card>
-              ))}
+              {jobs.map((job) => <UploadJobCard key={job.id} job={job} />)}
             </div>
           )}
         </aside>
       </div>
     </PageShell>
+  )
+}
+
+function UploadJobCard({ job }: { job: UploadJob }) {
+  const status = statusConfig[job.status]
+  const isBusy = job.status === 'queued' || job.status === 'uploading' || job.status === 'processing'
+
+  return (
+    <Card
+      className={cx(
+        'relative overflow-hidden p-4',
+        job.status === 'ready' && 'border-emerald-300/20',
+        job.status === 'error' && 'border-rose-300/20',
+        isBusy && 'border-accent-cyan/20',
+      )}
+    >
+      <div
+        className={cx(
+          'absolute bottom-0 left-0 top-0 w-1',
+          job.status === 'ready' && 'bg-accent-emerald/60',
+          job.status === 'error' && 'bg-accent-rose/70',
+          isBusy && 'bg-accent-cyan/60',
+        )}
+      />
+      <div className="flex items-start gap-3">
+        <div
+          className={cx(
+            'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg',
+            job.status === 'ready' && 'bg-emerald-400/10 text-accent-emerald',
+            job.status === 'error' && 'bg-rose-300/10 text-accent-rose',
+            isBusy && 'bg-accent-cyan/10 text-accent-cyan',
+          )}
+        >
+          {job.status === 'ready' ? (
+            <CheckCircle2 className="h-5 w-5" />
+          ) : job.status === 'error' ? (
+            <AlertCircle className="h-5 w-5" />
+          ) : (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="flex items-center gap-2 truncate text-sm font-medium text-white">
+            {job.imageUrl || job.fileType === 'image' ? (
+              <ImageIcon className="h-3.5 w-3.5 text-accent-cyan" />
+            ) : (
+              <FileText className="h-3.5 w-3.5 text-text-muted" />
+            )}
+            <span className="truncate">{job.fileName}</span>
+          </p>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <Badge tone={status.tone}>{status.label}</Badge>
+            {job.documentId && <span className="text-[11px] text-text-muted">ID {job.documentId.slice(0, 8)}</span>}
+            {typeof job.totalChunks === 'number' && <span className="text-[11px] text-text-muted">{job.totalChunks} chunks</span>}
+          </div>
+          <p
+            className={cx(
+              'mt-2 text-xs leading-5',
+              job.status === 'ready' && 'text-accent-emerald',
+              job.status === 'error' && 'text-accent-rose',
+              isBusy && 'text-accent-cyan',
+            )}
+          >
+            {job.message}
+          </p>
+        </div>
+      </div>
+    </Card>
   )
 }

@@ -3,7 +3,6 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useState,
 } from 'react'
@@ -25,9 +24,11 @@ export type StudyToolType = 'quiz' | 'flashcards' | 'summary'
 
 interface StudyToolsState {
   documents: Document[]
+  allDocuments: Document[]
   selectedDoc: string
   activeTool: StudyToolType
   numItems: number
+  isLoadingDocuments: boolean
   isGenerating: boolean
   error: string | null
   quizData: MCQuestion[] | null
@@ -36,7 +37,7 @@ interface StudyToolsState {
   setSelectedDoc: (documentId: string) => void
   setActiveTool: (tool: StudyToolType) => void
   setNumItems: (count: number) => void
-  refreshDocuments: () => Promise<void>
+  refreshDocuments: () => Promise<Document[]>
   generateCurrentTool: () => Promise<void>
 }
 
@@ -44,9 +45,11 @@ const StudyToolsContext = createContext<StudyToolsState | null>(null)
 
 export function StudyToolsProvider({ children }: { children: ReactNode }) {
   const [documents, setDocuments] = useState<Document[]>([])
+  const [allDocuments, setAllDocuments] = useState<Document[]>([])
   const [selectedDoc, setSelectedDoc] = useState('')
   const [activeTool, setActiveTool] = useState<StudyToolType>('quiz')
   const [numItems, setNumItems] = useState(5)
+  const [isLoadingDocuments, setIsLoadingDocuments] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [quizData, setQuizData] = useState<MCQuestion[] | null>(null)
@@ -54,48 +57,36 @@ export function StudyToolsProvider({ children }: { children: ReactNode }) {
   const [summaryData, setSummaryData] = useState<SummaryResponse | null>(null)
 
   const refreshDocuments = useCallback(async () => {
-    const res = await getDocuments()
-    const ready = res.documents.filter((doc) => doc.status === 'ready')
-    setDocuments(ready)
+    setIsLoadingDocuments(true)
+    try {
+      const res = await getDocuments()
+      const ready = res.documents.filter((doc) => doc.status === 'ready')
+      setAllDocuments(res.documents)
+      setDocuments(ready)
 
-    setSelectedDoc((current) => {
-      if (current && ready.some((doc) => doc.id === current)) {
-        return current
-      }
-      return ready[0]?.id ?? ''
-    })
-  }, [])
-
-  useEffect(() => {
-    let cancelled = false
-
-    void getDocuments()
-      .then((res) => {
-        if (cancelled) return
-
-        const ready = res.documents.filter((doc) => doc.status === 'ready')
-        setDocuments(ready)
-        setSelectedDoc((current) => {
-          if (current && ready.some((doc) => doc.id === current)) {
-            return current
-          }
-          return ready[0]?.id ?? ''
-        })
-      })
-      .catch((err) => {
-        if (!cancelled) {
-          console.error(err)
-          setError('Unable to load ready documents.')
+      setSelectedDoc((current) => {
+        if (current && ready.some((doc) => doc.id === current)) {
+          return current
         }
+        return ready[0]?.id ?? ''
       })
-
-    return () => {
-      cancelled = true
+      setError(null)
+      return res.documents
+    } catch (err) {
+      console.error(err)
+      setError('Unable to load ready documents.')
+      return []
+    } finally {
+      setIsLoadingDocuments(false)
     }
   }, [])
 
   const generateCurrentTool = useCallback(async () => {
     if (!selectedDoc || isGenerating) return
+    if (!documents.some((doc) => doc.id === selectedDoc)) {
+      setError('Select a ready document before generating study content.')
+      return
+    }
 
     const tool = activeTool
     const documentId = selectedDoc
@@ -134,14 +125,16 @@ export function StudyToolsProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsGenerating(false)
     }
-  }, [activeTool, isGenerating, numItems, selectedDoc])
+  }, [activeTool, documents, isGenerating, numItems, selectedDoc])
 
   const value = useMemo<StudyToolsState>(
     () => ({
       documents,
+      allDocuments,
       selectedDoc,
       activeTool,
       numItems,
+      isLoadingDocuments,
       isGenerating,
       error,
       quizData,
@@ -155,10 +148,12 @@ export function StudyToolsProvider({ children }: { children: ReactNode }) {
     }),
     [
       activeTool,
+      allDocuments,
       documents,
       error,
       flashcardsData,
       generateCurrentTool,
+      isLoadingDocuments,
       isGenerating,
       numItems,
       quizData,

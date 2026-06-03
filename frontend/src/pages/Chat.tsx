@@ -23,6 +23,7 @@ import {
 } from '../lib/api'
 import type { ChatSession, Citation, Document, Message } from '../lib/api'
 import { Badge, Button, Card, EmptyState } from '../components/ui'
+import SelectDropdown from '../components/ui/SelectDropdown'
 import { cx } from '../lib/cx'
 
 function findMatchingLocalMessage(localMessages: Message[], incoming: Message): Message | undefined {
@@ -275,6 +276,14 @@ export default function Chat() {
   }
 
   const selectedDocumentValue = selectedDocIds ? selectedDocIds.join(',') : ''
+  const documentScopeOptions = [
+    { value: '', label: 'All ready documents', description: `${documents.length} source${documents.length === 1 ? '' : 's'} available` },
+    ...documents.map((doc) => ({
+      value: doc.id,
+      label: doc.file_name,
+      description: `${doc.total_chunks} chunks`,
+    })),
+  ]
 
   return (
     <div className="flex h-[calc(100dvh-3.5rem)] min-h-0 overflow-hidden md:h-screen">
@@ -287,24 +296,13 @@ export default function Chat() {
         </div>
 
         <div className="border-b border-white/10 p-4">
-          <label className="mb-2 block text-xs font-medium text-text-muted">Search scope</label>
-          <div className="field-surface rounded-lg">
-            <select
-              value={selectedDocumentValue}
-              onChange={(event) => {
-                const value = event.target.value
-                setSelectedDocIds(value ? value.split(',') : null)
-              }}
-              className="w-full rounded-lg bg-transparent px-3 py-2.5 text-sm text-text-secondary outline-none"
-            >
-              <option value="">All ready documents</option>
-              {documents.map((doc) => (
-                <option key={doc.id} value={doc.id}>
-                  {doc.file_name}
-                </option>
-              ))}
-            </select>
-          </div>
+          <SelectDropdown
+            label="Search scope"
+            value={selectedDocumentValue}
+            options={documentScopeOptions}
+            placeholder="All ready documents"
+            onChange={(value) => setSelectedDocIds(value ? [value] : null)}
+          />
           <p className="mt-2 text-xs text-text-muted">{documents.length} ready source{documents.length === 1 ? '' : 's'}</p>
         </div>
 
