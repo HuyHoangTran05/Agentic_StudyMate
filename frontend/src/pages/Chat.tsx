@@ -14,6 +14,7 @@ import {
   Zap,
 } from 'lucide-react'
 import ChatMessage from '../components/ChatMessage'
+import type { ChatMessageMetadata } from '../components/ChatMessage'
 import {
   deleteChatSession,
   getChatHistory,
@@ -26,7 +27,11 @@ import { Badge, Button, Card, EmptyState } from '../components/ui'
 import SelectDropdown from '../components/ui/SelectDropdown'
 import { cx } from '../lib/cx'
 
-function findMatchingLocalMessage(localMessages: Message[], incoming: Message): Message | undefined {
+type ChatUiMessage = Message & {
+  metadata?: ChatMessageMetadata
+}
+
+function findMatchingLocalMessage(localMessages: ChatUiMessage[], incoming: ChatUiMessage): ChatUiMessage | undefined {
   return localMessages.find((local) => local.id === incoming.id)
     ?? localMessages.find((local) =>
       local.role === incoming.role
@@ -36,21 +41,22 @@ function findMatchingLocalMessage(localMessages: Message[], incoming: Message): 
     )
 }
 
-function mergeMessagePreservingLocalImage(localMessages: Message[], incoming: Message): Message {
+function mergeMessagePreservingLocalImage(localMessages: ChatUiMessage[], incoming: ChatUiMessage): ChatUiMessage {
   const local = findMatchingLocalMessage(localMessages, incoming)
   return {
     ...local,
     ...incoming,
     image_url: local?.image_url ?? incoming.image_url ?? null,
     citations: incoming.citations ?? local?.citations ?? null,
+    metadata: incoming.metadata ?? local?.metadata,
   }
 }
 
-function mergeMessagesPreservingImages(localMessages: Message[], incomingMessages: Message[]): Message[] {
+function mergeMessagesPreservingImages(localMessages: ChatUiMessage[], incomingMessages: ChatUiMessage[]): ChatUiMessage[] {
   return incomingMessages.map((incoming) => mergeMessagePreservingLocalImage(localMessages, incoming))
 }
 
-function appendMessagePreservingImages(localMessages: Message[], incoming: Message): Message[] {
+function appendMessagePreservingImages(localMessages: ChatUiMessage[], incoming: ChatUiMessage): ChatUiMessage[] {
   const existingIndex = localMessages.findIndex((local) => local.id === incoming.id)
   if (existingIndex === -1) {
     return [...localMessages, mergeMessagePreservingLocalImage(localMessages, incoming)]
@@ -61,7 +67,7 @@ function appendMessagePreservingImages(localMessages: Message[], incoming: Messa
   )
 }
 
-function previousUserMessageHasImage(messages: Message[], messageIndex: number): boolean {
+function previousUserMessageHasImage(messages: ChatUiMessage[], messageIndex: number): boolean {
   for (let index = messageIndex - 1; index >= 0; index -= 1) {
     const message = messages[index]
     if (message.role === 'user') return Boolean(message.image_url)
@@ -77,7 +83,7 @@ export default function Chat() {
   const [sessions, setSessions] = useState<ChatSession[]>([])
   const [documents, setDocuments] = useState<Document[]>([])
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(paramSessionId || null)
-  const [messages, setMessages] = useState<Message[]>([])
+  const [messages, setMessages] = useState<ChatUiMessage[]>([])
   const [input, setInput] = useState('')
   const [isStreaming, setIsStreaming] = useState(false)
   const [streamingContent, setStreamingContent] = useState('')
@@ -185,7 +191,7 @@ export default function Chat() {
     const optimisticImageUrl = imageForRequest ? URL.createObjectURL(imageForRequest) : null
     if (optimisticImageUrl) optimisticImageUrlsRef.current.push(optimisticImageUrl)
 
-    const userMsg: Message = {
+    const userMsg: ChatUiMessage = {
       id: Date.now().toString(),
       role: 'user',
       content: question,
@@ -232,13 +238,21 @@ export default function Chat() {
           setStreamingCitations(citations)
         },
         onDone: (data) => {
-          const assistantMsg: Message = {
+          const metadata: ChatMessageMetadata = {
+            questionType: data.question_type || undefined,
+            searchQuery: data.sub_questions?.[0] || undefined,
+            sourcesSearched: data.sources_searched,
+            usedImage: Boolean(imageForRequest || userMsg.image_url),
+          }
+
+          const assistantMsg: ChatUiMessage = {
             id: (Date.now() + 1).toString(),
             role: 'assistant',
             content: data.answer,
             image_url: null,
             citations: citationsRef.current.length > 0 ? citationsRef.current : null,
             created_at: new Date().toISOString(),
+            metadata,
           }
           setMessages((prev) => appendMessagePreservingImages(prev, assistantMsg))
           setStreamingContent('')
@@ -249,7 +263,7 @@ export default function Chat() {
           getChatSessions().then(setSessions).catch(console.error)
         },
         onError: (error) => {
-          const errorMsg: Message = {
+          const errorMsg: ChatUiMessage = {
             id: (Date.now() + 1).toString(),
             role: 'assistant',
             content: `Error: ${error}`,
@@ -412,6 +426,7 @@ export default function Chat() {
                 imageUrl={message.image_url}
                 citations={message.citations}
                 hasVisionSource={message.role === 'assistant' ? previousUserMessageHasImage(messages, index) : undefined}
+                metadata={message.role === 'assistant' ? message.metadata : undefined}
               />
             ))}
 
@@ -423,6 +438,7 @@ export default function Chat() {
                 citations={streamingCitations.length > 0 ? streamingCitations : undefined}
                 isStreaming
                 hasVisionSource={streamingHasVisionSource}
+                metadata={{ usedImage: streamingHasVisionSource }}
               />
             )}
 

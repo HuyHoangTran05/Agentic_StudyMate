@@ -13,6 +13,14 @@ interface Props {
   citations?: Citation[] | null
   isStreaming?: boolean
   hasVisionSource?: boolean
+  metadata?: ChatMessageMetadata
+}
+
+export interface ChatMessageMetadata {
+  questionType?: string
+  searchQuery?: string
+  sourcesSearched?: number
+  usedImage?: boolean
 }
 
 function getCitationKey(citation: Citation) {
@@ -42,7 +50,15 @@ function groupCitationsByFile(citations: Citation[]) {
   }, [])
 }
 
-export default function ChatMessage({ role, content, imageUrl, citations, isStreaming, hasVisionSource }: Props) {
+export default function ChatMessage({
+  role,
+  content,
+  imageUrl,
+  citations,
+  isStreaming,
+  hasVisionSource,
+  metadata,
+}: Props) {
   const [copied, setCopied] = useState(false)
   const [showAllSources, setShowAllSources] = useState(false)
 
@@ -84,7 +100,10 @@ export default function ChatMessage({ role, content, imageUrl, citations, isStre
     : uniqueCitations.slice(0, DEFAULT_VISIBLE_CITATIONS)
   const citationGroups = groupCitationsByFile(visibleCitations)
   const hasDocumentSources = uniqueCitations.length > 0
-  const shouldShowSourceSummary = Boolean(hasVisionSource || hasDocumentSources)
+  const isVisionRag = metadata?.questionType === 'image_rag' || metadata?.usedImage || hasVisionSource
+  const hasSearchQuery = Boolean(metadata?.searchQuery)
+  const hasSourcesSearched = typeof metadata?.sourcesSearched === 'number'
+  const shouldShowSourceSummary = Boolean(isVisionRag || hasDocumentSources || hasSearchQuery || hasSourcesSearched)
 
   return (
     <div className="flex justify-start animate-fade-in">
@@ -121,10 +140,10 @@ export default function ChatMessage({ role, content, imageUrl, citations, isStre
           {shouldShowSourceSummary && (
             <div className="space-y-2">
               <div className="flex flex-wrap items-center gap-1.5 px-1">
-                {hasVisionSource && (
+                {isVisionRag && (
                   <span className="inline-flex items-center gap-1.5 rounded-full border border-accent-violet/20 bg-accent-violet/10 px-2.5 py-1 text-[11px] font-medium text-accent-violet">
                     <Image className="h-3 w-3" />
-                    Vision
+                    Vision RAG
                   </span>
                 )}
                 {hasDocumentSources && (
@@ -138,7 +157,27 @@ export default function ChatMessage({ role, content, imageUrl, citations, isStre
                     </span>
                   </>
                 )}
+                {hasSourcesSearched && (
+                  <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] font-medium text-text-secondary">
+                    Sources searched: {metadata?.sourcesSearched}
+                  </span>
+                )}
               </div>
+
+              {hasSearchQuery && (
+                <div className="rounded-xl border border-accent-violet/15 bg-accent-violet/[0.055] px-3 py-2">
+                  <p className="text-[11px] font-medium text-accent-violet">Search query</p>
+                  <p className="mt-0.5 break-words text-xs leading-5 text-text-secondary">
+                    {metadata?.searchQuery}
+                  </p>
+                </div>
+              )}
+
+              {isVisionRag && !hasDocumentSources && (
+                <div className="rounded-xl border border-white/10 bg-white/[0.035] px-3 py-2 text-xs leading-5 text-text-secondary">
+                  Generated from image understanding. No document citations were returned.
+                </div>
+              )}
 
               {hasDocumentSources && (
                 <div className="overflow-hidden rounded-2xl border border-white/10 bg-surface-850/78 shadow-lg shadow-black/20">

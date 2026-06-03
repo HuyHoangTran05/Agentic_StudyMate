@@ -190,7 +190,6 @@ export function UploadProvider({ children }: { children: ReactNode }) {
         }
       } catch (err) {
         const message = getUploadErrorMessage(err)
-        if (isDuplicateUploadError(err)) window.alert(message)
         updateJob(job.id, {
           status: 'error',
           message,
