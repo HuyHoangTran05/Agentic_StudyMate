@@ -298,6 +298,41 @@ Common local defaults:
 - `NEO4J_USER=neo4j`
 - `NEO4J_PASSWORD=your_password`
 
+## RAG Evaluation
+
+Agentic StudyMate includes a lightweight local evaluation workflow for checking retrieval quality, citation quality, and optional answer grounding against uploaded study documents.
+
+Evaluation files live in:
+
+- `backend/evaluation/sample_eval_set.json`
+
+Each item contains a question plus optional expected keywords, file name, page numbers, and notes. Update the sample placeholders to match files currently uploaded in your local library before treating the scores as meaningful.
+
+Run retrieval-only evaluation from the backend directory:
+
+```powershell
+cd backend
+python evaluation/evaluate_retrieval.py --eval-file evaluation/sample_eval_set.json --top-k 10
+```
+
+The retrieval-only mode:
+
+- initializes the in-memory BM25 index from SQLite
+- calls the existing hybrid retriever
+- reports `hit@k`, `page_hit@k`, keyword overlap, and average chunks returned
+- writes JSON reports to `backend/evaluation/reports/`
+
+Optional answer evaluation may use configured LLM quota:
+
+```powershell
+cd backend
+python evaluation/evaluate_retrieval.py --eval-file evaluation/sample_eval_set.json --top-k 10 --with-answer
+```
+
+The optional answer mode also reports answer length, citation count, expected keywords in the answer, and whether the expected file appears in citations.
+
+This workflow does not require the frontend. Retrieval-only evaluation does not require API keys if your local embeddings/vector index and SQLite chunks are already available. If Qdrant or Neo4j is unavailable, the script prints clear warnings and continues where possible.
+
 ## Troubleshooting
 
 Neo4j Browser:

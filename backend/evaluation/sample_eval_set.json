@@ -1,0 +1,34 @@
+[
+  {
+    "id": "sample_hdfs_namenode_001",
+    "question": "What is the role of the NameNode in HDFS?",
+    "expected_keywords": ["NameNode", "metadata", "block location"],
+    "expected_file": "replace-with-your-big-data-file.pdf",
+    "expected_pages": [64, 65],
+    "notes": "Replace expected_file/pages with a document currently uploaded in your library."
+  },
+  {
+    "id": "sample_mapreduce_shuffle_001",
+    "question": "What happens during the shuffle phase in MapReduce?",
+    "expected_keywords": ["shuffle", "map", "reduce", "partition"],
+    "expected_file": "replace-with-your-distributed-systems-file.pdf",
+    "expected_pages": [],
+    "notes": "Useful for checking whether keyword-heavy retrieval finds architecture/process content."
+  },
+  {
+    "id": "sample_database_index_001",
+    "question": "Why do database indexes improve query performance?",
+    "expected_keywords": ["index", "query", "lookup", "scan"],
+    "expected_file": "replace-with-your-database-file.pdf",
+    "expected_pages": [],
+    "notes": "Generic database retrieval item. Update expected_file before using as a scored benchmark."
+  },
+  {
+    "id": "sample_neural_network_001",
+    "question": "What is the purpose of backpropagation in neural network training?",
+    "expected_keywords": ["backpropagation", "gradient", "weights", "loss"],
+    "expected_file": "replace-with-your-ml-file.pdf",
+    "expected_pages": [],
+    "notes": "Generic machine-learning item for smoke testing retrieval and answer grounding."
+  }
+]
