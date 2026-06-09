@@ -1,0 +1,3268 @@
+{
+  "created_at": "2026-06-09T16:58:06.394262+00:00",
+  "eval_file": "D:\\Agentic_StudyMate\\backend\\evaluation\\cv_eval_set.json",
+  "top_k": 10,
+  "with_answer": true,
+  "summary": {
+    "items": 12,
+    "hit_at_1": 0.9166666666666666,
+    "hit_at_3": 1.0,
+    "hit_at_5": 1.0,
+    "hit_at_k": 1.0,
+    "mrr": 0.9583333333333334,
+    "page_hit_at_k": 1.0,
+    "keyword_overlap_avg": 0.9791666666666666,
+    "average_chunks_returned": 10.0,
+    "source_distribution": {
+      "bm25": 120,
+      "vector": 5,
+      "graph": 0,
+      "unknown": 0
+    }
+  },
+  "results": [
+    {
+      "item": {
+        "id": "asm_architecture_stack_001",
+        "question": "What frontend and backend stack does Agentic StudyMate use?",
+        "expected_keywords": [
+          "React",
+          "Vite",
+          "TypeScript",
+          "Tailwind",
+          "FastAPI",
+          "SQLAlchemy",
+          "SQLite"
+        ],
+        "expected_file": "agentic_studymate_architecture_cv.txt",
+        "expected_pages": [
+          2
+        ],
+        "notes": "Checks core application architecture stack."
+      },
+      "warnings": [],
+      "retrieval": {
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "hit_at_k": true,
+        "first_relevant_rank": 1,
+        "mrr_contribution": 1.0,
+        "top1_file": "agentic_studymate_architecture_cv.txt",
+        "top1_page": 2,
+        "top1_is_expected_file": true,
+        "page_hit_at_k": true,
+        "keyword_overlap": {
+          "score": 1.0,
+          "matched": [
+            "React",
+            "Vite",
+            "TypeScript",
+            "Tailwind",
+            "FastAPI",
+            "SQLAlchemy",
+            "SQLite"
+          ],
+          "missing": []
+        },
+        "retrieved_count": 10,
+        "top_files": [
+          "agentic_studymate_architecture_cv.txt",
+          "agentic_studymate_architecture_cv.txt",
+          "rag_evaluation_metrics_cv.txt",
+          "agentic_studymate_architecture_cv.txt",
+          "3.Big Data Storage.pdf",
+          "2.Big Data Ecosystem.pdf",
+          "rag_evaluation_metrics_cv.txt",
+          "2.Big Data Ecosystem.pdf",
+          "1.Foundation of Big Data.pdf",
+          "2.Big Data Ecosystem.pdf"
+        ],
+        "top_pages": [
+          2,
+          1,
+          2,
+          4,
+          85,
+          39,
+          4,
+          36,
+          30,
+          26
+        ],
+        "source_distribution": {
+          "bm25": 10,
+          "vector": 1,
+          "graph": 0,
+          "unknown": 0
+        }
+      },
+      "top_chunks": [
+        {
+          "chunk_id": "20678625-a0a4-422b-9326-d9205c300feb",
+          "document_id": "ac678159-85c5-4fda-afc6-a67032adadab",
+          "file_name": "agentic_studymate_architecture_cv.txt",
+          "page_number": 2,
+          "section_title": null,
+          "chunk_index": 1,
+          "sources": [
+            "bm25",
+            "vector"
+          ],
+          "rrf_score": 0.03278688524590164,
+          "vector_score": 0.7931513,
+          "bm25_score": 20.390213914240327,
+          "snippet": "Agentic StudyMate is a multimodal RAG study assistant with a React, Vite, TypeScript, and Tailwind frontend. The backend uses async FastAPI routes, SQLAlchemy async sessions, and SQLite metadata storage. Uploaded files become Document records, extracted text becomes Chunk records, and ready document"
+        },
+        {
+          "chunk_id": "cc74d038-c5f6-4289-a984-295464e2f476",
+          "document_id": "ac678159-85c5-4fda-afc6-a67032adadab",
+          "file_name": "agentic_studymate_architecture_cv.txt",
+          "page_number": 1,
+          "section_title": null,
+          "chunk_index": 0,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.016129032258064516,
+          "vector_score": null,
+          "bm25_score": 13.686040881939395,
+          "snippet": "# Agentic StudyMate Architecture"
+        },
+        {
+          "chunk_id": "224b38db-3591-421f-bd4f-aaf91946e895",
+          "document_id": "b304b65b-18ee-464d-bc51-ed144d00268c",
+          "file_name": "rag_evaluation_metrics_cv.txt",
+          "page_number": 2,
+          "section_title": null,
+          "chunk_index": 1,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015873015873015872,
+          "vector_score": null,
+          "bm25_score": 10.651956204052192,
+          "snippet": "The Agentic StudyMate evaluation pipeline reports hit@1, hit@3, hit@5, hit@10, MRR, page_hit@10, keyword_overlap_avg, average_chunks_returned, and source_distribution. The source_distribution counts BM25, vector, graph, and unknown retrieval sources across returned chunks."
+        },
+        {
+          "chunk_id": "18dcc840-186f-4047-92ca-72de151e6ef2",
+          "document_id": "ac678159-85c5-4fda-afc6-a67032adadab",
+          "file_name": "agentic_studymate_architecture_cv.txt",
+          "page_number": 4,
+          "section_title": null,
+          "chunk_index": 3,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015625,
+          "vector_score": null,
+          "bm25_score": 9.947599084278092,
+          "snippet": "Agentic StudyMate also supports Neo4j GraphRAG. During ingestion, entity-relation triplets can be extracted from chunks and stored in Neo4j relationships tagged with the originating chunk_id. Graph retrieval can return source chunks linked to matching graph relationships."
+        },
+        {
+          "chunk_id": "d977b3cf-8372-4afe-b8ad-90949a2fbfe8",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 85,
+          "section_title": "**Data Localit y**",
+          "chunk_index": 85,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015384615384615385,
+          "vector_score": null,
+          "bm25_score": 7.2699468103142335,
+          "snippet": "## **Data Localit y** ▪ Hadoop does its best to run the map task on a node where the input data resides in HDFS, because it doesn’t use valuable cluster bandwidth. **==> picture [576 x 343] intentionally omitted <==**"
+        },
+        {
+          "chunk_id": "7c033e74-6894-4803-b56c-65e301cd250f",
+          "document_id": "5c9e2e73-c8b7-4662-aa0c-a09465835cc3",
+          "file_name": "2.Big Data Ecosystem.pdf",
+          "page_number": 39,
+          "section_title": "**ocess Data Science Application Pr**",
+          "chunk_index": 38,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015151515151515152,
+          "vector_score": null,
+          "bm25_score": 6.407880529301324,
+          "snippet": "## **ocess Data Science Application Pr** ▪ What question are you answering? - What is the right scope of the project? ▪ What data will you use? - What techniques are you going to try? ▪ How will you evaluate your results? - What maintenance will be required? Before we even get to machine learning, a"
+        },
+        {
+          "chunk_id": "0c49e019-9460-47a7-95d6-adbaa477d848",
+          "document_id": "b304b65b-18ee-464d-bc51-ed144d00268c",
+          "file_name": "rag_evaluation_metrics_cv.txt",
+          "page_number": 4,
+          "section_title": null,
+          "chunk_index": 3,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014925373134328358,
+          "vector_score": null,
+          "bm25_score": 5.695124304167585,
+          "snippet": "keyword_overlap_avg measures how many expected keywords appear in the retrieved context. average_chunks_returned confirms whether the retriever returned the requested number of chunks. Retrieval reports are saved as JSON files under backend/evaluation/reports."
+        },
+        {
+          "chunk_id": "4388e0dc-35cf-4058-a5af-6df9d25ceb5a",
+          "document_id": "5c9e2e73-c8b7-4662-aa0c-a09465835cc3",
+          "file_name": "2.Big Data Ecosystem.pdf",
+          "page_number": 36,
+          "section_title": "**What Does Bi Data Anal tics g y Involve?**",
+          "chunk_index": 35,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014705882352941176,
+          "vector_score": null,
+          "bm25_score": 4.91573992757193,
+          "snippet": "## **What Does Bi Data Anal tics g y Involve?** - Acquisition, access – data may exist without being accessible (C) - Wrangling – data may be in the wrong form (CE) - Integration, representation – data relationships may not be captured (ER) - Cleaning, filtering – data may have variable quality (ER)"
+        },
+        {
+          "chunk_id": "d1ea36f8-2739-4b07-b2a4-d1279cde59fe",
+          "document_id": "65d5befb-69f4-4268-9e60-5f2466442096",
+          "file_name": "1.Foundation of Big Data.pdf",
+          "page_number": 30,
+          "section_title": "**Volume Variet and , y, Velocity**",
+          "chunk_index": 29,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014492753623188406,
+          "vector_score": null,
+          "bm25_score": 4.893376001186219,
+          "snippet": "## **Volume Variet and , y, Velocity** - The rate at which data arrives at the enterprise and is processed or well understood - In other terms “How long does it take you to do something about it or know it has even arrived? - Data is generated fast and need to be processed fast - Late decisions ➔ mi"
+        },
+        {
+          "chunk_id": "72b22f47-2723-4e87-8459-57fb826c7ec2",
+          "document_id": "5c9e2e73-c8b7-4662-aa0c-a09465835cc3",
+          "file_name": "2.Big Data Ecosystem.pdf",
+          "page_number": 26,
+          "section_title": "**Bi Data Stack g**",
+          "chunk_index": 25,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014285714285714285,
+          "vector_score": null,
+          "bm25_score": 4.669190974139455,
+          "snippet": "## **Bi Data Stack g** **==> picture [720 x 463] intentionally omitted <==** **----- Start of picture text -----**<br> 26<br>Big Data @ DIS<br>**----- End of picture text -----**<br>"
+        }
+      ],
+      "answer": {
+        "answer_length": 690,
+        "citation_count": 1,
+        "expected_keywords_in_answer": {
+          "score": 1.0,
+          "matched": [
+            "React",
+            "Vite",
+            "TypeScript",
+            "Tailwind",
+            "FastAPI",
+            "SQLAlchemy",
+            "SQLite"
+          ],
+          "missing": []
+        },
+        "expected_file_in_citations": true,
+        "citation_files": [
+          "agentic_studymate_architecture_cv.txt"
+        ],
+        "citations": [
+          {
+            "file_name": "agentic_studymate_architecture_cv.txt",
+            "page_number": 2,
+            "chunk_id": "20678625-a0a4-422b-9326-d9205c300feb",
+            "section_title": null,
+            "snippet": "Agentic StudyMate is a multimodal RAG study assistant with a React, Vite, TypeScript, and Tailwind frontend. The backend uses async FastAPI routes, SQ...",
+            "image_url": null
+          }
+        ],
+        "known_document_count": 6
+      }
+    },
+    {
+      "item": {
+        "id": "asm_vector_db_002",
+        "question": "Which vector database and collection does Agentic StudyMate use for chunk embeddings?",
+        "expected_keywords": [
+          "Qdrant",
+          "studymate_chunks",
+          "vector search",
+          "chunk embeddings"
+        ],
+        "expected_file": "agentic_studymate_architecture_cv.txt",
+        "expected_pages": [
+          3
+        ],
+        "notes": "Checks Qdrant configuration and vector storage."
+      },
+      "warnings": [
+        "Vector retrieval did not appear in the top-k results. Check Qdrant indexing or hybrid fusion settings."
+      ],
+      "retrieval": {
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "hit_at_k": true,
+        "first_relevant_rank": 1,
+        "mrr_contribution": 1.0,
+        "top1_file": "agentic_studymate_architecture_cv.txt",
+        "top1_page": 3,
+        "top1_is_expected_file": true,
+        "page_hit_at_k": true,
+        "keyword_overlap": {
+          "score": 0.75,
+          "matched": [
+            "Qdrant",
+            "studymate_chunks",
+            "vector search"
+          ],
+          "missing": [
+            "chunk embeddings"
+          ]
+        },
+        "retrieved_count": 10,
+        "top_files": [
+          "agentic_studymate_architecture_cv.txt",
+          "rag_evaluation_metrics_cv.txt",
+          "agentic_studymate_architecture_cv.txt",
+          "agentic_studymate_architecture_cv.txt",
+          "agentic_studymate_architecture_cv.txt",
+          "2.Big Data Ecosystem.pdf",
+          "3.Big Data Storage.pdf",
+          "3.Big Data Storage.pdf",
+          "3.Big Data Storage.pdf",
+          "1.Foundation of Big Data.pdf"
+        ],
+        "top_pages": [
+          3,
+          2,
+          1,
+          2,
+          4,
+          14,
+          80,
+          85,
+          65,
+          30
+        ],
+        "source_distribution": {
+          "bm25": 10,
+          "vector": 0,
+          "graph": 0,
+          "unknown": 0
+        }
+      },
+      "top_chunks": [
+        {
+          "chunk_id": "99e08975-fc66-4ce3-913e-2a4a7a4ed419",
+          "document_id": "ac678159-85c5-4fda-afc6-a67032adadab",
+          "file_name": "agentic_studymate_architecture_cv.txt",
+          "page_number": 3,
+          "section_title": null,
+          "chunk_index": 2,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.01639344262295082,
+          "vector_score": null,
+          "bm25_score": 21.573703672437155,
+          "snippet": "Retrieval combines Qdrant vector search and BM25 keyword retrieval with reciprocal rank fusion. The default Qdrant collection is studymate_chunks. Local CPU embeddings use sentence-transformers/all-MiniLM-L6-v2, which produces 384-dimensional vectors. The default chunk size is 512 tokens with 64 tok"
+        },
+        {
+          "chunk_id": "224b38db-3591-421f-bd4f-aaf91946e895",
+          "document_id": "b304b65b-18ee-464d-bc51-ed144d00268c",
+          "file_name": "rag_evaluation_metrics_cv.txt",
+          "page_number": 2,
+          "section_title": null,
+          "chunk_index": 1,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.016129032258064516,
+          "vector_score": null,
+          "bm25_score": 15.423236143835796,
+          "snippet": "The Agentic StudyMate evaluation pipeline reports hit@1, hit@3, hit@5, hit@10, MRR, page_hit@10, keyword_overlap_avg, average_chunks_returned, and source_distribution. The source_distribution counts BM25, vector, graph, and unknown retrieval sources across returned chunks."
+        },
+        {
+          "chunk_id": "cc74d038-c5f6-4289-a984-295464e2f476",
+          "document_id": "ac678159-85c5-4fda-afc6-a67032adadab",
+          "file_name": "agentic_studymate_architecture_cv.txt",
+          "page_number": 1,
+          "section_title": null,
+          "chunk_index": 0,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015873015873015872,
+          "vector_score": null,
+          "bm25_score": 13.686040881939395,
+          "snippet": "# Agentic StudyMate Architecture"
+        },
+        {
+          "chunk_id": "20678625-a0a4-422b-9326-d9205c300feb",
+          "document_id": "ac678159-85c5-4fda-afc6-a67032adadab",
+          "file_name": "agentic_studymate_architecture_cv.txt",
+          "page_number": 2,
+          "section_title": null,
+          "chunk_index": 1,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015625,
+          "vector_score": null,
+          "bm25_score": 13.573398758429136,
+          "snippet": "Agentic StudyMate is a multimodal RAG study assistant with a React, Vite, TypeScript, and Tailwind frontend. The backend uses async FastAPI routes, SQLAlchemy async sessions, and SQLite metadata storage. Uploaded files become Document records, extracted text becomes Chunk records, and ready document"
+        },
+        {
+          "chunk_id": "18dcc840-186f-4047-92ca-72de151e6ef2",
+          "document_id": "ac678159-85c5-4fda-afc6-a67032adadab",
+          "file_name": "agentic_studymate_architecture_cv.txt",
+          "page_number": 4,
+          "section_title": null,
+          "chunk_index": 3,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015384615384615385,
+          "vector_score": null,
+          "bm25_score": 9.947599084278092,
+          "snippet": "Agentic StudyMate also supports Neo4j GraphRAG. During ingestion, entity-relation triplets can be extracted from chunks and stored in Neo4j relationships tagged with the originating chunk_id. Graph retrieval can return source chunks linked to matching graph relationships."
+        },
+        {
+          "chunk_id": "cd56fa1c-c19c-44d1-b054-67ecfdcb69d9",
+          "document_id": "5c9e2e73-c8b7-4662-aa0c-a09465835cc3",
+          "file_name": "2.Big Data Ecosystem.pdf",
+          "page_number": 14,
+          "section_title": "**Graph & Vector Databases**",
+          "chunk_index": 13,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015151515151515152,
+          "vector_score": null,
+          "bm25_score": 7.423678948731192,
+          "snippet": "## **Graph & Vector Databases** ## **GraphDB** ## **VectorDB** - Optimized for handling relationships and connected data - Uses nodes and edges to represent entities and relationships - Ideal for network analysis, pattern matching, social networks, fraud detection, recommendation engines - Stores hi"
+        },
+        {
+          "chunk_id": "64b1bec3-83da-4849-af2a-20016c827e93",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 80,
+          "section_title": "**HDFS Inside: Read**",
+          "chunk_index": 80,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014925373134328358,
+          "vector_score": null,
+          "bm25_score": 7.390976340043107,
+          "snippet": "## **HDFS Inside: Read** - Q: Why does HDFS choose such a design for read? Why not ask client to read blocks through NN? - Reasons: - Prevent NN from being the bottleneck of the cluster - Allow HDFS to scale to large number of concurrent clients - Spread the data traffic across the cluster - Q: Give"
+        },
+        {
+          "chunk_id": "d977b3cf-8372-4afe-b8ad-90949a2fbfe8",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 85,
+          "section_title": "**Data Localit y**",
+          "chunk_index": 85,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014705882352941176,
+          "vector_score": null,
+          "bm25_score": 7.2699468103142335,
+          "snippet": "## **Data Localit y** ▪ Hadoop does its best to run the map task on a node where the input data resides in HDFS, because it doesn’t use valuable cluster bandwidth. **==> picture [576 x 343] intentionally omitted <==**"
+        },
+        {
+          "chunk_id": "6823767a-dbde-456a-b4dd-04aadd5b0903",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 65,
+          "section_title": "**Distributed File S stem y**",
+          "chunk_index": 64,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014492753623188406,
+          "vector_score": null,
+          "bm25_score": 7.224171203251002,
+          "snippet": "## **Distributed File S stem y** ## ▪ **Chunk servers** - File is split into contiguous chunks - Typically each chunk is 16-64MB - Each chunk replicated (usually 2x or 3x) - Try to keep replicas in different racks - **Master node** - a.k.a. Name Node in Hadoop’s HDFS - Stores metadata about where fi"
+        },
+        {
+          "chunk_id": "d1ea36f8-2739-4b07-b2a4-d1279cde59fe",
+          "document_id": "65d5befb-69f4-4268-9e60-5f2466442096",
+          "file_name": "1.Foundation of Big Data.pdf",
+          "page_number": 30,
+          "section_title": "**Volume Variet and , y, Velocity**",
+          "chunk_index": 29,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014285714285714285,
+          "vector_score": null,
+          "bm25_score": 6.65673175343412,
+          "snippet": "## **Volume Variet and , y, Velocity** - The rate at which data arrives at the enterprise and is processed or well understood - In other terms “How long does it take you to do something about it or know it has even arrived? - Data is generated fast and need to be processed fast - Late decisions ➔ mi"
+        }
+      ],
+      "answer": {
+        "answer_length": 574,
+        "citation_count": 1,
+        "expected_keywords_in_answer": {
+          "score": 0.75,
+          "matched": [
+            "Qdrant",
+            "studymate_chunks",
+            "chunk embeddings"
+          ],
+          "missing": [
+            "vector search"
+          ]
+        },
+        "expected_file_in_citations": true,
+        "citation_files": [
+          "agentic_studymate_architecture_cv.txt"
+        ],
+        "citations": [
+          {
+            "file_name": "agentic_studymate_architecture_cv.txt",
+            "page_number": 3,
+            "chunk_id": "99e08975-fc66-4ce3-913e-2a4a7a4ed419",
+            "section_title": null,
+            "snippet": "Retrieval combines Qdrant vector search and BM25 keyword retrieval with reciprocal rank fusion. The default Qdrant collection is studymate_chunks. Loc...",
+            "image_url": null
+          }
+        ],
+        "known_document_count": 6
+      }
+    },
+    {
+      "item": {
+        "id": "asm_bm25_hybrid_003",
+        "question": "How does Agentic StudyMate combine BM25 keyword retrieval with vector search?",
+        "expected_keywords": [
+          "BM25",
+          "keyword retrieval",
+          "Qdrant",
+          "reciprocal rank fusion",
+          "reranker"
+        ],
+        "expected_file": "agentic_studymate_architecture_cv.txt",
+        "expected_pages": [
+          3
+        ],
+        "notes": "Checks hybrid retrieval and reranking."
+      },
+      "warnings": [
+        "Vector retrieval did not appear in the top-k results. Check Qdrant indexing or hybrid fusion settings."
+      ],
+      "retrieval": {
+        "hit_at_1": false,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "hit_at_k": true,
+        "first_relevant_rank": 2,
+        "mrr_contribution": 0.5,
+        "top1_file": "rag_evaluation_metrics_cv.txt",
+        "top1_page": 2,
+        "top1_is_expected_file": false,
+        "page_hit_at_k": true,
+        "keyword_overlap": {
+          "score": 1.0,
+          "matched": [
+            "BM25",
+            "keyword retrieval",
+            "Qdrant",
+            "reciprocal rank fusion",
+            "reranker"
+          ],
+          "missing": []
+        },
+        "retrieved_count": 10,
+        "top_files": [
+          "rag_evaluation_metrics_cv.txt",
+          "agentic_studymate_architecture_cv.txt",
+          "agentic_studymate_architecture_cv.txt",
+          "agentic_studymate_architecture_cv.txt",
+          "agentic_studymate_architecture_cv.txt",
+          "2.Big Data Ecosystem.pdf",
+          "agentic_studymate_architecture_cv.txt",
+          "1.Foundation of Big Data.pdf",
+          "3.Big Data Storage.pdf",
+          "rag_evaluation_metrics_cv.txt"
+        ],
+        "top_pages": [
+          2,
+          3,
+          4,
+          1,
+          8,
+          14,
+          2,
+          35,
+          15,
+          4
+        ],
+        "source_distribution": {
+          "bm25": 10,
+          "vector": 0,
+          "graph": 0,
+          "unknown": 0
+        }
+      },
+      "top_chunks": [
+        {
+          "chunk_id": "224b38db-3591-421f-bd4f-aaf91946e895",
+          "document_id": "b304b65b-18ee-464d-bc51-ed144d00268c",
+          "file_name": "rag_evaluation_metrics_cv.txt",
+          "page_number": 2,
+          "section_title": null,
+          "chunk_index": 1,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.01639344262295082,
+          "vector_score": null,
+          "bm25_score": 23.446202972997167,
+          "snippet": "The Agentic StudyMate evaluation pipeline reports hit@1, hit@3, hit@5, hit@10, MRR, page_hit@10, keyword_overlap_avg, average_chunks_returned, and source_distribution. The source_distribution counts BM25, vector, graph, and unknown retrieval sources across returned chunks."
+        },
+        {
+          "chunk_id": "99e08975-fc66-4ce3-913e-2a4a7a4ed419",
+          "document_id": "ac678159-85c5-4fda-afc6-a67032adadab",
+          "file_name": "agentic_studymate_architecture_cv.txt",
+          "page_number": 3,
+          "section_title": null,
+          "chunk_index": 2,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.016129032258064516,
+          "vector_score": null,
+          "bm25_score": 21.8235376656324,
+          "snippet": "Retrieval combines Qdrant vector search and BM25 keyword retrieval with reciprocal rank fusion. The default Qdrant collection is studymate_chunks. Local CPU embeddings use sentence-transformers/all-MiniLM-L6-v2, which produces 384-dimensional vectors. The default chunk size is 512 tokens with 64 tok"
+        },
+        {
+          "chunk_id": "18dcc840-186f-4047-92ca-72de151e6ef2",
+          "document_id": "ac678159-85c5-4fda-afc6-a67032adadab",
+          "file_name": "agentic_studymate_architecture_cv.txt",
+          "page_number": 4,
+          "section_title": null,
+          "chunk_index": 3,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015873015873015872,
+          "vector_score": null,
+          "bm25_score": 14.979714721876242,
+          "snippet": "Agentic StudyMate also supports Neo4j GraphRAG. During ingestion, entity-relation triplets can be extracted from chunks and stored in Neo4j relationships tagged with the originating chunk_id. Graph retrieval can return source chunks linked to matching graph relationships."
+        },
+        {
+          "chunk_id": "cc74d038-c5f6-4289-a984-295464e2f476",
+          "document_id": "ac678159-85c5-4fda-afc6-a67032adadab",
+          "file_name": "agentic_studymate_architecture_cv.txt",
+          "page_number": 1,
+          "section_title": null,
+          "chunk_index": 0,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015625,
+          "vector_score": null,
+          "bm25_score": 13.686040881939395,
+          "snippet": "# Agentic StudyMate Architecture"
+        },
+        {
+          "chunk_id": "4e9f5266-d7a2-40c0-ae31-fd774d2f31a3",
+          "document_id": "ac678159-85c5-4fda-afc6-a67032adadab",
+          "file_name": "agentic_studymate_architecture_cv.txt",
+          "page_number": 8,
+          "section_title": null,
+          "chunk_index": 7,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015384615384615385,
+          "vector_score": null,
+          "bm25_score": 12.889463514848227,
+          "snippet": "If Qdrant is unavailable, ingestion continues without vector storage so BM25 can still retrieve chunks. If Neo4j or an LLM provider is unavailable, graph ingestion is skipped or logged without blocking the core retrieval path."
+        },
+        {
+          "chunk_id": "cd56fa1c-c19c-44d1-b054-67ecfdcb69d9",
+          "document_id": "5c9e2e73-c8b7-4662-aa0c-a09465835cc3",
+          "file_name": "2.Big Data Ecosystem.pdf",
+          "page_number": 14,
+          "section_title": "**Graph & Vector Databases**",
+          "chunk_index": 13,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015151515151515152,
+          "vector_score": null,
+          "bm25_score": 12.580956804573699,
+          "snippet": "## **Graph & Vector Databases** ## **GraphDB** ## **VectorDB** - Optimized for handling relationships and connected data - Uses nodes and edges to represent entities and relationships - Ideal for network analysis, pattern matching, social networks, fraud detection, recommendation engines - Stores hi"
+        },
+        {
+          "chunk_id": "20678625-a0a4-422b-9326-d9205c300feb",
+          "document_id": "ac678159-85c5-4fda-afc6-a67032adadab",
+          "file_name": "agentic_studymate_architecture_cv.txt",
+          "page_number": 2,
+          "section_title": null,
+          "chunk_index": 1,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014925373134328358,
+          "vector_score": null,
+          "bm25_score": 10.827900692102627,
+          "snippet": "Agentic StudyMate is a multimodal RAG study assistant with a React, Vite, TypeScript, and Tailwind frontend. The backend uses async FastAPI routes, SQLAlchemy async sessions, and SQLite metadata storage. Uploaded files become Document records, extracted text becomes Chunk records, and ready document"
+        },
+        {
+          "chunk_id": "4ad805ab-f0a4-4dde-986b-5774022b13b7",
+          "document_id": "65d5befb-69f4-4268-9e60-5f2466442096",
+          "file_name": "1.Foundation of Big Data.pdf",
+          "page_number": 35,
+          "section_title": "**20 Common Queries**",
+          "chunk_index": 34,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014705882352941176,
+          "vector_score": null,
+          "bm25_score": 9.68334252531672,
+          "snippet": "## **20 Common Queries** - **Find co-occurring items** (e.g., products frequently bought together). ## **1. Data retrieval & search** - **Find a specific record by ID** (e.g., retrieve a user, product, or experiment result). - **Detect missing or mismatched records** (e.g., students registered for a"
+        },
+        {
+          "chunk_id": "39475393-9384-4e08-9bcc-d509911cd366",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 15,
+          "section_title": "**Philoso h to Scale for Bi Data p y g**",
+          "chunk_index": 14,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014492753623188406,
+          "vector_score": null,
+          "bm25_score": 6.993223095262443,
+          "snippet": "## **Philoso h to Scale for Bi Data p y g** ## ▪ Divide and Conquer **==> picture [428 x 396] intentionally omitted <==** ## **Divide Work** **==> picture [38 x 197] intentionally omitted <==** **Combine Results**"
+        },
+        {
+          "chunk_id": "0c49e019-9460-47a7-95d6-adbaa477d848",
+          "document_id": "b304b65b-18ee-464d-bc51-ed144d00268c",
+          "file_name": "rag_evaluation_metrics_cv.txt",
+          "page_number": 4,
+          "section_title": null,
+          "chunk_index": 3,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014285714285714285,
+          "vector_score": null,
+          "bm25_score": 6.3082844298995315,
+          "snippet": "keyword_overlap_avg measures how many expected keywords appear in the retrieved context. average_chunks_returned confirms whether the retriever returned the requested number of chunks. Retrieval reports are saved as JSON files under backend/evaluation/reports."
+        }
+      ],
+      "answer": {
+        "answer_length": 1551,
+        "citation_count": 4,
+        "expected_keywords_in_answer": {
+          "score": 0.8,
+          "matched": [
+            "BM25",
+            "keyword retrieval",
+            "Qdrant",
+            "reciprocal rank fusion"
+          ],
+          "missing": [
+            "reranker"
+          ]
+        },
+        "expected_file_in_citations": true,
+        "citation_files": [
+          "agentic_studymate_architecture_cv.txt",
+          "agentic_studymate_architecture_cv.txt",
+          "agentic_studymate_architecture_cv.txt",
+          "rag_evaluation_metrics_cv.txt"
+        ],
+        "citations": [
+          {
+            "file_name": "agentic_studymate_architecture_cv.txt",
+            "page_number": 3,
+            "chunk_id": "99e08975-fc66-4ce3-913e-2a4a7a4ed419",
+            "section_title": null,
+            "snippet": "Retrieval combines Qdrant vector search and BM25 keyword retrieval with reciprocal rank fusion. The default Qdrant collection is studymate_chunks. Loc...",
+            "image_url": null
+          },
+          {
+            "file_name": "agentic_studymate_architecture_cv.txt",
+            "page_number": 4,
+            "chunk_id": "18dcc840-186f-4047-92ca-72de151e6ef2",
+            "section_title": null,
+            "snippet": "Agentic StudyMate also supports Neo4j GraphRAG. During ingestion, entity-relation triplets can be extracted from chunks and stored in Neo4j relationsh...",
+            "image_url": null
+          },
+          {
+            "file_name": "agentic_studymate_architecture_cv.txt",
+            "page_number": 8,
+            "chunk_id": "4e9f5266-d7a2-40c0-ae31-fd774d2f31a3",
+            "section_title": null,
+            "snippet": "If Qdrant is unavailable, ingestion continues without vector storage so BM25 can still retrieve chunks. If Neo4j or an LLM provider is unavailable, gr...",
+            "image_url": null
+          },
+          {
+            "file_name": "rag_evaluation_metrics_cv.txt",
+            "page_number": 2,
+            "chunk_id": "224b38db-3591-421f-bd4f-aaf91946e895",
+            "section_title": null,
+            "snippet": "The Agentic StudyMate evaluation pipeline reports hit@1, hit@3, hit@5, hit@10, MRR, page_hit@10, keyword_overlap_avg, average_chunks_returned, and sou...",
+            "image_url": null
+          }
+        ],
+        "known_document_count": 6
+      }
+    },
+    {
+      "item": {
+        "id": "asm_embeddings_chunking_004",
+        "question": "What embedding model, embedding dimension, chunk size, and overlap are used?",
+        "expected_keywords": [
+          "all-MiniLM-L6-v2",
+          "384-dimensional",
+          "512",
+          "64",
+          "CPU embeddings"
+        ],
+        "expected_file": "agentic_studymate_architecture_cv.txt",
+        "expected_pages": [
+          3
+        ],
+        "notes": "Checks embedding and chunking configuration."
+      },
+      "warnings": [
+        "Vector retrieval did not appear in the top-k results. Check Qdrant indexing or hybrid fusion settings."
+      ],
+      "retrieval": {
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "hit_at_k": true,
+        "first_relevant_rank": 1,
+        "mrr_contribution": 1.0,
+        "top1_file": "agentic_studymate_architecture_cv.txt",
+        "top1_page": 3,
+        "top1_is_expected_file": true,
+        "page_hit_at_k": true,
+        "keyword_overlap": {
+          "score": 1.0,
+          "matched": [
+            "all-MiniLM-L6-v2",
+            "384-dimensional",
+            "512",
+            "64",
+            "CPU embeddings"
+          ],
+          "missing": []
+        },
+        "retrieved_count": 10,
+        "top_files": [
+          "agentic_studymate_architecture_cv.txt",
+          "3.Big Data Storage.pdf",
+          "3.Big Data Storage.pdf",
+          "1.Foundation of Big Data.pdf",
+          "2.Big Data Ecosystem.pdf",
+          "rag_evaluation_metrics_cv.txt",
+          "3.Big Data Storage.pdf",
+          "cryptoscope_metrics_cv.txt",
+          "3.Big Data Storage.pdf",
+          "3.Big Data Storage.pdf"
+        ],
+        "top_pages": [
+          3,
+          65,
+          57,
+          19,
+          39,
+          3,
+          78,
+          5,
+          66,
+          87
+        ],
+        "source_distribution": {
+          "bm25": 10,
+          "vector": 0,
+          "graph": 0,
+          "unknown": 0
+        }
+      },
+      "top_chunks": [
+        {
+          "chunk_id": "99e08975-fc66-4ce3-913e-2a4a7a4ed419",
+          "document_id": "ac678159-85c5-4fda-afc6-a67032adadab",
+          "file_name": "agentic_studymate_architecture_cv.txt",
+          "page_number": 3,
+          "section_title": null,
+          "chunk_index": 2,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.01639344262295082,
+          "vector_score": null,
+          "bm25_score": 12.14904629577055,
+          "snippet": "Retrieval combines Qdrant vector search and BM25 keyword retrieval with reciprocal rank fusion. The default Qdrant collection is studymate_chunks. Local CPU embeddings use sentence-transformers/all-MiniLM-L6-v2, which produces 384-dimensional vectors. The default chunk size is 512 tokens with 64 tok"
+        },
+        {
+          "chunk_id": "6823767a-dbde-456a-b4dd-04aadd5b0903",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 65,
+          "section_title": "**Distributed File S stem y**",
+          "chunk_index": 64,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.016129032258064516,
+          "vector_score": null,
+          "bm25_score": 8.199608159482018,
+          "snippet": "## **Distributed File S stem y** ## ▪ **Chunk servers** - File is split into contiguous chunks - Typically each chunk is 16-64MB - Each chunk replicated (usually 2x or 3x) - Try to keep replicas in different racks - **Master node** - a.k.a. Name Node in Hadoop’s HDFS - Stores metadata about where fi"
+        },
+        {
+          "chunk_id": "d5affff0-1901-45ae-9353-1ed1bd3a24a2",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 57,
+          "section_title": "s ~~GFS: Design Decision~~",
+          "chunk_index": 56,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015873015873015872,
+          "vector_score": null,
+          "bm25_score": 7.397549867748487,
+          "snippet": "## s ~~GFS: Design Decision~~ Files stored as chunks Fixed size (64MB) Reliability through replication Each chunk replicated across 3+ chunkservers Single master to coordinate access and hold metadata Simple centralized management No data caching Little benefit for streaming reads over large dataset"
+        },
+        {
+          "chunk_id": "aeb8be03-9afe-4b86-967c-48456050ded0",
+          "document_id": "65d5befb-69f4-4268-9e60-5f2466442096",
+          "file_name": "1.Foundation of Big Data.pdf",
+          "page_number": 19,
+          "section_title": "**Bi Data g**",
+          "chunk_index": 18,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015625,
+          "vector_score": null,
+          "bm25_score": 7.197154674058309,
+          "snippet": "## **Bi Data g** ## ▪ **Big** in Big Data refers to: - Big **size** is the primary definition. - Big **complexity** rather than big volume. it can be small and not all large datasets are big data - size matters... but so does **accessibility, interoperability** and **reusability** - define Big Data "
+        },
+        {
+          "chunk_id": "7c033e74-6894-4803-b56c-65e301cd250f",
+          "document_id": "5c9e2e73-c8b7-4662-aa0c-a09465835cc3",
+          "file_name": "2.Big Data Ecosystem.pdf",
+          "page_number": 39,
+          "section_title": "**ocess Data Science Application Pr**",
+          "chunk_index": 38,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015384615384615385,
+          "vector_score": null,
+          "bm25_score": 7.114167684366194,
+          "snippet": "## **ocess Data Science Application Pr** ▪ What question are you answering? - What is the right scope of the project? ▪ What data will you use? - What techniques are you going to try? ▪ How will you evaluate your results? - What maintenance will be required? Before we even get to machine learning, a"
+        },
+        {
+          "chunk_id": "921f62da-6cfd-4261-be37-cda5f9e8aa46",
+          "document_id": "b304b65b-18ee-464d-bc51-ed144d00268c",
+          "file_name": "rag_evaluation_metrics_cv.txt",
+          "page_number": 3,
+          "section_title": null,
+          "chunk_index": 2,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015151515151515152,
+          "vector_score": null,
+          "bm25_score": 6.656602364168239,
+          "snippet": "hit@k checks whether the expected file appears within the top k retrieved chunks. MRR, or mean reciprocal rank, rewards systems that place the first relevant chunk near the top. page_hit@10 checks whether an expected page appears in the retrieved context when expected_pages are provided."
+        },
+        {
+          "chunk_id": "70f13c83-8726-45f5-9f53-cafd4df3a2e6",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 78,
+          "section_title": "**HDFS Inside: Blocks**",
+          "chunk_index": 78,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014925373134328358,
+          "vector_score": null,
+          "bm25_score": 6.425376285569397,
+          "snippet": "## **HDFS Inside: Blocks** ## • HDFS Block size is by default **128 MB** , why it is much larger than regular file system block? - Reasons: - Minimize overhead: disk seek time is almost constant - Example: seek time: 10 ms, file transfer rate: 100MB/s, overhead (seek time/a block transfer time) is 1"
+        },
+        {
+          "chunk_id": "42d58662-d225-4015-8606-6d451eff8e61",
+          "document_id": "ea61c81f-c78d-4616-808f-b0466ec8da75",
+          "file_name": "cryptoscope_metrics_cv.txt",
+          "page_number": 5,
+          "section_title": null,
+          "chunk_index": 4,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014705882352941176,
+          "vector_score": null,
+          "bm25_score": 6.281427218299875,
+          "snippet": "CryptoScope reports each metric per model and per evaluation window. A strong model should show low MAPE, low RMSE, high Directional Accuracy, and a high Composite Score. These metrics can be summarized in a dashboard or CV bullet to show forecasting quality and model comparison rigor."
+        },
+        {
+          "chunk_id": "ce5e84a9-770f-4506-ba70-0b9e1fcf149e",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 66,
+          "section_title": "**Distributed File S stem y**",
+          "chunk_index": 65,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014492753623188406,
+          "vector_score": null,
+          "bm25_score": 5.865641318385812,
+          "snippet": "## **Distributed File S stem y** ## ▪ **Reliable distributed file system** ▪ Data kept in “chunks” spread across machines ▪ Each chunk replicated on different machines – Seamless recovery from disk or machine failure **==> picture [251 x 88] intentionally omitted <==** **----- Start of picture text "
+        },
+        {
+          "chunk_id": "8a3bdd63-99ca-4db8-bcc1-3ea3f5d96102",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 87,
+          "section_title": "**HDFS Inside: Write**",
+          "chunk_index": 87,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014285714285714285,
+          "vector_score": null,
+          "bm25_score": 5.779191320702391,
+          "snippet": "## **HDFS Inside: Write** - Q: Where should HDFS put the three replicas of a block? What tradeoffs we need to consider? - Tradeoffs: - Reliability - Write Bandwidth - Read Bandwidth ## Q: What are some possible strategies? **==> picture [720 x 76] intentionally omitted <==** **----- Start of picture"
+        }
+      ],
+      "answer": {
+        "answer_length": 711,
+        "citation_count": 1,
+        "expected_keywords_in_answer": {
+          "score": 0.8,
+          "matched": [
+            "all-MiniLM-L6-v2",
+            "384-dimensional",
+            "512",
+            "64"
+          ],
+          "missing": [
+            "CPU embeddings"
+          ]
+        },
+        "expected_file_in_citations": true,
+        "citation_files": [
+          "agentic_studymate_architecture_cv.txt"
+        ],
+        "citations": [
+          {
+            "file_name": "agentic_studymate_architecture_cv.txt",
+            "page_number": 3,
+            "chunk_id": "99e08975-fc66-4ce3-913e-2a4a7a4ed419",
+            "section_title": null,
+            "snippet": "Retrieval combines Qdrant vector search and BM25 keyword retrieval with reciprocal rank fusion. The default Qdrant collection is studymate_chunks. Loc...",
+            "image_url": null
+          }
+        ],
+        "known_document_count": 6
+      }
+    },
+    {
+      "item": {
+        "id": "asm_neo4j_graphrag_005",
+        "question": "How does Agentic StudyMate use Neo4j for GraphRAG?",
+        "expected_keywords": [
+          "Neo4j",
+          "GraphRAG",
+          "entity-relation triplets",
+          "chunk_id",
+          "graph retrieval"
+        ],
+        "expected_file": "agentic_studymate_architecture_cv.txt",
+        "expected_pages": [
+          4
+        ],
+        "notes": "Checks graph retrieval architecture."
+      },
+      "warnings": [],
+      "retrieval": {
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "hit_at_k": true,
+        "first_relevant_rank": 1,
+        "mrr_contribution": 1.0,
+        "top1_file": "agentic_studymate_architecture_cv.txt",
+        "top1_page": 4,
+        "top1_is_expected_file": true,
+        "page_hit_at_k": true,
+        "keyword_overlap": {
+          "score": 1.0,
+          "matched": [
+            "Neo4j",
+            "GraphRAG",
+            "entity-relation triplets",
+            "chunk_id",
+            "graph retrieval"
+          ],
+          "missing": []
+        },
+        "retrieved_count": 10,
+        "top_files": [
+          "agentic_studymate_architecture_cv.txt",
+          "agentic_studymate_architecture_cv.txt",
+          "rag_evaluation_metrics_cv.txt",
+          "agentic_studymate_architecture_cv.txt",
+          "3.Big Data Storage.pdf",
+          "3.Big Data Storage.pdf",
+          "1.Foundation of Big Data.pdf",
+          "3.Big Data Storage.pdf",
+          "3.Big Data Storage.pdf",
+          "2.Big Data Ecosystem.pdf"
+        ],
+        "top_pages": [
+          4,
+          1,
+          2,
+          2,
+          85,
+          80,
+          30,
+          58,
+          60,
+          14
+        ],
+        "source_distribution": {
+          "bm25": 10,
+          "vector": 1,
+          "graph": 0,
+          "unknown": 0
+        }
+      },
+      "top_chunks": [
+        {
+          "chunk_id": "18dcc840-186f-4047-92ca-72de151e6ef2",
+          "document_id": "ac678159-85c5-4fda-afc6-a67032adadab",
+          "file_name": "agentic_studymate_architecture_cv.txt",
+          "page_number": 4,
+          "section_title": null,
+          "chunk_index": 3,
+          "sources": [
+            "bm25",
+            "vector"
+          ],
+          "rrf_score": 0.03278688524590164,
+          "vector_score": 0.7631348,
+          "bm25_score": 21.200697894674345,
+          "snippet": "Agentic StudyMate also supports Neo4j GraphRAG. During ingestion, entity-relation triplets can be extracted from chunks and stored in Neo4j relationships tagged with the originating chunk_id. Graph retrieval can return source chunks linked to matching graph relationships."
+        },
+        {
+          "chunk_id": "cc74d038-c5f6-4289-a984-295464e2f476",
+          "document_id": "ac678159-85c5-4fda-afc6-a67032adadab",
+          "file_name": "agentic_studymate_architecture_cv.txt",
+          "page_number": 1,
+          "section_title": null,
+          "chunk_index": 0,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.016129032258064516,
+          "vector_score": null,
+          "bm25_score": 13.686040881939395,
+          "snippet": "# Agentic StudyMate Architecture"
+        },
+        {
+          "chunk_id": "224b38db-3591-421f-bd4f-aaf91946e895",
+          "document_id": "b304b65b-18ee-464d-bc51-ed144d00268c",
+          "file_name": "rag_evaluation_metrics_cv.txt",
+          "page_number": 2,
+          "section_title": null,
+          "chunk_index": 1,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015873015873015872,
+          "vector_score": null,
+          "bm25_score": 10.070264444568345,
+          "snippet": "The Agentic StudyMate evaluation pipeline reports hit@1, hit@3, hit@5, hit@10, MRR, page_hit@10, keyword_overlap_avg, average_chunks_returned, and source_distribution. The source_distribution counts BM25, vector, graph, and unknown retrieval sources across returned chunks."
+        },
+        {
+          "chunk_id": "20678625-a0a4-422b-9326-d9205c300feb",
+          "document_id": "ac678159-85c5-4fda-afc6-a67032adadab",
+          "file_name": "agentic_studymate_architecture_cv.txt",
+          "page_number": 2,
+          "section_title": null,
+          "chunk_index": 1,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015625,
+          "vector_score": null,
+          "bm25_score": 8.89522922076262,
+          "snippet": "Agentic StudyMate is a multimodal RAG study assistant with a React, Vite, TypeScript, and Tailwind frontend. The backend uses async FastAPI routes, SQLAlchemy async sessions, and SQLite metadata storage. Uploaded files become Document records, extracted text becomes Chunk records, and ready document"
+        },
+        {
+          "chunk_id": "d977b3cf-8372-4afe-b8ad-90949a2fbfe8",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 85,
+          "section_title": "**Data Localit y**",
+          "chunk_index": 85,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015384615384615385,
+          "vector_score": null,
+          "bm25_score": 7.2699468103142335,
+          "snippet": "## **Data Localit y** ▪ Hadoop does its best to run the map task on a node where the input data resides in HDFS, because it doesn’t use valuable cluster bandwidth. **==> picture [576 x 343] intentionally omitted <==**"
+        },
+        {
+          "chunk_id": "64b1bec3-83da-4849-af2a-20016c827e93",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 80,
+          "section_title": "**HDFS Inside: Read**",
+          "chunk_index": 80,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015151515151515152,
+          "vector_score": null,
+          "bm25_score": 6.547951614338598,
+          "snippet": "## **HDFS Inside: Read** - Q: Why does HDFS choose such a design for read? Why not ask client to read blocks through NN? - Reasons: - Prevent NN from being the bottleneck of the cluster - Allow HDFS to scale to large number of concurrent clients - Spread the data traffic across the cluster - Q: Give"
+        },
+        {
+          "chunk_id": "d1ea36f8-2739-4b07-b2a4-d1279cde59fe",
+          "document_id": "65d5befb-69f4-4268-9e60-5f2466442096",
+          "file_name": "1.Foundation of Big Data.pdf",
+          "page_number": 30,
+          "section_title": "**Volume Variet and , y, Velocity**",
+          "chunk_index": 29,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014925373134328358,
+          "vector_score": null,
+          "bm25_score": 5.215704685248616,
+          "snippet": "## **Volume Variet and , y, Velocity** - The rate at which data arrives at the enterprise and is processed or well understood - In other terms “How long does it take you to do something about it or know it has even arrived? - Data is generated fast and need to be processed fast - Late decisions ➔ mi"
+        },
+        {
+          "chunk_id": "e73eb8ef-69ea-427e-841f-c2453b0091fe",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 58,
+          "section_title": "~~From GFS to HDFS~~",
+          "chunk_index": 57,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014705882352941176,
+          "vector_score": null,
+          "bm25_score": 5.03473157883908,
+          "snippet": "## ~~From GFS to HDFS~~ Terminology differences: GFS master = Hadoop namenode GFS chunkservers = Hadoop datanodes Implementation differences: Different consistency model for file appends Implementation language Performance For the most part, we’ll use Hadoop terminology…"
+        },
+        {
+          "chunk_id": "f63453ac-13e0-4e8f-a837-689572a9b31a",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 60,
+          "section_title": "**Hadoo offers p**",
+          "chunk_index": 59,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014492753623188406,
+          "vector_score": null,
+          "bm25_score": 5.00339399427444,
+          "snippet": "## **Hadoo offers p** ▪ Redundant, Fault-tolerant data storage ▪ Parallel computation framework ▪ Job coordination _**No longer need to worry about**_ **==> picture [113 x 135] intentionally omitted <==** **==> picture [144 x 42] intentionally omitted <==** **==> picture [121 x 81] intentionally omi"
+        },
+        {
+          "chunk_id": "cd56fa1c-c19c-44d1-b054-67ecfdcb69d9",
+          "document_id": "5c9e2e73-c8b7-4662-aa0c-a09465835cc3",
+          "file_name": "2.Big Data Ecosystem.pdf",
+          "page_number": 14,
+          "section_title": "**Graph & Vector Databases**",
+          "chunk_index": 13,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014285714285714285,
+          "vector_score": null,
+          "bm25_score": 4.9855531838122635,
+          "snippet": "## **Graph & Vector Databases** ## **GraphDB** ## **VectorDB** - Optimized for handling relationships and connected data - Uses nodes and edges to represent entities and relationships - Ideal for network analysis, pattern matching, social networks, fraud detection, recommendation engines - Stores hi"
+        }
+      ],
+      "answer": {
+        "answer_length": 1643,
+        "citation_count": 5,
+        "expected_keywords_in_answer": {
+          "score": 1.0,
+          "matched": [
+            "Neo4j",
+            "GraphRAG",
+            "entity-relation triplets",
+            "chunk_id",
+            "graph retrieval"
+          ],
+          "missing": []
+        },
+        "expected_file_in_citations": true,
+        "citation_files": [
+          "agentic_studymate_architecture_cv.txt",
+          "agentic_studymate_architecture_cv.txt",
+          "agentic_studymate_architecture_cv.txt",
+          "rag_evaluation_metrics_cv.txt",
+          "2.Big Data Ecosystem.pdf"
+        ],
+        "citations": [
+          {
+            "file_name": "agentic_studymate_architecture_cv.txt",
+            "page_number": 4,
+            "chunk_id": "18dcc840-186f-4047-92ca-72de151e6ef2",
+            "section_title": null,
+            "snippet": "Agentic StudyMate also supports Neo4j GraphRAG. During ingestion, entity-relation triplets can be extracted from chunks and stored in Neo4j relationsh...",
+            "image_url": null
+          },
+          {
+            "file_name": "agentic_studymate_architecture_cv.txt",
+            "page_number": 7,
+            "chunk_id": "12e1f496-1b41-4087-88fa-290c99ca56f2",
+            "section_title": null,
+            "snippet": "The pipeline extracts text, splits content into page-aware chunks, stores chunks in SQLite, extracts Neo4j triplets when an LLM key is configured, gen...",
+            "image_url": null
+          },
+          {
+            "file_name": "agentic_studymate_architecture_cv.txt",
+            "page_number": 6,
+            "chunk_id": "18dcc840-186f-4047-92ca-72de151e6ef2",
+            "section_title": null,
+            "snippet": "Agentic StudyMate also supports Neo4j GraphRAG. During ingestion, entity-relation triplets can be extracted from chunks and stored in Neo4j relationsh...",
+            "image_url": null
+          },
+          {
+            "file_name": "rag_evaluation_metrics_cv.txt",
+            "page_number": 2,
+            "chunk_id": "224b38db-3591-421f-bd4f-aaf91946e895",
+            "section_title": null,
+            "snippet": "The Agentic StudyMate evaluation pipeline reports hit@1, hit@3, hit@5, hit@10, MRR, page_hit@10, keyword_overlap_avg, average_chunks_returned, and sou...",
+            "image_url": null
+          },
+          {
+            "file_name": "2.Big Data Ecosystem.pdf",
+            "page_number": 14,
+            "chunk_id": "cd56fa1c-c19c-44d1-b054-67ecfdcb69d9",
+            "section_title": "**Graph & Vector Databases**",
+            "snippet": "## **Graph & Vector Databases** \n\n## **GraphDB** \n\n## **VectorDB** \n\n- Optimized for handling relationships and connected data \n\n- Uses nodes and edge...",
+            "image_url": null
+          }
+        ],
+        "known_document_count": 6
+      }
+    },
+    {
+      "item": {
+        "id": "asm_ingestion_pipeline_006",
+        "question": "What are the main steps in the document ingestion pipeline?",
+        "expected_keywords": [
+          "PDF",
+          "DOCX",
+          "TXT",
+          "SHA-256",
+          "chunks",
+          "SQLite",
+          "Qdrant",
+          "BM25",
+          "ready"
+        ],
+        "expected_file": "agentic_studymate_architecture_cv.txt",
+        "expected_pages": [
+          6,
+          7
+        ],
+        "notes": "Checks upload, chunk, embed, store, and status flow."
+      },
+      "warnings": [
+        "Vector retrieval did not appear in the top-k results. Check Qdrant indexing or hybrid fusion settings."
+      ],
+      "retrieval": {
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "hit_at_k": true,
+        "first_relevant_rank": 1,
+        "mrr_contribution": 1.0,
+        "top1_file": "agentic_studymate_architecture_cv.txt",
+        "top1_page": 6,
+        "top1_is_expected_file": true,
+        "page_hit_at_k": true,
+        "keyword_overlap": {
+          "score": 1.0,
+          "matched": [
+            "PDF",
+            "DOCX",
+            "TXT",
+            "SHA-256",
+            "chunks",
+            "SQLite",
+            "Qdrant",
+            "BM25",
+            "ready"
+          ],
+          "missing": []
+        },
+        "retrieved_count": 10,
+        "top_files": [
+          "agentic_studymate_architecture_cv.txt",
+          "agentic_studymate_architecture_cv.txt",
+          "agentic_studymate_architecture_cv.txt",
+          "3.Big Data Storage.pdf",
+          "2.Big Data Ecosystem.pdf",
+          "2.Big Data Ecosystem.pdf",
+          "2.Big Data Ecosystem.pdf",
+          "3.Big Data Storage.pdf",
+          "3.Big Data Storage.pdf",
+          "rag_evaluation_metrics_cv.txt"
+        ],
+        "top_pages": [
+          6,
+          5,
+          7,
+          40,
+          39,
+          13,
+          21,
+          87,
+          45,
+          6
+        ],
+        "source_distribution": {
+          "bm25": 10,
+          "vector": 0,
+          "graph": 0,
+          "unknown": 0
+        }
+      },
+      "top_chunks": [
+        {
+          "chunk_id": "af471cfd-a63a-4715-ae62-886d9290409b",
+          "document_id": "ac678159-85c5-4fda-afc6-a67032adadab",
+          "file_name": "agentic_studymate_architecture_cv.txt",
+          "page_number": 6,
+          "section_title": null,
+          "chunk_index": 5,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.01639344262295082,
+          "vector_score": null,
+          "bm25_score": 16.721342029659706,
+          "snippet": "The document ingestion pipeline accepts PDF, DOCX, and TXT files. It validates the extension, computes a SHA-256 hash for duplicate detection, saves the upload, and creates a processing Document row in SQLite."
+        },
+        {
+          "chunk_id": "c8ff7469-dc2a-4f16-8635-3cabbe11b7ce",
+          "document_id": "ac678159-85c5-4fda-afc6-a67032adadab",
+          "file_name": "agentic_studymate_architecture_cv.txt",
+          "page_number": 5,
+          "section_title": null,
+          "chunk_index": 4,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.016129032258064516,
+          "vector_score": null,
+          "bm25_score": 11.547827740583593,
+          "snippet": "# Ingestion Pipeline"
+        },
+        {
+          "chunk_id": "12e1f496-1b41-4087-88fa-290c99ca56f2",
+          "document_id": "ac678159-85c5-4fda-afc6-a67032adadab",
+          "file_name": "agentic_studymate_architecture_cv.txt",
+          "page_number": 7,
+          "section_title": null,
+          "chunk_index": 6,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015873015873015872,
+          "vector_score": null,
+          "bm25_score": 10.439196338510273,
+          "snippet": "The pipeline extracts text, splits content into page-aware chunks, stores chunks in SQLite, extracts Neo4j triplets when an LLM key is configured, generates CPU embeddings, upserts vectors into Qdrant, adds the chunks to the in-memory BM25 index, and marks the document ready."
+        },
+        {
+          "chunk_id": "0f4264ba-8e62-4ee3-9089-463f80a3ac7d",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 40,
+          "section_title": "**Document Stores**",
+          "chunk_index": 39,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015625,
+          "vector_score": null,
+          "bm25_score": 8.467288527186067,
+          "snippet": "## **Document Stores** ▪ Documents are stored in some standard format or encoding (e.g., XML, JSON, PDF or Office Documents) – These are typically referred to as Binary Large Objects (BLOBs) ## ▪ Documents can be indexed – This allows document stores to outperform traditional file systems ▪ E.g., Mo"
+        },
+        {
+          "chunk_id": "7c033e74-6894-4803-b56c-65e301cd250f",
+          "document_id": "5c9e2e73-c8b7-4662-aa0c-a09465835cc3",
+          "file_name": "2.Big Data Ecosystem.pdf",
+          "page_number": 39,
+          "section_title": "**ocess Data Science Application Pr**",
+          "chunk_index": 38,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015384615384615385,
+          "vector_score": null,
+          "bm25_score": 8.238395243340525,
+          "snippet": "## **ocess Data Science Application Pr** ▪ What question are you answering? - What is the right scope of the project? ▪ What data will you use? - What techniques are you going to try? ▪ How will you evaluate your results? - What maintenance will be required? Before we even get to machine learning, a"
+        },
+        {
+          "chunk_id": "b0746ed8-1564-4009-9716-be8982bea1e3",
+          "document_id": "5c9e2e73-c8b7-4662-aa0c-a09465835cc3",
+          "file_name": "2.Big Data Ecosystem.pdf",
+          "page_number": 13,
+          "section_title": "**es NoSQL vs NewSQL Databas**",
+          "chunk_index": 12,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015151515151515152,
+          "vector_score": null,
+          "bm25_score": 7.406907315111065,
+          "snippet": "## **es NoSQL vs NewSQL Databas** ## **NoSQL NewSQL** - Designed for scalability and flexibility ## ▪ Four main types: - Key-Value Stores (Redis, DynamoDB) - Document Stores (MongoDB, CouchDB) - Column-Family Stores (Cassandra, HBase) - Graph Databases (Neo4j, ArangoDB) - Combines the consistency of"
+        },
+        {
+          "chunk_id": "9e53b6ba-3247-420d-a711-45a78cfe4d19",
+          "document_id": "5c9e2e73-c8b7-4662-aa0c-a09465835cc3",
+          "file_name": "2.Big Data Ecosystem.pdf",
+          "page_number": 21,
+          "section_title": "**Data In estion g**",
+          "chunk_index": 20,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014925373134328358,
+          "vector_score": null,
+          "bm25_score": 6.837236435826296,
+          "snippet": "## **Data In estion g** 1. Data acquisition / collection 2. Data ingestion orchestration 3. Batch ingestion 4. Stream ingestion 5. Data format handling 6. Metadata capture 7. Initial validation **==> picture [720 x 76] intentionally omitted <==** **----- Start of picture text -----**<br> 21<br>Big D"
+        },
+        {
+          "chunk_id": "8a3bdd63-99ca-4db8-bcc1-3ea3f5d96102",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 87,
+          "section_title": "**HDFS Inside: Write**",
+          "chunk_index": 87,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014705882352941176,
+          "vector_score": null,
+          "bm25_score": 6.683539096912833,
+          "snippet": "## **HDFS Inside: Write** - Q: Where should HDFS put the three replicas of a block? What tradeoffs we need to consider? - Tradeoffs: - Reliability - Write Bandwidth - Read Bandwidth ## Q: What are some possible strategies? **==> picture [720 x 76] intentionally omitted <==** **----- Start of picture"
+        },
+        {
+          "chunk_id": "101f953f-9e6c-415c-a870-2358b3ffb771",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 45,
+          "section_title": "**A NewS L Exam le – VoltDB Q p**",
+          "chunk_index": 44,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014492753623188406,
+          "vector_score": null,
+          "bm25_score": 6.681991346477648,
+          "snippet": "## **A NewS L Exam le – VoltDB Q p** ▪ Main-memory storage ▪ Single threaded, run Xacts to completion – No locking – No latching ▪ Built-in HA and durability – No log (in the traditional sense) Traditional ## VoltDB **==> picture [276 x 279] intentionally omitted <==** **----- Start of picture text "
+        },
+        {
+          "chunk_id": "9ff619fc-43ba-4775-9d06-f327768f534f",
+          "document_id": "b304b65b-18ee-464d-bc51-ed144d00268c",
+          "file_name": "rag_evaluation_metrics_cv.txt",
+          "page_number": 6,
+          "section_title": null,
+          "chunk_index": 5,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014285714285714285,
+          "vector_score": null,
+          "bm25_score": 6.577110088741626,
+          "snippet": "When answer evaluation is enabled, the pipeline also measures answer_length, citation_count, expected keywords in the answer, and expected_file_in_citations. citation_count measures how many source citations the generated answer includes. expected_file_in_citations checks whether the answer cites th"
+        }
+      ],
+      "answer": {
+        "answer_length": 1791,
+        "citation_count": 4,
+        "expected_keywords_in_answer": {
+          "score": 1.0,
+          "matched": [
+            "PDF",
+            "DOCX",
+            "TXT",
+            "SHA-256",
+            "chunks",
+            "SQLite",
+            "Qdrant",
+            "BM25",
+            "ready"
+          ],
+          "missing": []
+        },
+        "expected_file_in_citations": true,
+        "citation_files": [
+          "agentic_studymate_architecture_cv.txt",
+          "agentic_studymate_architecture_cv.txt",
+          "agentic_studymate_architecture_cv.txt",
+          "2.Big Data Ecosystem.pdf"
+        ],
+        "citations": [
+          {
+            "file_name": "agentic_studymate_architecture_cv.txt",
+            "page_number": 6,
+            "chunk_id": "af471cfd-a63a-4715-ae62-886d9290409b",
+            "section_title": null,
+            "snippet": "The document ingestion pipeline accepts PDF, DOCX, and TXT files. It validates the extension, computes a SHA-256 hash for duplicate detection, saves t...",
+            "image_url": null
+          },
+          {
+            "file_name": "agentic_studymate_architecture_cv.txt",
+            "page_number": 7,
+            "chunk_id": "12e1f496-1b41-4087-88fa-290c99ca56f2",
+            "section_title": null,
+            "snippet": "The pipeline extracts text, splits content into page-aware chunks, stores chunks in SQLite, extracts Neo4j triplets when an LLM key is configured, gen...",
+            "image_url": null
+          },
+          {
+            "file_name": "agentic_studymate_architecture_cv.txt",
+            "page_number": 8,
+            "chunk_id": "4e9f5266-d7a2-40c0-ae31-fd774d2f31a3",
+            "section_title": null,
+            "snippet": "If Qdrant is unavailable, ingestion continues without vector storage so BM25 can still retrieve chunks. If Neo4j or an LLM provider is unavailable, gr...",
+            "image_url": null
+          },
+          {
+            "file_name": "2.Big Data Ecosystem.pdf",
+            "page_number": 21,
+            "chunk_id": "9e53b6ba-3247-420d-a711-45a78cfe4d19",
+            "section_title": "**Data In estion g**",
+            "snippet": "## **Data In estion g** \n\n1. Data acquisition / collection \n\n2. Data ingestion orchestration \n\n3. Batch ingestion \n\n4. Stream ingestion \n\n5. Data form...",
+            "image_url": null
+          }
+        ],
+        "known_document_count": 6
+      }
+    },
+    {
+      "item": {
+        "id": "cryptoscope_metrics_007",
+        "question": "Which metrics does CryptoScope use to evaluate forecasting runs?",
+        "expected_keywords": [
+          "MAPE",
+          "Directional Accuracy",
+          "RMSE",
+          "Composite Score"
+        ],
+        "expected_file": "cryptoscope_metrics_cv.txt",
+        "expected_pages": [
+          2,
+          3
+        ],
+        "notes": "Checks CryptoScope metric names."
+      },
+      "warnings": [],
+      "retrieval": {
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "hit_at_k": true,
+        "first_relevant_rank": 1,
+        "mrr_contribution": 1.0,
+        "top1_file": "cryptoscope_metrics_cv.txt",
+        "top1_page": 1,
+        "top1_is_expected_file": true,
+        "page_hit_at_k": true,
+        "keyword_overlap": {
+          "score": 1.0,
+          "matched": [
+            "MAPE",
+            "Directional Accuracy",
+            "RMSE",
+            "Composite Score"
+          ],
+          "missing": []
+        },
+        "retrieved_count": 10,
+        "top_files": [
+          "cryptoscope_metrics_cv.txt",
+          "cryptoscope_metrics_cv.txt",
+          "cryptoscope_metrics_cv.txt",
+          "3.Big Data Storage.pdf",
+          "3.Big Data Storage.pdf",
+          "2.Big Data Ecosystem.pdf",
+          "rag_evaluation_metrics_cv.txt",
+          "rag_evaluation_metrics_cv.txt",
+          "agentic_studymate_architecture_cv.txt",
+          "1.Foundation of Big Data.pdf"
+        ],
+        "top_pages": [
+          1,
+          5,
+          2,
+          85,
+          80,
+          39,
+          1,
+          5,
+          3,
+          30
+        ],
+        "source_distribution": {
+          "bm25": 10,
+          "vector": 2,
+          "graph": 0,
+          "unknown": 0
+        }
+      },
+      "top_chunks": [
+        {
+          "chunk_id": "871e5a2d-d155-4f63-ab18-10236ebb9ea8",
+          "document_id": "ea61c81f-c78d-4616-808f-b0466ec8da75",
+          "file_name": "cryptoscope_metrics_cv.txt",
+          "page_number": 1,
+          "section_title": null,
+          "chunk_index": 0,
+          "sources": [
+            "bm25",
+            "vector"
+          ],
+          "rrf_score": 0.032266458495966696,
+          "vector_score": 0.8548738,
+          "bm25_score": 12.769582867379095,
+          "snippet": "# CryptoScope Forecast Metrics"
+        },
+        {
+          "chunk_id": "42d58662-d225-4015-8606-6d451eff8e61",
+          "document_id": "ea61c81f-c78d-4616-808f-b0466ec8da75",
+          "file_name": "cryptoscope_metrics_cv.txt",
+          "page_number": 5,
+          "section_title": null,
+          "chunk_index": 4,
+          "sources": [
+            "bm25",
+            "vector"
+          ],
+          "rrf_score": 0.03225806451612903,
+          "vector_score": 0.8136461,
+          "bm25_score": 13.215476579007984,
+          "snippet": "CryptoScope reports each metric per model and per evaluation window. A strong model should show low MAPE, low RMSE, high Directional Accuracy, and a high Composite Score. These metrics can be summarized in a dashboard or CV bullet to show forecasting quality and model comparison rigor."
+        },
+        {
+          "chunk_id": "51f804be-a389-4976-9212-3f196e4e1807",
+          "document_id": "ea61c81f-c78d-4616-808f-b0466ec8da75",
+          "file_name": "cryptoscope_metrics_cv.txt",
+          "page_number": 2,
+          "section_title": null,
+          "chunk_index": 1,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.01639344262295082,
+          "vector_score": null,
+          "bm25_score": 14.980747989143765,
+          "snippet": "CryptoScope evaluates crypto forecasting runs with MAPE, Directional Accuracy, RMSE, and a Composite Score. MAPE measures mean absolute percentage error, so lower MAPE indicates better price forecast accuracy. RMSE measures root mean squared error and penalizes large misses, so lower RMSE is better."
+        },
+        {
+          "chunk_id": "d977b3cf-8372-4afe-b8ad-90949a2fbfe8",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 85,
+          "section_title": "**Data Localit y**",
+          "chunk_index": 85,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015625,
+          "vector_score": null,
+          "bm25_score": 7.548075563779475,
+          "snippet": "## **Data Localit y** ▪ Hadoop does its best to run the map task on a node where the input data resides in HDFS, because it doesn’t use valuable cluster bandwidth. **==> picture [576 x 343] intentionally omitted <==**"
+        },
+        {
+          "chunk_id": "64b1bec3-83da-4849-af2a-20016c827e93",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 80,
+          "section_title": "**HDFS Inside: Read**",
+          "chunk_index": 80,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015384615384615385,
+          "vector_score": null,
+          "bm25_score": 6.821560126250532,
+          "snippet": "## **HDFS Inside: Read** - Q: Why does HDFS choose such a design for read? Why not ask client to read blocks through NN? - Reasons: - Prevent NN from being the bottleneck of the cluster - Allow HDFS to scale to large number of concurrent clients - Spread the data traffic across the cluster - Q: Give"
+        },
+        {
+          "chunk_id": "7c033e74-6894-4803-b56c-65e301cd250f",
+          "document_id": "5c9e2e73-c8b7-4662-aa0c-a09465835cc3",
+          "file_name": "2.Big Data Ecosystem.pdf",
+          "page_number": 39,
+          "section_title": "**ocess Data Science Application Pr**",
+          "chunk_index": 38,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015151515151515152,
+          "vector_score": null,
+          "bm25_score": 6.2053950319059465,
+          "snippet": "## **ocess Data Science Application Pr** ▪ What question are you answering? - What is the right scope of the project? ▪ What data will you use? - What techniques are you going to try? ▪ How will you evaluate your results? - What maintenance will be required? Before we even get to machine learning, a"
+        },
+        {
+          "chunk_id": "0c78c32b-7795-4b90-b74b-0405d17f37f2",
+          "document_id": "b304b65b-18ee-464d-bc51-ed144d00268c",
+          "file_name": "rag_evaluation_metrics_cv.txt",
+          "page_number": 1,
+          "section_title": null,
+          "chunk_index": 0,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014925373134328358,
+          "vector_score": null,
+          "bm25_score": 5.926562426409397,
+          "snippet": "# RAG Evaluation Metrics"
+        },
+        {
+          "chunk_id": "f36b0c2f-a39e-4422-8761-deb16e6a2035",
+          "document_id": "b304b65b-18ee-464d-bc51-ed144d00268c",
+          "file_name": "rag_evaluation_metrics_cv.txt",
+          "page_number": 5,
+          "section_title": null,
+          "chunk_index": 4,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014705882352941176,
+          "vector_score": null,
+          "bm25_score": 5.926562426409397,
+          "snippet": "# Answer Grounding Metrics"
+        },
+        {
+          "chunk_id": "99e08975-fc66-4ce3-913e-2a4a7a4ed419",
+          "document_id": "ac678159-85c5-4fda-afc6-a67032adadab",
+          "file_name": "agentic_studymate_architecture_cv.txt",
+          "page_number": 3,
+          "section_title": null,
+          "chunk_index": 2,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014492753623188406,
+          "vector_score": null,
+          "bm25_score": 5.751001912886519,
+          "snippet": "Retrieval combines Qdrant vector search and BM25 keyword retrieval with reciprocal rank fusion. The default Qdrant collection is studymate_chunks. Local CPU embeddings use sentence-transformers/all-MiniLM-L6-v2, which produces 384-dimensional vectors. The default chunk size is 512 tokens with 64 tok"
+        },
+        {
+          "chunk_id": "d1ea36f8-2739-4b07-b2a4-d1279cde59fe",
+          "document_id": "65d5befb-69f4-4268-9e60-5f2466442096",
+          "file_name": "1.Foundation of Big Data.pdf",
+          "page_number": 30,
+          "section_title": "**Volume Variet and , y, Velocity**",
+          "chunk_index": 29,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014285714285714285,
+          "vector_score": null,
+          "bm25_score": 5.488441956880988,
+          "snippet": "## **Volume Variet and , y, Velocity** - The rate at which data arrives at the enterprise and is processed or well understood - In other terms “How long does it take you to do something about it or know it has even arrived? - Data is generated fast and need to be processed fast - Late decisions ➔ mi"
+        }
+      ],
+      "answer": {
+        "answer_length": 1311,
+        "citation_count": 1,
+        "expected_keywords_in_answer": {
+          "score": 1.0,
+          "matched": [
+            "MAPE",
+            "Directional Accuracy",
+            "RMSE",
+            "Composite Score"
+          ],
+          "missing": []
+        },
+        "expected_file_in_citations": false,
+        "citation_files": [
+          "cryptoscope_metrics_cv.txt, Page 2"
+        ],
+        "citations": [
+          {
+            "file_name": "cryptoscope_metrics_cv.txt, Page 2",
+            "page_number": null,
+            "chunk_id": "51f804be-a389-4976-9212-3f196e4e1807",
+            "section_title": null,
+            "snippet": "CryptoScope evaluates crypto forecasting runs with MAPE, Directional Accuracy, RMSE, and a Composite Score. MAPE measures mean absolute percentage err...",
+            "image_url": null
+          }
+        ],
+        "known_document_count": 6
+      }
+    },
+    {
+      "item": {
+        "id": "cryptoscope_interpretation_008",
+        "question": "How should MAPE, RMSE, Directional Accuracy, and Composite Score be interpreted?",
+        "expected_keywords": [
+          "lower MAPE",
+          "lower RMSE",
+          "Higher Directional Accuracy",
+          "Composite Score",
+          "best-performing model"
+        ],
+        "expected_file": "cryptoscope_metrics_cv.txt",
+        "expected_pages": [
+          5,
+          6
+        ],
+        "notes": "Checks metric interpretation and model comparison."
+      },
+      "warnings": [
+        "Vector retrieval did not appear in the top-k results. Check Qdrant indexing or hybrid fusion settings."
+      ],
+      "retrieval": {
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "hit_at_k": true,
+        "first_relevant_rank": 1,
+        "mrr_contribution": 1.0,
+        "top1_file": "cryptoscope_metrics_cv.txt",
+        "top1_page": 2,
+        "top1_is_expected_file": true,
+        "page_hit_at_k": true,
+        "keyword_overlap": {
+          "score": 1.0,
+          "matched": [
+            "lower MAPE",
+            "lower RMSE",
+            "Higher Directional Accuracy",
+            "Composite Score",
+            "best-performing model"
+          ],
+          "missing": []
+        },
+        "retrieved_count": 10,
+        "top_files": [
+          "cryptoscope_metrics_cv.txt",
+          "cryptoscope_metrics_cv.txt",
+          "cryptoscope_metrics_cv.txt",
+          "cryptoscope_metrics_cv.txt",
+          "1.Foundation of Big Data.pdf",
+          "rag_evaluation_metrics_cv.txt",
+          "3.Big Data Storage.pdf",
+          "3.Big Data Storage.pdf",
+          "1.Foundation of Big Data.pdf",
+          "3.Big Data Storage.pdf"
+        ],
+        "top_pages": [
+          2,
+          5,
+          6,
+          3,
+          32,
+          7,
+          80,
+          33,
+          30,
+          24
+        ],
+        "source_distribution": {
+          "bm25": 10,
+          "vector": 0,
+          "graph": 0,
+          "unknown": 0
+        }
+      },
+      "top_chunks": [
+        {
+          "chunk_id": "51f804be-a389-4976-9212-3f196e4e1807",
+          "document_id": "ea61c81f-c78d-4616-808f-b0466ec8da75",
+          "file_name": "cryptoscope_metrics_cv.txt",
+          "page_number": 2,
+          "section_title": null,
+          "chunk_index": 1,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.01639344262295082,
+          "vector_score": null,
+          "bm25_score": 35.54176331329029,
+          "snippet": "CryptoScope evaluates crypto forecasting runs with MAPE, Directional Accuracy, RMSE, and a Composite Score. MAPE measures mean absolute percentage error, so lower MAPE indicates better price forecast accuracy. RMSE measures root mean squared error and penalizes large misses, so lower RMSE is better."
+        },
+        {
+          "chunk_id": "42d58662-d225-4015-8606-6d451eff8e61",
+          "document_id": "ea61c81f-c78d-4616-808f-b0466ec8da75",
+          "file_name": "cryptoscope_metrics_cv.txt",
+          "page_number": 5,
+          "section_title": null,
+          "chunk_index": 4,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.016129032258064516,
+          "vector_score": null,
+          "bm25_score": 34.57090334753098,
+          "snippet": "CryptoScope reports each metric per model and per evaluation window. A strong model should show low MAPE, low RMSE, high Directional Accuracy, and a high Composite Score. These metrics can be summarized in a dashboard or CV bullet to show forecasting quality and model comparison rigor."
+        },
+        {
+          "chunk_id": "28f25989-eb87-414a-9755-355811309d20",
+          "document_id": "ea61c81f-c78d-4616-808f-b0466ec8da75",
+          "file_name": "cryptoscope_metrics_cv.txt",
+          "page_number": 6,
+          "section_title": null,
+          "chunk_index": 5,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015873015873015872,
+          "vector_score": null,
+          "bm25_score": 32.05149996550797,
+          "snippet": "When explaining CryptoScope results, MAPE and RMSE describe error magnitude, Directional Accuracy describes trend correctness, and the Composite Score provides an overall benchmark for selecting the best-performing model."
+        },
+        {
+          "chunk_id": "156ee69e-c9f3-430a-92fa-6ea5c99b28e6",
+          "document_id": "ea61c81f-c78d-4616-808f-b0466ec8da75",
+          "file_name": "cryptoscope_metrics_cv.txt",
+          "page_number": 3,
+          "section_title": null,
+          "chunk_index": 2,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015625,
+          "vector_score": null,
+          "bm25_score": 21.271755117059705,
+          "snippet": "Directional Accuracy measures the percentage of predictions that correctly forecast whether price moves up or down. Higher Directional Accuracy is better because it reflects useful trading direction signals. The Composite Score combines multiple metrics into a single ranking signal for comparing mod"
+        },
+        {
+          "chunk_id": "56e2a3ec-74e6-42b2-8956-a65c3c8144ed",
+          "document_id": "65d5befb-69f4-4268-9e60-5f2466442096",
+          "file_name": "1.Foundation of Big Data.pdf",
+          "page_number": 32,
+          "section_title": "**Other V’s**",
+          "chunk_index": 31,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015384615384615385,
+          "vector_score": null,
+          "bm25_score": 7.570436322995217,
+          "snippet": "## **Other V’s** - Visibility/Visualization: after big data being processed, we need a way to present the data in a manner that is readable and accessible. - Viscosity: describe the latency or lag time in the data relative to the event being described. We found that this is just as easily understood"
+        },
+        {
+          "chunk_id": "14b2c5d7-72ef-43ed-bc58-a14ce869c5fb",
+          "document_id": "b304b65b-18ee-464d-bc51-ed144d00268c",
+          "file_name": "rag_evaluation_metrics_cv.txt",
+          "page_number": 7,
+          "section_title": null,
+          "chunk_index": 6,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015151515151515152,
+          "vector_score": null,
+          "bm25_score": 4.816273035322758,
+          "snippet": "These answer metrics help distinguish retrieval quality from final-answer grounding. A grounded RAG answer should cite relevant chunks, include expected concepts, and avoid relying on uncited content."
+        },
+        {
+          "chunk_id": "64b1bec3-83da-4849-af2a-20016c827e93",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 80,
+          "section_title": "**HDFS Inside: Read**",
+          "chunk_index": 80,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014925373134328358,
+          "vector_score": null,
+          "bm25_score": 4.449079237037202,
+          "snippet": "## **HDFS Inside: Read** - Q: Why does HDFS choose such a design for read? Why not ask client to read blocks through NN? - Reasons: - Prevent NN from being the bottleneck of the cluster - Allow HDFS to scale to large number of concurrent clients - Spread the data traffic across the cluster - Q: Give"
+        },
+        {
+          "chunk_id": "b7b4dda0-fcac-4a5a-b5fd-d6c9053b2fe3",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 33,
+          "section_title": "**Tradin -Off Consistenc g y**",
+          "chunk_index": 32,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014705882352941176,
+          "vector_score": null,
+          "bm25_score": 4.27387337417361,
+          "snippet": "## **Tradin -Off Consistenc g y** ▪ Maintaining consistency should balance between the strictness of consistency versus availability/scalability – Good-enough consistency **depends on your application** **Loose Consistency** **Strict Consistency** **==> picture [566 x 77] intentionally omitted <==**"
+        },
+        {
+          "chunk_id": "d1ea36f8-2739-4b07-b2a4-d1279cde59fe",
+          "document_id": "65d5befb-69f4-4268-9e60-5f2466442096",
+          "file_name": "1.Foundation of Big Data.pdf",
+          "page_number": 30,
+          "section_title": "**Volume Variet and , y, Velocity**",
+          "chunk_index": 29,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014492753623188406,
+          "vector_score": null,
+          "bm25_score": 4.111188263423655,
+          "snippet": "## **Volume Variet and , y, Velocity** - The rate at which data arrives at the enterprise and is processed or well understood - In other terms “How long does it take you to do something about it or know it has even arrived? - Data is generated fast and need to be processed fast - Late decisions ➔ mi"
+        },
+        {
+          "chunk_id": "a6a39562-3c6d-4663-83b2-9d4bfe6cd4bb",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 24,
+          "section_title": "**2. Traditional Stora e g**",
+          "chunk_index": 23,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014285714285714285,
+          "vector_score": null,
+          "bm25_score": 4.040750703672112,
+          "snippet": "## **2. Traditional Stora e g** ## ▪ Scaling Traditional Databases: Traditional RDBMSs can be either scaled: ## – Vertically (or Up) - Can be achieved by hardware upgrades (e.g., faster CPU, more memory, or larger disk) - Limited by the amount of CPU, RAM and disk that can be configured on a single "
+        }
+      ],
+      "answer": {
+        "answer_length": 1682,
+        "citation_count": 5,
+        "expected_keywords_in_answer": {
+          "score": 1.0,
+          "matched": [
+            "lower MAPE",
+            "lower RMSE",
+            "Higher Directional Accuracy",
+            "Composite Score",
+            "best-performing model"
+          ],
+          "missing": []
+        },
+        "expected_file_in_citations": true,
+        "citation_files": [
+          "cryptoscope_metrics_cv.txt",
+          "cryptoscope_metrics_cv.txt",
+          "cryptoscope_metrics_cv.txt",
+          "cryptoscope_metrics_cv.txt",
+          "cryptoscope_metrics_cv.txt"
+        ],
+        "citations": [
+          {
+            "file_name": "cryptoscope_metrics_cv.txt",
+            "page_number": 2,
+            "chunk_id": "51f804be-a389-4976-9212-3f196e4e1807",
+            "section_title": null,
+            "snippet": "CryptoScope evaluates crypto forecasting runs with MAPE, Directional Accuracy, RMSE, and a Composite Score. MAPE measures mean absolute percentage err...",
+            "image_url": null
+          },
+          {
+            "file_name": "cryptoscope_metrics_cv.txt",
+            "page_number": 3,
+            "chunk_id": "156ee69e-c9f3-430a-92fa-6ea5c99b28e6",
+            "section_title": null,
+            "snippet": "Directional Accuracy measures the percentage of predictions that correctly forecast whether price moves up or down. Higher Directional Accuracy is bet...",
+            "image_url": null
+          },
+          {
+            "file_name": "cryptoscope_metrics_cv.txt",
+            "page_number": 4,
+            "chunk_id": "1eebe2a0-abb5-4aa2-9cfd-cb5e950690c6",
+            "section_title": null,
+            "snippet": "# Reporting and Interpretation",
+            "image_url": null
+          },
+          {
+            "file_name": "cryptoscope_metrics_cv.txt",
+            "page_number": 6,
+            "chunk_id": "28f25989-eb87-414a-9755-355811309d20",
+            "section_title": null,
+            "snippet": "When explaining CryptoScope results, MAPE and RMSE describe error magnitude, Directional Accuracy describes trend correctness, and the Composite Score...",
+            "image_url": null
+          },
+          {
+            "file_name": "cryptoscope_metrics_cv.txt",
+            "page_number": 5,
+            "chunk_id": "42d58662-d225-4015-8606-6d451eff8e61",
+            "section_title": null,
+            "snippet": "CryptoScope reports each metric per model and per evaluation window. A strong model should show low MAPE, low RMSE, high Directional Accuracy, and a h...",
+            "image_url": null
+          }
+        ],
+        "known_document_count": 6
+      }
+    },
+    {
+      "item": {
+        "id": "rag_retrieval_metrics_009",
+        "question": "What retrieval metrics does the RAG evaluation pipeline report?",
+        "expected_keywords": [
+          "hit@1",
+          "hit@3",
+          "hit@5",
+          "hit@10",
+          "MRR",
+          "page_hit@10",
+          "keyword_overlap_avg",
+          "average_chunks_returned"
+        ],
+        "expected_file": "rag_evaluation_metrics_cv.txt",
+        "expected_pages": [
+          2
+        ],
+        "notes": "Checks retrieval metric coverage."
+      },
+      "warnings": [
+        "Vector retrieval did not appear in the top-k results. Check Qdrant indexing or hybrid fusion settings."
+      ],
+      "retrieval": {
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "hit_at_k": true,
+        "first_relevant_rank": 1,
+        "mrr_contribution": 1.0,
+        "top1_file": "rag_evaluation_metrics_cv.txt",
+        "top1_page": 1,
+        "top1_is_expected_file": true,
+        "page_hit_at_k": true,
+        "keyword_overlap": {
+          "score": 1.0,
+          "matched": [
+            "hit@1",
+            "hit@3",
+            "hit@5",
+            "hit@10",
+            "MRR",
+            "page_hit@10",
+            "keyword_overlap_avg",
+            "average_chunks_returned"
+          ],
+          "missing": []
+        },
+        "retrieved_count": 10,
+        "top_files": [
+          "rag_evaluation_metrics_cv.txt",
+          "rag_evaluation_metrics_cv.txt",
+          "rag_evaluation_metrics_cv.txt",
+          "rag_evaluation_metrics_cv.txt",
+          "rag_evaluation_metrics_cv.txt",
+          "cryptoscope_metrics_cv.txt",
+          "cryptoscope_metrics_cv.txt",
+          "1.Foundation of Big Data.pdf",
+          "1.Foundation of Big Data.pdf",
+          "cryptoscope_metrics_cv.txt"
+        ],
+        "top_pages": [
+          1,
+          7,
+          2,
+          6,
+          4,
+          3,
+          5,
+          2,
+          5,
+          1
+        ],
+        "source_distribution": {
+          "bm25": 10,
+          "vector": 0,
+          "graph": 0,
+          "unknown": 0
+        }
+      },
+      "top_chunks": [
+        {
+          "chunk_id": "0c78c32b-7795-4b90-b74b-0405d17f37f2",
+          "document_id": "b304b65b-18ee-464d-bc51-ed144d00268c",
+          "file_name": "rag_evaluation_metrics_cv.txt",
+          "page_number": 1,
+          "section_title": null,
+          "chunk_index": 0,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.01639344262295082,
+          "vector_score": null,
+          "bm25_score": 19.40125151185905,
+          "snippet": "# RAG Evaluation Metrics"
+        },
+        {
+          "chunk_id": "14b2c5d7-72ef-43ed-bc58-a14ce869c5fb",
+          "document_id": "b304b65b-18ee-464d-bc51-ed144d00268c",
+          "file_name": "rag_evaluation_metrics_cv.txt",
+          "page_number": 7,
+          "section_title": null,
+          "chunk_index": 6,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.016129032258064516,
+          "vector_score": null,
+          "bm25_score": 13.815868546136638,
+          "snippet": "These answer metrics help distinguish retrieval quality from final-answer grounding. A grounded RAG answer should cite relevant chunks, include expected concepts, and avoid relying on uncited content."
+        },
+        {
+          "chunk_id": "224b38db-3591-421f-bd4f-aaf91946e895",
+          "document_id": "b304b65b-18ee-464d-bc51-ed144d00268c",
+          "file_name": "rag_evaluation_metrics_cv.txt",
+          "page_number": 2,
+          "section_title": null,
+          "chunk_index": 1,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015873015873015872,
+          "vector_score": null,
+          "bm25_score": 13.018324688403027,
+          "snippet": "The Agentic StudyMate evaluation pipeline reports hit@1, hit@3, hit@5, hit@10, MRR, page_hit@10, keyword_overlap_avg, average_chunks_returned, and source_distribution. The source_distribution counts BM25, vector, graph, and unknown retrieval sources across returned chunks."
+        },
+        {
+          "chunk_id": "9ff619fc-43ba-4775-9d06-f327768f534f",
+          "document_id": "b304b65b-18ee-464d-bc51-ed144d00268c",
+          "file_name": "rag_evaluation_metrics_cv.txt",
+          "page_number": 6,
+          "section_title": null,
+          "chunk_index": 5,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015625,
+          "vector_score": null,
+          "bm25_score": 9.056246422281783,
+          "snippet": "When answer evaluation is enabled, the pipeline also measures answer_length, citation_count, expected keywords in the answer, and expected_file_in_citations. citation_count measures how many source citations the generated answer includes. expected_file_in_citations checks whether the answer cites th"
+        },
+        {
+          "chunk_id": "0c49e019-9460-47a7-95d6-adbaa477d848",
+          "document_id": "b304b65b-18ee-464d-bc51-ed144d00268c",
+          "file_name": "rag_evaluation_metrics_cv.txt",
+          "page_number": 4,
+          "section_title": null,
+          "chunk_index": 3,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015384615384615385,
+          "vector_score": null,
+          "bm25_score": 8.750898137682512,
+          "snippet": "keyword_overlap_avg measures how many expected keywords appear in the retrieved context. average_chunks_returned confirms whether the retriever returned the requested number of chunks. Retrieval reports are saved as JSON files under backend/evaluation/reports."
+        },
+        {
+          "chunk_id": "156ee69e-c9f3-430a-92fa-6ea5c99b28e6",
+          "document_id": "ea61c81f-c78d-4616-808f-b0466ec8da75",
+          "file_name": "cryptoscope_metrics_cv.txt",
+          "page_number": 3,
+          "section_title": null,
+          "chunk_index": 2,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015151515151515152,
+          "vector_score": null,
+          "bm25_score": 8.589179714337675,
+          "snippet": "Directional Accuracy measures the percentage of predictions that correctly forecast whether price moves up or down. Higher Directional Accuracy is better because it reflects useful trading direction signals. The Composite Score combines multiple metrics into a single ranking signal for comparing mod"
+        },
+        {
+          "chunk_id": "42d58662-d225-4015-8606-6d451eff8e61",
+          "document_id": "ea61c81f-c78d-4616-808f-b0466ec8da75",
+          "file_name": "cryptoscope_metrics_cv.txt",
+          "page_number": 5,
+          "section_title": null,
+          "chunk_index": 4,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014925373134328358,
+          "vector_score": null,
+          "bm25_score": 8.005060041257883,
+          "snippet": "CryptoScope reports each metric per model and per evaluation window. A strong model should show low MAPE, low RMSE, high Directional Accuracy, and a high Composite Score. These metrics can be summarized in a dashboard or CV bullet to show forecasting quality and model comparison rigor."
+        },
+        {
+          "chunk_id": "a96dbcb3-2bd1-48a5-a37c-ae6440ceb8be",
+          "document_id": "65d5befb-69f4-4268-9e60-5f2466442096",
+          "file_name": "1.Foundation of Big Data.pdf",
+          "page_number": 2,
+          "section_title": "**Outline**",
+          "chunk_index": 1,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014705882352941176,
+          "vector_score": null,
+          "bm25_score": 7.559727037343602,
+          "snippet": "## **Outline** 1. Concepts: From Data to Intelligence 2. When Does Data Become “Big”? 3. Big Data Characteristics: 3Vs → System Requirements 4. The Big Data System: Pipeline, Architecture, and Lifecycle 5. Big Data Jobs **==> picture [720 x 76] intentionally omitted <==** **----- Start of picture te"
+        },
+        {
+          "chunk_id": "d325c237-aa47-4b16-8a33-1b816c1f97fb",
+          "document_id": "65d5befb-69f4-4268-9e60-5f2466442096",
+          "file_name": "1.Foundation of Big Data.pdf",
+          "page_number": 5,
+          "section_title": "**What is Information?**",
+          "chunk_index": 4,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014492753623188406,
+          "vector_score": null,
+          "bm25_score": 6.427563946169645,
+          "snippet": "## **What is Information?** ## ▪ Data that has been: – Processed - Structured - Contextualized **From raw logs → aggregated metrics:** - Aggregated ## ▪ Information answers: → Who? - → What? - → When? - → Where? ## ▪ Example: - Average speed dropped 40% - Vehicle density exceeded threshold - Peak co"
+        },
+        {
+          "chunk_id": "871e5a2d-d155-4f63-ab18-10236ebb9ea8",
+          "document_id": "ea61c81f-c78d-4616-808f-b0466ec8da75",
+          "file_name": "cryptoscope_metrics_cv.txt",
+          "page_number": 1,
+          "section_title": null,
+          "chunk_index": 0,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014285714285714285,
+          "vector_score": null,
+          "bm25_score": 5.926562426409397,
+          "snippet": "# CryptoScope Forecast Metrics"
+        }
+      ],
+      "answer": {
+        "answer_length": 514,
+        "citation_count": 2,
+        "expected_keywords_in_answer": {
+          "score": 1.0,
+          "matched": [
+            "hit@1",
+            "hit@3",
+            "hit@5",
+            "hit@10",
+            "MRR",
+            "page_hit@10",
+            "keyword_overlap_avg",
+            "average_chunks_returned"
+          ],
+          "missing": []
+        },
+        "expected_file_in_citations": true,
+        "citation_files": [
+          "rag_evaluation_metrics_cv.txt",
+          "rag_evaluation_metrics_cv.txt"
+        ],
+        "citations": [
+          {
+            "file_name": "rag_evaluation_metrics_cv.txt",
+            "page_number": 3,
+            "chunk_id": "0c78c32b-7795-4b90-b74b-0405d17f37f2",
+            "section_title": null,
+            "snippet": "# RAG Evaluation Metrics",
+            "image_url": null
+          },
+          {
+            "file_name": "rag_evaluation_metrics_cv.txt",
+            "page_number": 2,
+            "chunk_id": "224b38db-3591-421f-bd4f-aaf91946e895",
+            "section_title": null,
+            "snippet": "The Agentic StudyMate evaluation pipeline reports hit@1, hit@3, hit@5, hit@10, MRR, page_hit@10, keyword_overlap_avg, average_chunks_returned, and sou...",
+            "image_url": null
+          }
+        ],
+        "known_document_count": 6
+      }
+    },
+    {
+      "item": {
+        "id": "rag_source_distribution_010",
+        "question": "What does source_distribution count in the RAG evaluation report?",
+        "expected_keywords": [
+          "source_distribution",
+          "BM25",
+          "vector",
+          "graph",
+          "unknown",
+          "returned chunks"
+        ],
+        "expected_file": "rag_evaluation_metrics_cv.txt",
+        "expected_pages": [
+          2
+        ],
+        "notes": "Checks retrieval source accounting."
+      },
+      "warnings": [
+        "Vector retrieval did not appear in the top-k results. Check Qdrant indexing or hybrid fusion settings."
+      ],
+      "retrieval": {
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "hit_at_k": true,
+        "first_relevant_rank": 1,
+        "mrr_contribution": 1.0,
+        "top1_file": "rag_evaluation_metrics_cv.txt",
+        "top1_page": 2,
+        "top1_is_expected_file": true,
+        "page_hit_at_k": true,
+        "keyword_overlap": {
+          "score": 1.0,
+          "matched": [
+            "source_distribution",
+            "BM25",
+            "vector",
+            "graph",
+            "unknown",
+            "returned chunks"
+          ],
+          "missing": []
+        },
+        "retrieved_count": 10,
+        "top_files": [
+          "rag_evaluation_metrics_cv.txt",
+          "rag_evaluation_metrics_cv.txt",
+          "1.Foundation of Big Data.pdf",
+          "rag_evaluation_metrics_cv.txt",
+          "rag_evaluation_metrics_cv.txt",
+          "2.Big Data Ecosystem.pdf",
+          "3.Big Data Storage.pdf",
+          "rag_evaluation_metrics_cv.txt",
+          "1.Foundation of Big Data.pdf",
+          "1.Foundation of Big Data.pdf"
+        ],
+        "top_pages": [
+          2,
+          1,
+          4,
+          4,
+          6,
+          36,
+          85,
+          7,
+          30,
+          35
+        ],
+        "source_distribution": {
+          "bm25": 10,
+          "vector": 0,
+          "graph": 0,
+          "unknown": 0
+        }
+      },
+      "top_chunks": [
+        {
+          "chunk_id": "224b38db-3591-421f-bd4f-aaf91946e895",
+          "document_id": "b304b65b-18ee-464d-bc51-ed144d00268c",
+          "file_name": "rag_evaluation_metrics_cv.txt",
+          "page_number": 2,
+          "section_title": null,
+          "chunk_index": 1,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.01639344262295082,
+          "vector_score": null,
+          "bm25_score": 13.792476078062359,
+          "snippet": "The Agentic StudyMate evaluation pipeline reports hit@1, hit@3, hit@5, hit@10, MRR, page_hit@10, keyword_overlap_avg, average_chunks_returned, and source_distribution. The source_distribution counts BM25, vector, graph, and unknown retrieval sources across returned chunks."
+        },
+        {
+          "chunk_id": "0c78c32b-7795-4b90-b74b-0405d17f37f2",
+          "document_id": "b304b65b-18ee-464d-bc51-ed144d00268c",
+          "file_name": "rag_evaluation_metrics_cv.txt",
+          "page_number": 1,
+          "section_title": null,
+          "chunk_index": 0,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.016129032258064516,
+          "vector_score": null,
+          "bm25_score": 13.474689085449652,
+          "snippet": "# RAG Evaluation Metrics"
+        },
+        {
+          "chunk_id": "2d564523-f614-4aae-80a5-9712b021d6f6",
+          "document_id": "65d5befb-69f4-4268-9e60-5f2466442096",
+          "file_name": "1.Foundation of Big Data.pdf",
+          "page_number": 4,
+          "section_title": "**What is Data?**",
+          "chunk_index": 3,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015873015873015872,
+          "vector_score": null,
+          "bm25_score": 6.8842791815609345,
+          "snippet": "## **What is Data?** ## ▪ Raw, unprocessed facts or signals ▪ Without context or interpretation ▪ Examples: – 35°C – 120 bpm - 1,000,000 transactions – \"click\", \"view\", \"purchase\" ## ▪ Characteristics: – Structured / unstructured – No inherent meaning – High volume ## **Raw data collected from senso"
+        },
+        {
+          "chunk_id": "0c49e019-9460-47a7-95d6-adbaa477d848",
+          "document_id": "b304b65b-18ee-464d-bc51-ed144d00268c",
+          "file_name": "rag_evaluation_metrics_cv.txt",
+          "page_number": 4,
+          "section_title": null,
+          "chunk_index": 3,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015625,
+          "vector_score": null,
+          "bm25_score": 6.227009648285202,
+          "snippet": "keyword_overlap_avg measures how many expected keywords appear in the retrieved context. average_chunks_returned confirms whether the retriever returned the requested number of chunks. Retrieval reports are saved as JSON files under backend/evaluation/reports."
+        },
+        {
+          "chunk_id": "9ff619fc-43ba-4775-9d06-f327768f534f",
+          "document_id": "b304b65b-18ee-464d-bc51-ed144d00268c",
+          "file_name": "rag_evaluation_metrics_cv.txt",
+          "page_number": 6,
+          "section_title": null,
+          "chunk_index": 5,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015384615384615385,
+          "vector_score": null,
+          "bm25_score": 6.058270258960632,
+          "snippet": "When answer evaluation is enabled, the pipeline also measures answer_length, citation_count, expected keywords in the answer, and expected_file_in_citations. citation_count measures how many source citations the generated answer includes. expected_file_in_citations checks whether the answer cites th"
+        },
+        {
+          "chunk_id": "4388e0dc-35cf-4058-a5af-6df9d25ceb5a",
+          "document_id": "5c9e2e73-c8b7-4662-aa0c-a09465835cc3",
+          "file_name": "2.Big Data Ecosystem.pdf",
+          "page_number": 36,
+          "section_title": "**What Does Bi Data Anal tics g y Involve?**",
+          "chunk_index": 35,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015151515151515152,
+          "vector_score": null,
+          "bm25_score": 5.978481356517062,
+          "snippet": "## **What Does Bi Data Anal tics g y Involve?** - Acquisition, access – data may exist without being accessible (C) - Wrangling – data may be in the wrong form (CE) - Integration, representation – data relationships may not be captured (ER) - Cleaning, filtering – data may have variable quality (ER)"
+        },
+        {
+          "chunk_id": "d977b3cf-8372-4afe-b8ad-90949a2fbfe8",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 85,
+          "section_title": "**Data Localit y**",
+          "chunk_index": 85,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014925373134328358,
+          "vector_score": null,
+          "bm25_score": 5.695766251892475,
+          "snippet": "## **Data Localit y** ▪ Hadoop does its best to run the map task on a node where the input data resides in HDFS, because it doesn’t use valuable cluster bandwidth. **==> picture [576 x 343] intentionally omitted <==**"
+        },
+        {
+          "chunk_id": "14b2c5d7-72ef-43ed-bc58-a14ce869c5fb",
+          "document_id": "b304b65b-18ee-464d-bc51-ed144d00268c",
+          "file_name": "rag_evaluation_metrics_cv.txt",
+          "page_number": 7,
+          "section_title": null,
+          "chunk_index": 6,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014705882352941176,
+          "vector_score": null,
+          "bm25_score": 5.574498471528365,
+          "snippet": "These answer metrics help distinguish retrieval quality from final-answer grounding. A grounded RAG answer should cite relevant chunks, include expected concepts, and avoid relying on uncited content."
+        },
+        {
+          "chunk_id": "d1ea36f8-2739-4b07-b2a4-d1279cde59fe",
+          "document_id": "65d5befb-69f4-4268-9e60-5f2466442096",
+          "file_name": "1.Foundation of Big Data.pdf",
+          "page_number": 30,
+          "section_title": "**Volume Variet and , y, Velocity**",
+          "chunk_index": 29,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014492753623188406,
+          "vector_score": null,
+          "bm25_score": 5.526073024916892,
+          "snippet": "## **Volume Variet and , y, Velocity** - The rate at which data arrives at the enterprise and is processed or well understood - In other terms “How long does it take you to do something about it or know it has even arrived? - Data is generated fast and need to be processed fast - Late decisions ➔ mi"
+        },
+        {
+          "chunk_id": "25eed10b-2395-4e23-988e-ec2cbf9d3205",
+          "document_id": "65d5befb-69f4-4268-9e60-5f2466442096",
+          "file_name": "1.Foundation of Big Data.pdf",
+          "page_number": 35,
+          "section_title": "**3. Time-Based Analysis**",
+          "chunk_index": 35,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014285714285714285,
+          "vector_score": null,
+          "bm25_score": 5.467278569799825,
+          "snippet": "- **Compute moving averages over time** (e.g., rolling 7-day average of website visits). - **Detect missing expected values** (e.g., expected daily report missing for a date). **4. Join & Relationships** - **Join two or more datasets** (e.g., link"
+        }
+      ],
+      "answer": {
+        "answer_length": 663,
+        "citation_count": 1,
+        "expected_keywords_in_answer": {
+          "score": 1.0,
+          "matched": [
+            "source_distribution",
+            "BM25",
+            "vector",
+            "graph",
+            "unknown",
+            "returned chunks"
+          ],
+          "missing": []
+        },
+        "expected_file_in_citations": true,
+        "citation_files": [
+          "rag_evaluation_metrics_cv.txt"
+        ],
+        "citations": [
+          {
+            "file_name": "rag_evaluation_metrics_cv.txt",
+            "page_number": 2,
+            "chunk_id": "224b38db-3591-421f-bd4f-aaf91946e895",
+            "section_title": null,
+            "snippet": "The Agentic StudyMate evaluation pipeline reports hit@1, hit@3, hit@5, hit@10, MRR, page_hit@10, keyword_overlap_avg, average_chunks_returned, and sou...",
+            "image_url": null
+          }
+        ],
+        "known_document_count": 6
+      }
+    },
+    {
+      "item": {
+        "id": "rag_answer_grounding_011",
+        "question": "Which answer grounding metrics are measured when answer evaluation is enabled?",
+        "expected_keywords": [
+          "answer_length",
+          "citation_count",
+          "expected_file_in_citations",
+          "expected keywords",
+          "grounding"
+        ],
+        "expected_file": "rag_evaluation_metrics_cv.txt",
+        "expected_pages": [
+          6,
+          7
+        ],
+        "notes": "Checks answer-mode metrics."
+      },
+      "warnings": [],
+      "retrieval": {
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "hit_at_k": true,
+        "first_relevant_rank": 1,
+        "mrr_contribution": 1.0,
+        "top1_file": "rag_evaluation_metrics_cv.txt",
+        "top1_page": 5,
+        "top1_is_expected_file": true,
+        "page_hit_at_k": true,
+        "keyword_overlap": {
+          "score": 1.0,
+          "matched": [
+            "answer_length",
+            "citation_count",
+            "expected_file_in_citations",
+            "expected keywords",
+            "grounding"
+          ],
+          "missing": []
+        },
+        "retrieved_count": 10,
+        "top_files": [
+          "rag_evaluation_metrics_cv.txt",
+          "rag_evaluation_metrics_cv.txt",
+          "rag_evaluation_metrics_cv.txt",
+          "3.Big Data Storage.pdf",
+          "agentic_studymate_architecture_cv.txt",
+          "rag_evaluation_metrics_cv.txt",
+          "cryptoscope_metrics_cv.txt",
+          "cryptoscope_metrics_cv.txt",
+          "1.Foundation of Big Data.pdf",
+          "rag_evaluation_metrics_cv.txt"
+        ],
+        "top_pages": [
+          5,
+          6,
+          7,
+          23,
+          3,
+          1,
+          3,
+          5,
+          5,
+          4
+        ],
+        "source_distribution": {
+          "bm25": 10,
+          "vector": 1,
+          "graph": 0,
+          "unknown": 0
+        }
+      },
+      "top_chunks": [
+        {
+          "chunk_id": "f36b0c2f-a39e-4422-8761-deb16e6a2035",
+          "document_id": "b304b65b-18ee-464d-bc51-ed144d00268c",
+          "file_name": "rag_evaluation_metrics_cv.txt",
+          "page_number": 5,
+          "section_title": null,
+          "chunk_index": 4,
+          "sources": [
+            "bm25",
+            "vector"
+          ],
+          "rrf_score": 0.03252247488101534,
+          "vector_score": 0.76291233,
+          "bm25_score": 26.781471266735984,
+          "snippet": "# Answer Grounding Metrics"
+        },
+        {
+          "chunk_id": "9ff619fc-43ba-4775-9d06-f327768f534f",
+          "document_id": "b304b65b-18ee-464d-bc51-ed144d00268c",
+          "file_name": "rag_evaluation_metrics_cv.txt",
+          "page_number": 6,
+          "section_title": null,
+          "chunk_index": 5,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.01639344262295082,
+          "vector_score": null,
+          "bm25_score": 29.808131487074938,
+          "snippet": "When answer evaluation is enabled, the pipeline also measures answer_length, citation_count, expected keywords in the answer, and expected_file_in_citations. citation_count measures how many source citations the generated answer includes. expected_file_in_citations checks whether the answer cites th"
+        },
+        {
+          "chunk_id": "14b2c5d7-72ef-43ed-bc58-a14ce869c5fb",
+          "document_id": "b304b65b-18ee-464d-bc51-ed144d00268c",
+          "file_name": "rag_evaluation_metrics_cv.txt",
+          "page_number": 7,
+          "section_title": null,
+          "chunk_index": 6,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015873015873015872,
+          "vector_score": null,
+          "bm25_score": 24.938062576520213,
+          "snippet": "These answer metrics help distinguish retrieval quality from final-answer grounding. A grounded RAG answer should cite relevant chunks, include expected concepts, and avoid relying on uncited content."
+        },
+        {
+          "chunk_id": "50d9a458-98b7-43b7-a5ab-f6b8a4a34f61",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 23,
+          "section_title": "**Stora e Infrastructure g**",
+          "chunk_index": 22,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015625,
+          "vector_score": null,
+          "bm25_score": 12.422946739129888,
+          "snippet": "## **Stora e Infrastructure g** ## ▪ **Problem:** ## – If nodes fail, how to store data persistently? ## ▪ **Answer:** - **Distributed File System:** - Provides global file namespace - Google GFS; Hadoop HDFS; ▪ **Typical usage pattern** – Huge files (100s of GB to TB) – Data is rarely updated in pl"
+        },
+        {
+          "chunk_id": "99e08975-fc66-4ce3-913e-2a4a7a4ed419",
+          "document_id": "ac678159-85c5-4fda-afc6-a67032adadab",
+          "file_name": "agentic_studymate_architecture_cv.txt",
+          "page_number": 3,
+          "section_title": null,
+          "chunk_index": 2,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015384615384615385,
+          "vector_score": null,
+          "bm25_score": 12.311364413720117,
+          "snippet": "Retrieval combines Qdrant vector search and BM25 keyword retrieval with reciprocal rank fusion. The default Qdrant collection is studymate_chunks. Local CPU embeddings use sentence-transformers/all-MiniLM-L6-v2, which produces 384-dimensional vectors. The default chunk size is 512 tokens with 64 tok"
+        },
+        {
+          "chunk_id": "0c78c32b-7795-4b90-b74b-0405d17f37f2",
+          "document_id": "b304b65b-18ee-464d-bc51-ed144d00268c",
+          "file_name": "rag_evaluation_metrics_cv.txt",
+          "page_number": 1,
+          "section_title": null,
+          "chunk_index": 0,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015151515151515152,
+          "vector_score": null,
+          "bm25_score": 12.11113854825319,
+          "snippet": "# RAG Evaluation Metrics"
+        },
+        {
+          "chunk_id": "156ee69e-c9f3-430a-92fa-6ea5c99b28e6",
+          "document_id": "ea61c81f-c78d-4616-808f-b0466ec8da75",
+          "file_name": "cryptoscope_metrics_cv.txt",
+          "page_number": 3,
+          "section_title": null,
+          "chunk_index": 2,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014925373134328358,
+          "vector_score": null,
+          "bm25_score": 9.362035610868592,
+          "snippet": "Directional Accuracy measures the percentage of predictions that correctly forecast whether price moves up or down. Higher Directional Accuracy is better because it reflects useful trading direction signals. The Composite Score combines multiple metrics into a single ranking signal for comparing mod"
+        },
+        {
+          "chunk_id": "42d58662-d225-4015-8606-6d451eff8e61",
+          "document_id": "ea61c81f-c78d-4616-808f-b0466ec8da75",
+          "file_name": "cryptoscope_metrics_cv.txt",
+          "page_number": 5,
+          "section_title": null,
+          "chunk_index": 4,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014705882352941176,
+          "vector_score": null,
+          "bm25_score": 8.005060041257883,
+          "snippet": "CryptoScope reports each metric per model and per evaluation window. A strong model should show low MAPE, low RMSE, high Directional Accuracy, and a high Composite Score. These metrics can be summarized in a dashboard or CV bullet to show forecasting quality and model comparison rigor."
+        },
+        {
+          "chunk_id": "d325c237-aa47-4b16-8a33-1b816c1f97fb",
+          "document_id": "65d5befb-69f4-4268-9e60-5f2466442096",
+          "file_name": "1.Foundation of Big Data.pdf",
+          "page_number": 5,
+          "section_title": "**What is Information?**",
+          "chunk_index": 4,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014492753623188406,
+          "vector_score": null,
+          "bm25_score": 7.8516739531191755,
+          "snippet": "## **What is Information?** ## ▪ Data that has been: – Processed - Structured - Contextualized **From raw logs → aggregated metrics:** - Aggregated ## ▪ Information answers: → Who? - → What? - → When? - → Where? ## ▪ Example: - Average speed dropped 40% - Vehicle density exceeded threshold - Peak co"
+        },
+        {
+          "chunk_id": "0c49e019-9460-47a7-95d6-adbaa477d848",
+          "document_id": "b304b65b-18ee-464d-bc51-ed144d00268c",
+          "file_name": "rag_evaluation_metrics_cv.txt",
+          "page_number": 4,
+          "section_title": null,
+          "chunk_index": 3,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014285714285714285,
+          "vector_score": null,
+          "bm25_score": 7.334699313187158,
+          "snippet": "keyword_overlap_avg measures how many expected keywords appear in the retrieved context. average_chunks_returned confirms whether the retriever returned the requested number of chunks. Retrieval reports are saved as JSON files under backend/evaluation/reports."
+        }
+      ],
+      "answer": {
+        "answer_length": 867,
+        "citation_count": 1,
+        "expected_keywords_in_answer": {
+          "score": 1.0,
+          "matched": [
+            "answer_length",
+            "citation_count",
+            "expected_file_in_citations",
+            "expected keywords",
+            "grounding"
+          ],
+          "missing": []
+        },
+        "expected_file_in_citations": false,
+        "citation_files": [
+          "rag_evaluation_metrics_cv.txt, Page 6"
+        ],
+        "citations": [
+          {
+            "file_name": "rag_evaluation_metrics_cv.txt, Page 6",
+            "page_number": null,
+            "chunk_id": "14b2c5d7-72ef-43ed-bc58-a14ce869c5fb",
+            "section_title": null,
+            "snippet": "These answer metrics help distinguish retrieval quality from final-answer grounding. A grounded RAG answer should cite relevant chunks, include expect...",
+            "image_url": null
+          }
+        ],
+        "known_document_count": 6
+      }
+    },
+    {
+      "item": {
+        "id": "rag_report_path_012",
+        "question": "Where are retrieval evaluation JSON reports saved?",
+        "expected_keywords": [
+          "JSON",
+          "backend/evaluation/reports",
+          "retrieval reports"
+        ],
+        "expected_file": "rag_evaluation_metrics_cv.txt",
+        "expected_pages": [
+          4
+        ],
+        "notes": "Checks generated report location."
+      },
+      "warnings": [
+        "Vector retrieval did not appear in the top-k results. Check Qdrant indexing or hybrid fusion settings."
+      ],
+      "retrieval": {
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "hit_at_k": true,
+        "first_relevant_rank": 1,
+        "mrr_contribution": 1.0,
+        "top1_file": "rag_evaluation_metrics_cv.txt",
+        "top1_page": 4,
+        "top1_is_expected_file": true,
+        "page_hit_at_k": true,
+        "keyword_overlap": {
+          "score": 1.0,
+          "matched": [
+            "JSON",
+            "backend/evaluation/reports",
+            "retrieval reports"
+          ],
+          "missing": []
+        },
+        "retrieved_count": 10,
+        "top_files": [
+          "rag_evaluation_metrics_cv.txt",
+          "rag_evaluation_metrics_cv.txt",
+          "cryptoscope_metrics_cv.txt",
+          "3.Big Data Storage.pdf",
+          "rag_evaluation_metrics_cv.txt",
+          "3.Big Data Storage.pdf",
+          "3.Big Data Storage.pdf",
+          "3.Big Data Storage.pdf",
+          "2.Big Data Ecosystem.pdf",
+          "3.Big Data Storage.pdf"
+        ],
+        "top_pages": [
+          4,
+          2,
+          5,
+          40,
+          1,
+          87,
+          79,
+          65,
+          5,
+          85
+        ],
+        "source_distribution": {
+          "bm25": 10,
+          "vector": 0,
+          "graph": 0,
+          "unknown": 0
+        }
+      },
+      "top_chunks": [
+        {
+          "chunk_id": "0c49e019-9460-47a7-95d6-adbaa477d848",
+          "document_id": "b304b65b-18ee-464d-bc51-ed144d00268c",
+          "file_name": "rag_evaluation_metrics_cv.txt",
+          "page_number": 4,
+          "section_title": null,
+          "chunk_index": 3,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.01639344262295082,
+          "vector_score": null,
+          "bm25_score": 29.12186746619678,
+          "snippet": "keyword_overlap_avg measures how many expected keywords appear in the retrieved context. average_chunks_returned confirms whether the retriever returned the requested number of chunks. Retrieval reports are saved as JSON files under backend/evaluation/reports."
+        },
+        {
+          "chunk_id": "224b38db-3591-421f-bd4f-aaf91946e895",
+          "document_id": "b304b65b-18ee-464d-bc51-ed144d00268c",
+          "file_name": "rag_evaluation_metrics_cv.txt",
+          "page_number": 2,
+          "section_title": null,
+          "chunk_index": 1,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.016129032258064516,
+          "vector_score": null,
+          "bm25_score": 13.484276992152555,
+          "snippet": "The Agentic StudyMate evaluation pipeline reports hit@1, hit@3, hit@5, hit@10, MRR, page_hit@10, keyword_overlap_avg, average_chunks_returned, and source_distribution. The source_distribution counts BM25, vector, graph, and unknown retrieval sources across returned chunks."
+        },
+        {
+          "chunk_id": "42d58662-d225-4015-8606-6d451eff8e61",
+          "document_id": "ea61c81f-c78d-4616-808f-b0466ec8da75",
+          "file_name": "cryptoscope_metrics_cv.txt",
+          "page_number": 5,
+          "section_title": null,
+          "chunk_index": 4,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015873015873015872,
+          "vector_score": null,
+          "bm25_score": 8.90632162587756,
+          "snippet": "CryptoScope reports each metric per model and per evaluation window. A strong model should show low MAPE, low RMSE, high Directional Accuracy, and a high Composite Score. These metrics can be summarized in a dashboard or CV bullet to show forecasting quality and model comparison rigor."
+        },
+        {
+          "chunk_id": "0f4264ba-8e62-4ee3-9089-463f80a3ac7d",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 40,
+          "section_title": "**Document Stores**",
+          "chunk_index": 39,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015625,
+          "vector_score": null,
+          "bm25_score": 6.785521912912955,
+          "snippet": "## **Document Stores** ▪ Documents are stored in some standard format or encoding (e.g., XML, JSON, PDF or Office Documents) – These are typically referred to as Binary Large Objects (BLOBs) ## ▪ Documents can be indexed – This allows document stores to outperform traditional file systems ▪ E.g., Mo"
+        },
+        {
+          "chunk_id": "0c78c32b-7795-4b90-b74b-0405d17f37f2",
+          "document_id": "b304b65b-18ee-464d-bc51-ed144d00268c",
+          "file_name": "rag_evaluation_metrics_cv.txt",
+          "page_number": 1,
+          "section_title": null,
+          "chunk_index": 0,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015384615384615385,
+          "vector_score": null,
+          "bm25_score": 6.184576121843793,
+          "snippet": "# RAG Evaluation Metrics"
+        },
+        {
+          "chunk_id": "8a3bdd63-99ca-4db8-bcc1-3ea3f5d96102",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 87,
+          "section_title": "**HDFS Inside: Write**",
+          "chunk_index": 87,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.015151515151515152,
+          "vector_score": null,
+          "bm25_score": 6.176053808162697,
+          "snippet": "## **HDFS Inside: Write** - Q: Where should HDFS put the three replicas of a block? What tradeoffs we need to consider? - Tradeoffs: - Reliability - Write Bandwidth - Read Bandwidth ## Q: What are some possible strategies? **==> picture [720 x 76] intentionally omitted <==** **----- Start of picture"
+        },
+        {
+          "chunk_id": "a2bbe89f-bd5b-4252-8512-b788d3a4b871",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 79,
+          "section_title": "**HDFS Inside: Read**",
+          "chunk_index": 79,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014925373134328358,
+          "vector_score": null,
+          "bm25_score": 4.8552431137809915,
+          "snippet": "## **HDFS Inside: Read** **==> picture [592 x 262] intentionally omitted <==** **----- Start of picture text -----**<br> 1<br>Name Node<br>Client<br>2<br>3<br>4<br>DN1 DN2 DN3 . . . DNn<br>**----- End of picture text -----**<br> 1. Client connects to NN to read data 2. NN tells client where to find "
+        },
+        {
+          "chunk_id": "6823767a-dbde-456a-b4dd-04aadd5b0903",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 65,
+          "section_title": "**Distributed File S stem y**",
+          "chunk_index": 64,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014705882352941176,
+          "vector_score": null,
+          "bm25_score": 4.707201641548375,
+          "snippet": "## **Distributed File S stem y** ## ▪ **Chunk servers** - File is split into contiguous chunks - Typically each chunk is 16-64MB - Each chunk replicated (usually 2x or 3x) - Try to keep replicas in different racks - **Master node** - a.k.a. Name Node in Hadoop’s HDFS - Stores metadata about where fi"
+        },
+        {
+          "chunk_id": "42622af9-7a30-4eff-b818-f1c4242cab2d",
+          "document_id": "5c9e2e73-c8b7-4662-aa0c-a09465835cc3",
+          "file_name": "2.Big Data Ecosystem.pdf",
+          "page_number": 5,
+          "section_title": "**Most Scenarios: Lots of “Medium Data” that Isn’t Ready for Analytics**",
+          "chunk_index": 4,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014492753623188406,
+          "vector_score": null,
+          "bm25_score": 4.488239793911857,
+          "snippet": "## **Most Scenarios: Lots of “Medium Data” that Isn’t Ready for Analytics** ▪ Other than in the Web and in monitoring scenarios – we typically don’t have all of the data in one place – In different systems - Bringing in public datasets - Requiring access to Twitter APIs etc. - Also, it’s often not i"
+        },
+        {
+          "chunk_id": "d977b3cf-8372-4afe-b8ad-90949a2fbfe8",
+          "document_id": "a185ff5e-e008-438e-bc84-aefc17f677e6",
+          "file_name": "3.Big Data Storage.pdf",
+          "page_number": 85,
+          "section_title": "**Data Localit y**",
+          "chunk_index": 85,
+          "sources": [
+            "bm25"
+          ],
+          "rrf_score": 0.014285714285714285,
+          "vector_score": null,
+          "bm25_score": 4.320035585567534,
+          "snippet": "## **Data Localit y** ▪ Hadoop does its best to run the map task on a node where the input data resides in HDFS, because it doesn’t use valuable cluster bandwidth. **==> picture [576 x 343] intentionally omitted <==**"
+        }
+      ],
+      "answer": {
+        "answer_length": 544,
+        "citation_count": 1,
+        "expected_keywords_in_answer": {
+          "score": 0.6666666666666666,
+          "matched": [
+            "JSON",
+            "backend/evaluation/reports"
+          ],
+          "missing": [
+            "retrieval reports"
+          ]
+        },
+        "expected_file_in_citations": true,
+        "citation_files": [
+          "rag_evaluation_metrics_cv.txt"
+        ],
+        "citations": [
+          {
+            "file_name": "rag_evaluation_metrics_cv.txt",
+            "page_number": 4,
+            "chunk_id": "0c49e019-9460-47a7-95d6-adbaa477d848",
+            "section_title": null,
+            "snippet": "keyword_overlap_avg measures how many expected keywords appear in the retrieved context. average_chunks_returned confirms whether the retriever return...",
+            "image_url": null
+          }
+        ],
+        "known_document_count": 6
+      }
+    }
+  ]
+}

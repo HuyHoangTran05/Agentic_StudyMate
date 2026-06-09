@@ -1,0 +1,11 @@
+# CryptoScope Forecast Metrics
+
+CryptoScope evaluates crypto forecasting runs with MAPE, Directional Accuracy, RMSE, and a Composite Score. MAPE measures mean absolute percentage error, so lower MAPE indicates better price forecast accuracy. RMSE measures root mean squared error and penalizes large misses, so lower RMSE is better.
+
+Directional Accuracy measures the percentage of predictions that correctly forecast whether price moves up or down. Higher Directional Accuracy is better because it reflects useful trading direction signals. The Composite Score combines multiple metrics into a single ranking signal for comparing models across evaluation windows.
+
+# Reporting and Interpretation
+
+CryptoScope reports each metric per model and per evaluation window. A strong model should show low MAPE, low RMSE, high Directional Accuracy, and a high Composite Score. These metrics can be summarized in a dashboard or CV bullet to show forecasting quality and model comparison rigor.
+
+When explaining CryptoScope results, MAPE and RMSE describe error magnitude, Directional Accuracy describes trend correctness, and the Composite Score provides an overall benchmark for selecting the best-performing model.

@@ -1,0 +1,98 @@
+[
+  {
+    "id": "asm_architecture_stack_001",
+    "question": "What frontend and backend stack does Agentic StudyMate use?",
+    "expected_keywords": ["React", "Vite", "TypeScript", "Tailwind", "FastAPI", "SQLAlchemy", "SQLite"],
+    "expected_file": "agentic_studymate_architecture_cv.txt",
+    "expected_pages": [2],
+    "notes": "Checks core application architecture stack."
+  },
+  {
+    "id": "asm_vector_db_002",
+    "question": "Which vector database and collection does Agentic StudyMate use for chunk embeddings?",
+    "expected_keywords": ["Qdrant", "studymate_chunks", "vector search", "chunk embeddings"],
+    "expected_file": "agentic_studymate_architecture_cv.txt",
+    "expected_pages": [3],
+    "notes": "Checks Qdrant configuration and vector storage."
+  },
+  {
+    "id": "asm_bm25_hybrid_003",
+    "question": "How does Agentic StudyMate combine BM25 keyword retrieval with vector search?",
+    "expected_keywords": ["BM25", "keyword retrieval", "Qdrant", "reciprocal rank fusion", "reranker"],
+    "expected_file": "agentic_studymate_architecture_cv.txt",
+    "expected_pages": [3],
+    "notes": "Checks hybrid retrieval and reranking."
+  },
+  {
+    "id": "asm_embeddings_chunking_004",
+    "question": "What embedding model, embedding dimension, chunk size, and overlap are used?",
+    "expected_keywords": ["all-MiniLM-L6-v2", "384-dimensional", "512", "64", "CPU embeddings"],
+    "expected_file": "agentic_studymate_architecture_cv.txt",
+    "expected_pages": [3],
+    "notes": "Checks embedding and chunking configuration."
+  },
+  {
+    "id": "asm_neo4j_graphrag_005",
+    "question": "How does Agentic StudyMate use Neo4j for GraphRAG?",
+    "expected_keywords": ["Neo4j", "GraphRAG", "entity-relation triplets", "chunk_id", "graph retrieval"],
+    "expected_file": "agentic_studymate_architecture_cv.txt",
+    "expected_pages": [4],
+    "notes": "Checks graph retrieval architecture."
+  },
+  {
+    "id": "asm_ingestion_pipeline_006",
+    "question": "What are the main steps in the document ingestion pipeline?",
+    "expected_keywords": ["PDF", "DOCX", "TXT", "SHA-256", "chunks", "SQLite", "Qdrant", "BM25", "ready"],
+    "expected_file": "agentic_studymate_architecture_cv.txt",
+    "expected_pages": [6, 7],
+    "notes": "Checks upload, chunk, embed, store, and status flow."
+  },
+  {
+    "id": "cryptoscope_metrics_007",
+    "question": "Which metrics does CryptoScope use to evaluate forecasting runs?",
+    "expected_keywords": ["MAPE", "Directional Accuracy", "RMSE", "Composite Score"],
+    "expected_file": "cryptoscope_metrics_cv.txt",
+    "expected_pages": [2, 3],
+    "notes": "Checks CryptoScope metric names."
+  },
+  {
+    "id": "cryptoscope_interpretation_008",
+    "question": "How should MAPE, RMSE, Directional Accuracy, and Composite Score be interpreted?",
+    "expected_keywords": ["lower MAPE", "lower RMSE", "Higher Directional Accuracy", "Composite Score", "best-performing model"],
+    "expected_file": "cryptoscope_metrics_cv.txt",
+    "expected_pages": [5, 6],
+    "notes": "Checks metric interpretation and model comparison."
+  },
+  {
+    "id": "rag_retrieval_metrics_009",
+    "question": "What retrieval metrics does the RAG evaluation pipeline report?",
+    "expected_keywords": ["hit@1", "hit@3", "hit@5", "hit@10", "MRR", "page_hit@10", "keyword_overlap_avg", "average_chunks_returned"],
+    "expected_file": "rag_evaluation_metrics_cv.txt",
+    "expected_pages": [2],
+    "notes": "Checks retrieval metric coverage."
+  },
+  {
+    "id": "rag_source_distribution_010",
+    "question": "What does source_distribution count in the RAG evaluation report?",
+    "expected_keywords": ["source_distribution", "BM25", "vector", "graph", "unknown", "returned chunks"],
+    "expected_file": "rag_evaluation_metrics_cv.txt",
+    "expected_pages": [2],
+    "notes": "Checks retrieval source accounting."
+  },
+  {
+    "id": "rag_answer_grounding_011",
+    "question": "Which answer grounding metrics are measured when answer evaluation is enabled?",
+    "expected_keywords": ["answer_length", "citation_count", "expected_file_in_citations", "expected keywords", "grounding"],
+    "expected_file": "rag_evaluation_metrics_cv.txt",
+    "expected_pages": [6, 7],
+    "notes": "Checks answer-mode metrics."
+  },
+  {
+    "id": "rag_report_path_012",
+    "question": "Where are retrieval evaluation JSON reports saved?",
+    "expected_keywords": ["JSON", "backend/evaluation/reports", "retrieval reports"],
+    "expected_file": "rag_evaluation_metrics_cv.txt",
+    "expected_pages": [4],
+    "notes": "Checks generated report location."
+  }
+]
