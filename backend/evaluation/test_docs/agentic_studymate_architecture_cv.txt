@@ -1,0 +1,15 @@
+# Agentic StudyMate Architecture
+
+Agentic StudyMate is a multimodal RAG study assistant with a React, Vite, TypeScript, and Tailwind frontend. The backend uses async FastAPI routes, SQLAlchemy async sessions, and SQLite metadata storage. Uploaded files become Document records, extracted text becomes Chunk records, and ready documents can be searched and cited.
+
+Retrieval combines Qdrant vector search and BM25 keyword retrieval with reciprocal rank fusion. The default Qdrant collection is studymate_chunks. Local CPU embeddings use sentence-transformers/all-MiniLM-L6-v2, which produces 384-dimensional vectors. The default chunk size is 512 tokens with 64 tokens of overlap. A cross-encoder reranker named cross-encoder/ms-marco-MiniLM-L-6-v2 can rerank retrieved chunks before answer generation.
+
+Agentic StudyMate also supports Neo4j GraphRAG. During ingestion, entity-relation triplets can be extracted from chunks and stored in Neo4j relationships tagged with the originating chunk_id. Graph retrieval can return source chunks linked to matching graph relationships.
+
+# Ingestion Pipeline
+
+The document ingestion pipeline accepts PDF, DOCX, and TXT files. It validates the extension, computes a SHA-256 hash for duplicate detection, saves the upload, and creates a processing Document row in SQLite.
+
+The pipeline extracts text, splits content into page-aware chunks, stores chunks in SQLite, extracts Neo4j triplets when an LLM key is configured, generates CPU embeddings, upserts vectors into Qdrant, adds the chunks to the in-memory BM25 index, and marks the document ready.
+
+If Qdrant is unavailable, ingestion continues without vector storage so BM25 can still retrieve chunks. If Neo4j or an LLM provider is unavailable, graph ingestion is skipped or logged without blocking the core retrieval path.

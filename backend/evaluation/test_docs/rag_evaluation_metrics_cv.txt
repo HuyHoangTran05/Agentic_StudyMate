@@ -1,0 +1,13 @@
+# RAG Evaluation Metrics
+
+The Agentic StudyMate evaluation pipeline reports hit@1, hit@3, hit@5, hit@10, MRR, page_hit@10, keyword_overlap_avg, average_chunks_returned, and source_distribution. The source_distribution counts BM25, vector, graph, and unknown retrieval sources across returned chunks.
+
+hit@k checks whether the expected file appears within the top k retrieved chunks. MRR, or mean reciprocal rank, rewards systems that place the first relevant chunk near the top. page_hit@10 checks whether an expected page appears in the retrieved context when expected_pages are provided.
+
+keyword_overlap_avg measures how many expected keywords appear in the retrieved context. average_chunks_returned confirms whether the retriever returned the requested number of chunks. Retrieval reports are saved as JSON files under backend/evaluation/reports.
+
+# Answer Grounding Metrics
+
+When answer evaluation is enabled, the pipeline also measures answer_length, citation_count, expected keywords in the answer, and expected_file_in_citations. citation_count measures how many source citations the generated answer includes. expected_file_in_citations checks whether the answer cites the expected uploaded file.
+
+These answer metrics help distinguish retrieval quality from final-answer grounding. A grounded RAG answer should cite relevant chunks, include expected concepts, and avoid relying on uncited content.
